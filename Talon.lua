@@ -102,9 +102,9 @@ function KillFunctions()
   	if ValidTarget(enemy, 10000) then
   		local AADmg = GetBonusDmg(myHero)+GetBaseDamage(myHero)
 			local QDmg = 40*GetCastLevel(myHero,_Q)+1.3* AADmg
-			local WDmg = (25*GetCastLevel(myHero,_W)+5+.6* AADmg)*2
+			local WDmg = (25*GetCastLevel(myHero,_W)+5+.6* AADmg)
 			local EDmg = 1+GetCastLevel(myHero,_E)*.03
-			local RDmg = (50*GetCastLevel(myHero,_R)+70+.75*AADmg)*2
+			local RDmg = (50*GetCastLevel(myHero,_R)+70+.75*AADmg)
 			local QDMG = CalcDamage(myHero, enemy, QDmg)
 			local WDMG = CalcDamage(myHero, enemy, WDmg)
 			local EDMG = EDmg
