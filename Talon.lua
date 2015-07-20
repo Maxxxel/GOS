@@ -99,7 +99,7 @@ end
 
 function KillFunctions()
 	for _,enemy in pairs(GetEnemyHeroes()) do
-  	if ValidTarget(enemy, 10000) then
+  	if ValidTarget(enemy, 25000) then
   		local AADmg = GetBonusDmg(myHero)+GetBaseDamage(myHero)
 			local QDmg = 40*GetCastLevel(myHero,_Q)+1.3* AADmg
 			local WDmg = (25*GetCastLevel(myHero,_W)+5+.32* AADmg)*2
