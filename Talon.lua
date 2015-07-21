@@ -9,14 +9,18 @@ AddButton("AutoHarass", "AutoHarass W", true)
 AddButton("Killnotification", "Killnotifications", true)
 AddButton("PercentKill", "Show HP in % left", true)
 
+local version = 0.2
 local TalonTarget
 local killable=0
 local Q,W,E,R = 'Q','W','E','R'
 TargetableSpots={'Minion','Superminion','Golem','Lizard','Wraith','Dragon','Wolf','Tibbers','HeimerTYellow','HeimerTBlue','Mundo','Lucian','Karthus','ZyraThornPlant','ZyraGraspingPlant','Veigar','Ziggs','Zyra','Graves','Nasus','Vladimir','Soraka','Kayle','Evelynn','Caitlyn','Nidalee','Cassiopeia','Taric','Malphite','Fiddlesticks','Talon','Ahri','Ezreal','Quinn','Shyvana','Sion','Shen','Ryze','Renekton','Nasus','Annie'}
 
-function AfterObjectLoopEvent(myHero)
-	--DrawText('Terror Talon 0.1 WIP ported to GOS',100,0,Color.Red)
+AddAfterObjectLoopEvent(function(myHero)
+	--DrawText('Terror Talon 0.2 WIP ported to GOS',100,0,Color.Red)
 	TalonTarget = GetTarget(700)
+	local targetPos1 = GetOrigin(myHero)
+	local drawPos1 = WorldToScreen(1,targetPos1.x,targetPos1.y,targetPos1.z)
+	DrawText("killable:" .. killable,20,drawPos1.x,drawPos1.y,0xffff0000)
 	GetCD()
   DrawMenu()
   IWalk()
@@ -26,7 +30,7 @@ function AfterObjectLoopEvent(myHero)
   elseif GetButtonValue("AutoHarass") then
   	AutoHarass()
   end
-end
+end)
 
 function GetCD()
 	if CanUseSpell(myHero, _Q) == READY then
@@ -100,16 +104,16 @@ end
 function KillFunctions()
 	for _,enemy in pairs(GetEnemyHeroes()) do
   	if ValidTarget(enemy, 25000) then
-  		local AADmg = GetBonusDmg(myHero)+GetBaseDamage(myHero)
-			local QDmg = 40*GetCastLevel(myHero,_Q)+1.3* AADmg
-			local WDmg = (25*GetCastLevel(myHero,_W)+5+.32* AADmg)*2
+  		local AADmg = GetBonusDmg(myHero)
+  		local AA = CalcDamage(myHero, enemy, (AADmg+GetBaseDamage(myHero)))
+			local QDmg = 30*GetCastLevel(myHero,_Q)+.3*AADmg+10*GetCastLevel(myHero,_Q)+1.2*AADmg+AA
+			local WDmg = (25*GetCastLevel(myHero,_W)+5+.6* AADmg)*2
 			local EDmg = 1+GetCastLevel(myHero,_E)*.03
-			local RDmg = (50*GetCastLevel(myHero,_R)+70+.25*AADmg)*2
+			local RDmg = (50*GetCastLevel(myHero,_R)+70+.9*AADmg)*2
 			local QDMG = CalcDamage(myHero, enemy, QDmg)
 			local WDMG = CalcDamage(myHero, enemy, WDmg)
 			local EDMG = EDmg
 			local RDMG = CalcDamage(myHero, enemy, RDmg)
-			AA = CalcDamage(myHero, enemy, AADmg)
 			local Passive=0.1
 			local KSValue=0
 			
