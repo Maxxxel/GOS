@@ -9,6 +9,7 @@ Config.addParam("Combo", "Combo", SCRIPT_PARAM_KEYDOWN, string.byte(" "))
 Config.addParam("Note", "Note", SCRIPT_PARAM_ONOFF, true)
 Config.addParam("Percent","Percent", SCRIPT_PARAM_ONOFF,true)
 --Damage Stuff
+local myHero = GetMyHero()
 local killable=0
 local BonusAP = GetBonusAP(myHero)
 --Q Damage
@@ -21,23 +22,23 @@ local SpellE= (GetCastLevel(myHero,_E)*35)+35+(.55*BonusAP)
 local Pyroclasm = (GetCastLevel(myHero,_R)*150)+(.5*BonusAP)
 --On Spacebar pressed:
 OnLoop(function(myHero)
+	PrintChat(GetCastRange(_Q,myHero))
 	local target = GetCurrentTarget()
-	local myHero = GetMyHero()
 	local myHeroPos = GetOrigin(myHero)
 	Killsteal()
 	if Config.Combo and IsObjectAlive(target) and ValidTarget(target,1100) and killable==0 then
-		local QPred = GetPredictionForPlayer(GetMyHeroPos(),target,GetMoveSpeed(target),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)
-		local WPred = GetPredictionForPlayer(GetMyHeroPos(),target,GetMoveSpeed(target),20000,(math.floor(math.random()*500)+500),GetCastRange(myHero,_W),220,false,false)
-		if (GetDistance(target)<=GetCastRange(myHero,_E) and CanUseSpell(myHero, _E) == READY) and Config.E then
+		local QPred = GetPredictionForPlayer(GetMyHeroPos(),target,GetMoveSpeed(target),(math.floor(math.random()*400)+1600),250,950,60,true,true)
+		local WPred = GetPredictionForPlayer(GetMyHeroPos(),target,GetMoveSpeed(target),20000,(math.floor(math.random()*500)+500),800,220,false,false)
+		if (GetDistance(target)<=650 and CanUseSpell(myHero, _E) == READY) and Config.E then
 			CastE(target)
-		elseif (GetDistance(target)<=GetCastRange(myHero,_W) and CanUseSpell(myHero, _W) == READY) and Config.W and WPred.HitChance == 1 then
+		elseif (GetDistance(target)<=800 and CanUseSpell(myHero, _W) == READY) and Config.W and WPred.HitChance == 1 then
 			CastSkillShot(_W,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
-		elseif (GetDistance(target)<=GetCastRange(myHero,_Q) and CanUseSpell(myHero, _Q) == READY) and Config.Q and QPred.HitChance == 1 then
+		elseif (GetDistance(target)<=950 and CanUseSpell(myHero, _Q) == READY) and Config.Q and QPred.HitChance == 1 then
 		--Cast if target burns
 			if GotBuff(target,"brandablaze")~=0 then
 				CastSkillShot(_Q,QPred.PredPos.x,QPred.PredPos.y,QPred.PredPos.z)
 		--Cast when all Spells on CD or out of range
-			elseif (CanUseSpell(myHero, _W) ~= READY or GetDistance(target)>GetCastRange(myHero,_W)) and (CanUseSpell(myHero, _E) ~= READY or GetDistance(target)>GetCastRange(myHero,_E)) then
+			elseif (CanUseSpell(myHero, _W) ~= READY or GetDistance(target)>800) and (CanUseSpell(myHero, _E) ~= READY or GetDistance(target)>650) then
 				CastSkillShot(_Q,QPred.PredPos.x,QPred.PredPos.y,QPred.PredPos.z)
 			else
 				CastSkillShot(_Q,QPred.PredPos.x,QPred.PredPos.y,QPred.PredPos.z)
@@ -55,7 +56,7 @@ OnLoop(function(myHero)
 end )
 --Functions
 function CastW(o)
-	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),GetCastRange(myHero,_W),200,false,false)
+	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),800,200,false,false)
 	if WPred2.HitChance == 1 then
 		CastSkillShot(_W,WPred2.PredPos.x,WPred2.PredPos.y,WPred2.PredPos.z)
 	end
@@ -69,8 +70,8 @@ end
 -------------------------------------------------------------------------------------------------------------------------
 --Advanced Combos for KS
 function CastQWStun(o)
-	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)
-	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),GetCastRange(myHero,_W),200,false,false)
+	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,950,60,true,true)
+	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),800,200,false,false)
 	if (WPred2.HitChance == 1 or (CanUseSpell(myHero, _W) ~= READY)) then
 		if QPred2.HitChance == 1 then
 			CastSkillShot(_W,WPred2.PredPos.x,WPred2.PredPos.y,WPred2.PredPos.z)
@@ -81,8 +82,8 @@ function CastQWStun(o)
 	end
 end
 function CastQWDamage(o)
-	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)
-	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),GetCastRange(myHero,_W),200,false,false)
+	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,950,60,true,true)
+	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),800,200,false,false)
 	if (QPred2.HitChance == 1 or (CanUseSpell(myHero, _Q) ~= READY)) then
 		if WPred2.HitChance == 1 then
 			CastSkillShot(_Q,QPred2.PredPos.x,QPred2.PredPos.y,QPred2.PredPos.z)
@@ -93,7 +94,7 @@ function CastQWDamage(o)
 	end
 end
 function CastQE(o)
-	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)
+	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,950,60,true,true)
 	if (QPred2.HitChance == 1 or (CanUseSpell(myHero, _Q) ~= READY)) then
 		CastTargetSpell(o, _E)
 		if GotBuff(o,"brandablaze")~=0 then
@@ -102,7 +103,7 @@ function CastQE(o)
 	end
 end
 function CastEW(o)
-	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),GetCastRange(myHero,_W),200,false,false)
+	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),800,200,false,false)
 	if (WPred2.HitChance == 1 or (CanUseSpell(myHero, _W) ~= READY)) then
 		CastTargetSpell(o, _E)
 		if GotBuff(o,"brandablaze")~=0 then
@@ -111,8 +112,8 @@ function CastEW(o)
 	end
 end
 function CastQWE(o)
-	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)
-	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),GetCastRange(myHero,_W),200,false,false)
+	local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,950,60,true,true)
+	local WPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),20000,(math.floor(math.random()*500)+250),800,200,false,false)
 	if (QPred2.HitChance == 1 or (CanUseSpell(myHero, _Q) ~= READY) or (CanUseSpell(myHero, _E) ~= READY)) then
 		if WPred2.HitChance == 1 then
 			CastTargetSpell(o, _E)
@@ -192,37 +193,37 @@ function Killsteal()
 			end
 -------------------------------------------------------------------------------------------------------------------------
 			if Config.KS and ((GotBuff(enemy,"brandablaze")==0) or (GotBuff(enemy,"brandablaze")~=0 and enemyhp>PDMG)) then
-				local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)
-				if ValidTarget(enemy,GetCastRange(myHero,_Q)) and enemyhp < QDMG+PDMG and CanUseSpell(myHero, _Q) == READY and GetCurrentMana(myHero)>=50 then
+				local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,950,60,true,true)
+				if ValidTarget(enemy,950) and enemyhp < QDMG+PDMG and CanUseSpell(myHero, _Q) == READY and GetCurrentMana(myHero)>=50 then
 					if QPred2.HitChance == 1 then
 						CastSkillShot(_Q,QPred2.PredPos.x,QPred2.PredPos.y,QPred2.PredPos.z)
 						killable=1
 					end
-				elseif ValidTarget(enemy,GetCastRange(myHero,_W)) and enemyhp < WDMG+PDMG  and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65) then
+				elseif ValidTarget(enemy,800) and enemyhp < WDMG+PDMG  and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65) then
 					CastW(enemy)
 					killable=1
-				elseif ValidTarget(enemy,GetCastRange(myHero,_E)) and enemyhp < EDMG+PDMG  and CanUseSpell(myHero, _E) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_E))*5+65) then
+				elseif ValidTarget(enemy,650) and enemyhp < EDMG+PDMG  and CanUseSpell(myHero, _E) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_E))*5+65) then
 					CastE(enemy)
 					killable=1
-				elseif ValidTarget(enemy,GetCastRange(myHero,_E)) and enemyhp < EDMG+WDMG*1.25+PDMG and CanUseSpell(myHero, _E) == READY and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=(((GetCastLevel(myHero,_W))*5+65)+(((GetCastLevel(myHero,_E))*5+65))) then
+				elseif ValidTarget(enemy,650) and enemyhp < EDMG+WDMG*1.25+PDMG and CanUseSpell(myHero, _E) == READY and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=(((GetCastLevel(myHero,_W))*5+65)+(((GetCastLevel(myHero,_E))*5+65))) then
 					CastEW(enemy)
 					killable=1
-				elseif ValidTarget(enemy,GetCastRange(myHero,_E)) and enemyhp < EDMG+QDMG+PDMG  and CanUseSpell(myHero, _E) == READY and CanUseSpell(myHero, _Q) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_E))*5+65)+50 then
-					local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,GetCastRange(myHero,_Q),60,true,true)					if QPred2.HitChance == 1 then
+				elseif ValidTarget(enemy,650) and enemyhp < EDMG+QDMG+PDMG  and CanUseSpell(myHero, _E) == READY and CanUseSpell(myHero, _Q) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_E))*5+65)+50 then
+					local QPred2 = GetPredictionForPlayer(GetMyHeroPos(),o,GetMoveSpeed(o),(math.floor(math.random()*400)+1600),250,950,60,true,true)					if QPred2.HitChance == 1 then
 						CastQE(enemy)
 						killable=1
 					end
-				elseif ValidTarget(enemy,GetCastRange(myHero,_W)) and enemyhp < QDMG+WDMG+PDMG  and CanUseSpell(myHero, _Q) == READY and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65)+50 then
+				elseif ValidTarget(enemy,800) and enemyhp < QDMG+WDMG+PDMG  and CanUseSpell(myHero, _Q) == READY and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65)+50 then
 					if QPred2.HitChance == 1 then
 						CastQWStun(enemy)
 						killable=1
 					end
-				elseif ValidTarget(enemy,GetCastRange(myHero,_W)) and enemyhp < QDMG+WDMG*1.25+PDMG  and CanUseSpell(myHero, _Q) == READY and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65)+50 then
+				elseif ValidTarget(enemy,800) and enemyhp < QDMG+WDMG*1.25+PDMG  and CanUseSpell(myHero, _Q) == READY and CanUseSpell(myHero, _W) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65)+50 then
 					if QPred2.HitChance == 1 then
 						CastQWDamage(enemy)
 						killable=1
 					end
-				elseif ValidTarget(enemy,GetCastRange(myHero,_E)) and enemyhp < QDMG+WDMG+EDMG+PDMG  and CanUseSpell(myHero, _Q) == READY and CanUseSpell(myHero, _W) == READY and CanUseSpell(myHero, _E) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65)+((GetCastLevel(myHero,_E))*5+65)+50 then
+				elseif ValidTarget(enemy,650) and enemyhp < QDMG+WDMG+EDMG+PDMG  and CanUseSpell(myHero, _Q) == READY and CanUseSpell(myHero, _W) == READY and CanUseSpell(myHero, _E) == READY and GetCurrentMana(myHero)>=((GetCastLevel(myHero,_W))*5+65)+((GetCastLevel(myHero,_E))*5+65)+50 then
 					if QPred2.HitChance == 1 then
 						CastQWE(enemy)
 						killable=1
