@@ -1,9 +1,11 @@
-Config = scriptConfig("Talon", "Maxxxel Talon God")
-Config.addParam("R", "Smart Ulti(buggy)", SCRIPT_PARAM_ONOFF, true)
-Config.addParam("Percent","Show % Kill", SCRIPT_PARAM_ONOFF,true)
-Config.addParam("Combo", "Combo", SCRIPT_PARAM_KEYDOWN, string.byte(" "))
+Talon=Menu("Talon","Maxxxel Talon God")
+Talon:Key("Combo","Combo",string.byte(" "))
+Talon:SubMenu("KS","Killfunctions")
+Talon.KS:Boolean("R", "Smart Ulti(buggy)",true)
+Talon.KS:Boolean("Percent","Show % Kill",true)
+
 --Variables--
-local version = 0.4 --The Big Updated One
+local version = 0.5 --update for inspired v19
 local xHydra,HRDY,QRDY,WRDY,ERDY,R1RDY,R2RDY,HydraCast,HydraCastTime,LastWhisper=0,0,0,0,0,0,0,0,0,1
 local target
 local xAA,xQ,xQ2,xW,xE,xR
@@ -14,6 +16,7 @@ local Enemy = {}
 local Attack = {Target=nil}
 local Damage = {Success=false}
 local myHero = GetMyHero()
+
 
 --Every Loop do following funcs--
 OnLoop(function(myHero)
@@ -96,7 +99,7 @@ function CheckItemCD()
 end
 function DamageFunc()
 	xAA = (GetBaseDamage(myHero)+GetBonusDmg(myHero))
-	xQ = xAA+((25*GetCastLevel(myHero,_Q)+5)+(.3*GetBonusDmg(myHero)))
+	xQ = xAA+30*GetCastLevel(myHero,_Q)+(.3*GetBonusDmg(myHero))
 	xQ2 = (10*GetCastLevel(myHero,_Q))+(GetBonusDmg(myHero)) --over 6 seconds
 	xW = 2*(5+(25*GetCastLevel(myHero,_W))+(.6*GetBonusDmg(myHero))) --can hit 2 times, took into account
 	xE = 1+((GetCastLevel(myHero,_E)*3)*.01)
@@ -188,7 +191,7 @@ OnCreateObj(function(Object)
 end)
 --Enemies---
 function EnemyHandling()
-	for i,enemy in pairs(GetEnemyHeroes()) do
+	for i,enemy in pairs(GoS:GetEnemyHeroes()) do
 		if #enemies~= 5 then --check if an enemy isnt in table yet.
 			local entry = {hero = CheckEnemy(GetObjectName(enemy))} --returns nil if an enemy isnt in list already. and returns enemy for added enemies.
 			if entry.hero == nil then
@@ -230,43 +233,43 @@ function EnemyHandling()
 end
 --Main Function, calcs the Killnotis and which Spell to use on Combo--
 function SpellSequence()
-	--How Talon can kill without AA
-	KSN[1]  = {a=0,b=0,c=0,d=0,e=0,H=xAA, text='AA'}
-	KSN[2]  = {a=1,b=0,c=0,d=0,e=0,H=xQ+xQ2, text='Q'}
-	KSN[3]  = {a=0,b=1,c=0,d=0,e=0,H=xW, text='W'}
-	KSN[4]  = {a=0,b=0,c=0,d=1,e=0,H=xR, text='R1'}
-	KSN[5]  = {a=0,b=0,c=0,d=0,e=1,H=xR, text='R2'}
-	KSN[6]  = {a=0,b=0,c=0,d=1,e=n,H=xR*2, text='R1R2'}
-	KSN[7]  = {a=0,b=1,c=1,d=0,e=0,H=xW*xE, text='E-W'}
-	KSN[8]  = {a=1,b=0,c=1,d=0,e=0,H=(xQ*(xE+0.1))+xQ2, text='E-Q'}
-	KSN[9]  = {a=1,b=1,c=0,d=0,e=0,H=xQ+xQ2+xW, text='Q-W'}
-	KSN[10]  = {a=1,b=0,c=0,d=1,e=0,H=xQ+xQ2+xR, text='Q-R1'}
-	KSN[11]  = {a=1,b=0,c=0,d=0,e=1,H=xQ+xQ2+xR, text='Q-R2'}
-	KSN[12]  = {a=0,b=1,c=0,d=1,e=0,H=xW+xR, text='W-R1'}
-	KSN[13]  = {a=0,b=1,c=0,d=0,e=1,H=xW+xR, text='W-R2'}
-	KSN[14]  = {a=0,b=0,c=1,d=1,e=0,H=xR*xE, text='E-R1'}
-	KSN[15]  = {a=0,b=0,c=1,d=0,e=1,H=xR*xE, text='E-R2'}
-	KSN[16]  = {a=1,b=0,c=0,d=1,e=n,H=xQ+xQ2+xR*2, text='Q+R1R2'}
-	KSN[17]  = {a=0,b=1,c=0,d=1,e=n,H=xW+xR*2, text='W+R1R2'}
-	KSN[18]  = {a=0,b=0,c=1,d=1,e=n,H=xR+xR*xE, text='E+R1R2'}
-	KSN[19]  = {a=1,b=1,c=1,d=0,e=0,H=xW*xE+xQ2+xQ*(0.1+xE), text='E-Q-W'}
-	KSN[20]  = {a=1,b=0,c=1,d=1,e=0,H=(xQ*(xE+0.1))+xR*xE+xQ2, text='E-Q-R1'}
-	KSN[21]  = {a=1,b=0,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xR*xE+xQ2, text='E-Q-R2'}
-	KSN[22]  = {a=0,b=1,c=1,d=1,e=0,H=(xW+xR)*(xE), text='E-W-R1'}
-	KSN[23]  = {a=0,b=1,c=1,d=0,e=1,H=(xW+xR)*(xE), text='E-W-R2'}
-	KSN[24]  = {a=1,b=1,c=0,d=1,e=0,H=xQ+xQ2+xR+xW, text='Q-W-R1'}
-	KSN[25]  = {a=1,b=1,c=0,d=0,e=1,H=xQ+xQ2+xR+xW, text='Q-W-R2'}
-	KSN[26]  = {a=1,b=1,c=1,d=1,e=0,H=(xQ*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-Q-W-R1'}
-	KSN[27]  = {a=1,b=1,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-Q-W-R2'}
-	KSN[28]  = {a=1,b=1,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xQ2+(xR*2)*xE, text='E-Q-R1-R2'}
-	KSN[29]  = {a=1,b=1,c=1,d=0,e=1,H=(xW+xR*2)*xE, text='E-R1-W-R2'}
-	KSN[30]  = {a=1,b=1,c=1,d=0,e=1,H=xQ+xQ2+xW+xR*2, text='R1-Q-W-R2'}
-	KSN[31]  = {a=1,b=1,c=1,d=1,e=n,H=(xQ*(0.1+xE))+(xW+xR)*xE+xQ2+xR, text='E-Q-W-R1R2'}
-	KSN[32]  = {a=1,b=1,c=1,d=1,e=n,H=((xQ+xAA)*(0.1+xE))+(xW+xR)*xE+xQ2+xR, text='E-AA-Q-W-R1R2'}
+	--How Talon can kill
+		KSN[1]  = {a=0,b=0,c=0,d=1,e=0,H=xR, text='R1'}
+		KSN[2]  = {a=1,b=0,c=0,d=1,e=0,H=xQ+xQ2+xR, text='Q-R1'}
+		KSN[3]  = {a=0,b=1,c=0,d=1,e=0,H=xW+xR, text='W-R1'}
+		KSN[4]  = {a=0,b=0,c=1,d=1,e=0,H=xR*xE, text='E-R1'}
+		KSN[5]  = {a=1,b=0,c=1,d=1,e=0,H=(xQ*(xE+0.1))+xR*xE+xQ2, text='E-Q-R1'}
+		KSN[6]  = {a=0,b=1,c=1,d=1,e=0,H=(xW+xR)*(xE), text='E-W-R1'}
+		KSN[7]  = {a=1,b=1,c=0,d=1,e=0,H=xQ+xQ2+xR+xW, text='Q-W-R1'}
+		KSN[8]  = {a=1,b=1,c=1,d=1,e=0,H=(xQ*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-Q-W-R1'}
+		KSN[9]  = {a=0,b=0,c=0,d=0,e=1,H=xR, text='R2'}		
+		KSN[10]  = {a=1,b=0,c=0,d=0,e=1,H=xQ+xQ2+xR, text='Q-R2'}		
+		KSN[11]  = {a=0,b=1,c=0,d=0,e=1,H=xW+xR, text='W-R2'}	
+		KSN[12]  = {a=0,b=0,c=1,d=0,e=1,H=xR*xE, text='E-R2'}
+		KSN[13]  = {a=1,b=0,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xR*xE+xQ2, text='E-Q-R2'}		
+		KSN[14]  = {a=0,b=1,c=1,d=0,e=1,H=(xW+xR)*(xE), text='E-W-R2'}		
+		KSN[15]  = {a=1,b=1,c=0,d=0,e=1,H=xQ+xQ2+xR+xW, text='Q-W-R2'}		
+		KSN[16]  = {a=1,b=1,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-Q-W-R2'}
+		KSN[17]  = {a=0,b=0,c=0,d=1,e=n,H=xR*2, text='R1R2'}
+		KSN[18]  = {a=1,b=0,c=0,d=1,e=n,H=xQ+xQ2+xR*2, text='Q+R1R2'}
+		KSN[19]  = {a=0,b=1,c=0,d=1,e=n,H=xW+xR*2, text='W+R1R2'}
+		KSN[20]  = {a=0,b=0,c=1,d=1,e=n,H=xR+xR*xE, text='E+R1R2'}
+		KSN[21]  = {a=1,b=1,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xQ2+(xR*2)*xE, text='E-Q-R1-R2'}
+		KSN[22]  = {a=1,b=1,c=1,d=0,e=1,H=(xW+xR*2)*xE, text='E-R1-W-R2'}
+		KSN[23]  = {a=1,b=1,c=1,d=0,e=1,H=xQ+xQ2+xW+xR*2, text='R1-Q-W-R2'}
+		KSN[24]  = {a=1,b=1,c=1,d=1,e=n,H=(xQ*(0.1+xE))+(xW+xR)*xE+xQ2+xR, text='E-Q-W-R1R2'}
+		KSN[25]  = {a=1,b=1,c=1,d=1,e=n,H=((xQ+xAA)*(0.1+xE))+(xW+xR)*xE+xQ2+xR, text='E-AA-Q-W-R1R2'}
+		KSN[26]  = {a=0,b=0,c=0,d=0,e=0,H=xAA, text='AA'}
+		KSN[27]  = {a=1,b=0,c=0,d=0,e=0,H=xQ+xQ2, text='Q'}
+		KSN[28]  = {a=0,b=1,c=0,d=0,e=0,H=xW, text='W'}
+		KSN[29]  = {a=0,b=1,c=1,d=0,e=0,H=xW*xE, text='E-W'}
+		KSN[30]  = {a=1,b=0,c=1,d=0,e=0,H=(xQ*(xE+0.1))+xQ2, text='E-Q'}
+		KSN[31]  = {a=1,b=1,c=0,d=0,e=0,H=xQ+xQ2+xW, text='Q-W'}
+		KSN[32]  = {a=1,b=1,c=1,d=0,e=0,H=xW*xE+xQ2+xQ*(0.1+xE), text='E-Q-W'}	
 -------------------------------------
 	if #enemies > 0 then
     for i,enemy in ipairs(enemies) do
-    	if GetDistance(enemy.hero)<=2000 and Config.Percent then
+    	if GOS:GetDistance(enemy.hero)<=2000 and Talon.KS.Percent then
 	    	local drawing = WorldToScreen(1,enemy.Pos.x,enemy.Pos.y,enemy.Pos.z)
 				for v=1,32 do
 					local SUM=0
@@ -316,33 +319,31 @@ function SpellSequence()
 			end
 		end
 	end
-	if Config.Combo and not IsDead(myHero) then
+	if Talon.Combo:Value() and not IsDead(myHero) then
 		target=GetCurrentTarget()
-		if target and not IsDead(target) and IsTargetable(target) and not IsImmune(target) and IsVisible(target) and GetDistance(target)<=700 then
-			if GetDistance(target)<400 then 
-				CastOffensiveItems(target)
+		if target and not IsDead(target) and IsTargetable(target) and not IsImmune(target) and IsVisible(target) and GOS:GetDistance(target)<=700 then
+			if GOS:GetDistance(target)<400 then 
+				GOS:CastOffensiveItems(target)
 			end
-			if GetDistance(target)<=240 then
+			if GOS:GetDistance(target)<=240 then
 				if GetAA()==1 or (GetAA()==1 and ((CD(1,0,0,0,0)==1 and Mana(1,0,0,0,0)==1) or (CD(1,n,n,n,n)==1 and Mana(1,0,0,0,0)==1))) then
 					CastSpell(_Q)
 				else
-					if GetAA()~=1 then
-						AttackUnit(target)
-					end
+					AttackUnit(target)
 				end
 			end
-			if GetDistance(target)<=650 then
+			if GOS:GetDistance(target)<=700 and (CanUseSpell(myHero,_Q)~=READY or (CanUseSpell(myHero,_Q)==READY and GOS:GetDistance(target)>250)) then
 				if ((CD(0,1,0,0,0)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,0)==1 and Mana(1,1,0,0,0)==1) or (CD(n,1,0,0,0)==1 and Mana(0,1,0,0,0)==1)) then
 					W(target)
 				end
 			end
-			if GetDistance(target)<=650 and GetCastName(myHero,_R)~="talonshadowassaulttoggle" then
+			if GOS:GetDistance(target)<=650 and GetCastName(myHero,_R)~="talonshadowassaulttoggle" then
 				local DMG = math.max(((CD(0,0,0,1,n)*Mana(0,0,0,1,n))*xR*2),((CD(1,0,0,1,n)*Mana(1,0,0,1,n))*(xAA+xQ+xQ2+xR*2)),((CD(n,0,0,1,n)* Mana(0,0,0,1,n))*xR*2),((CD(0,1,0,1,n)*Mana(0,1,0,1,n))*(xW+xR*2)),((CD(0,n,0,1,n)*Mana(0,0,0,1,n))*(xR*2)),((CD(1,1,0,1,n)*Mana(1,1,0,1,n))*(xAA+xQ+xQ2+xW+xR*2)),((CD(n,n,0,1,n)*Mana(0,0,0,1,n)))*xR*2)
-				if Config.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then --if 2xR kills him
+				if Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then --if 2xR kills him
 					if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-(DMG-xR*2))<=0 then --if killable without R
-						if 		 (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GetDistance(target)<=245 then
+						if 		 (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GOS:GetDistance(target)<=245 then
 							CastSpell(_Q)
-						elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1)) and GetDistance(target)<=650 then
+						elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1)) and GOS:GetDistance(target)<=650 then
 							W(target)
 						end
 					elseif (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then
@@ -350,14 +351,14 @@ function SpellSequence()
 							R1(target)
 						end
 					end
-				elseif Config.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
+				elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
 					if		 (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) then 
 
-					elseif (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GetDistance(target)<=245 and GetAA()==1 then 
+					elseif (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GOS:GetDistance(target)<=245 and GetAA()==1 then 
 						CastSpell(_Q)
-					elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(n,1,0,1,n)==1 and Mana(0,1,0,1,n)==1)) and GetDistance(target)<=650 then 
+					elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(n,1,0,1,n)==1 and Mana(0,1,0,1,n)==1)) and GOS:GetDistance(target)<=650 then 
 						W(target)
-					elseif (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) and GetDistance(target)<=650 then 
+					elseif (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) and GOS:GetDistance(target)<=650 then 
 						W(target)
 					end
 				else
@@ -366,13 +367,13 @@ function SpellSequence()
 					end
 				end
 			end
-			if GetDistance(target)<=650 and GetCastName(myHero,_R)=="talonshadowassaulttoggle" then
+			if GOS:GetDistance(target)<=650 and GetCastName(myHero,_R)=="talonshadowassaulttoggle" then
 				local DMG= math.max((CD(0,0,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(1,0,0,0,1)*Mana(1,0,0,0,0)*(xAA+xQ+xQ2+xR)),(CD(n,0,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(0,1,0,0,1)*Mana(0,1,0,0,0)*(xW+xR)),(CD(0,n,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(1,1,0,0,1)*Mana(1,1,0,0,0)*(xAA+xQ+xQ2+xR)),(CD(n,n,0,0,1)*Mana(0,0,0,0,0)*xR))
-				if Config.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
+				if Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
 					if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -(DMG-xR))<=0 then --killable without the ult?
-						if 		  (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GetDistance(target)<=245 then
+						if 		  (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GOS:GetDistance(target)<=245 then
 							CastSpell(_Q)
-						elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GetDistance(target)<=650 then
+						elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GOS:GetDistance(target)<=650 then
 							W(target)
 						end
 					else
@@ -380,12 +381,12 @@ function SpellSequence()
 							R2(target)
 						end
 					end
-				elseif Config.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
+				elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
 					if 		 ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
 
-					elseif (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GetDistance(target)<=245 and GetAA()==1 then 
+					elseif (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GOS:GetDistance(target)<=245 and GetAA()==1 then 
 						CastSpell(_Q)
-					elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GetDistance(target)<=650 then 
+					elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GOS:GetDistance(target)<=650 then 
 						W(target)
 					end
 				else
@@ -394,9 +395,9 @@ function SpellSequence()
 					end
 				end
 			end
-			if GetDistance(target)<=700 then
+			if GOS:GetDistance(target)<=700 then
 				local DMG = math.max((CD(0,0,1,1,n)*Mana(0,0,1,1,n)*xR*2*xE),(CD(0,0,1,0,1)*Mana(0,0,1,0,0)*xE*xR),(CD(1,0,1,1,n)*Mana(1,0,1,1,n)*((xAA+xQ)*(0.1+xE)+xQ2+xR*2*xE)),(CD(1,0,1,0,1)*Mana(1,0,1,0,0)*((xAA+xQ)*(0.1+xE)+xQ2+xR*xE)),(CD(0,1,1,1,n)*Mana(0,1,1,1,n)*xE*(xW+xR*2)),(CD(0,1,1,0,1)*Mana(0,1,1,0,0)*xE*(xW+xR)),(CD(1,1,1,1,n)*Mana(1,1,1,1,n)*((xQ+xAA)*(0.1+xE)+(xW+xR*2)*xE)),(CD(1,1,1,0,1)*Mana(1,1,1,0,0)*((xQ+xAA)*(0.1+xE)+(xW+xR)*xE)))
-				if Config.R and GetDistance(target)<=650 and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
+				if Talon.KS.R and GOS:GetDistance(target)<=650 and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
 					if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -(DMG-xR*2))<=0 then
 						if ((CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1)) then
 							E(target)
@@ -406,7 +407,7 @@ function SpellSequence()
 							E(target)
 						end
 					end
-				elseif Config.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
+				elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
 					if ((CD(0,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,0)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,0)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,0)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(n,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or 	(CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(n,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
 						E(target)
 					end
@@ -419,29 +420,30 @@ function SpellSequence()
 		else
 			MoveToMouse()
 		end
+		if GetAA()==1 and CanUseSpell(myHero,_Q)~=READY then MoveToMouse() end
 	end
 end
 --Spells
 function W(o)
-	if GetDistance(o)<=650 then
+	if GOS:GetDistance(o)<=700 then
 		CastTargetSpell(o,_W)
 	end
 end
 function E(o)
-	if GetDistance(o)<=700 then
+	if GOS:GetDistance(o)<=700 then
 		CastTargetSpell(o,_E)
 	end
 end
 function R1(o)
-	if GetDistance(o)<=650 then
+	if GOS:GetDistance(o)<=650 then
 		CastSpell(_R)
 	end
 end
 function R2(o)
-	if GetDistance(o)<=650 then
+	if GOS:GetDistance(o)<=650 then
 		CastSpell(_R)
 	end
-	if GetCastName(myHero,_R)=="talonshadowassaulttoggle" and GetDistance(o)>640 then
+	if GetCastName(myHero,_R)=="talonshadowassaulttoggle" and GOS:GetDistance(o)>640 then
 	  CastSpell(_R)
 	end
 end
