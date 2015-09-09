@@ -1,14 +1,15 @@
 Talon=Menu("Talon","Maxxxel Talon God")
 Talon:Key("Combo","Combo",string.byte(" "))
 Talon:SubMenu("KS","Killfunctions")
-Talon.KS:Boolean("R", "Smart Ulti(buggy)",true)
+Talon.KS:Boolean("Ignite","Auto-Ignite",true)
+Talon.KS:Boolean("R", "Smart Ulti",true)
 Talon.KS:Boolean("Percent","Show % Kill",true)
 
 --Variables--
-local version = 0.5 --update for inspired v19
+local version = 0.6 --updated with ignite, faster FPS
 local xHydra,HRDY,QRDY,WRDY,ERDY,R1RDY,R2RDY,HydraCast,HydraCastTime,LastWhisper=0,0,0,0,0,0,0,0,0,1
 local target
-local xAA,xQ,xQ2,xW,xE,xR
+local xAA,xQ,xQ2,xW,xE,xR,from,to,IRDY,xIgnite,KillType
 
 local KSN = {}
 local enemies = {}
@@ -20,12 +21,16 @@ local myHero = GetMyHero()
 
 --Every Loop do following funcs--
 OnLoop(function(myHero)
-	DamageFunc()
-	CheckItemCD()
-	SpellSequence()
-	AAHandling()
-	EnemyHandling()
+	if not IsDead(myHero) then
+		CheckItemCD()
+		DamageFunc()
+		SpellSequence()
+		AAHandling()
+		EnemyHandling()
+		GetAA()
+	end
 end)
+--AA stuff
 function AAHandling()
 	local Clock = GetTickCount()
   if Attack.Target and Damage.Success then --if we did an attack, reset its variables after animation did and damage aplied or damage aplied and auto attacked.
@@ -96,7 +101,12 @@ function CheckItemCD()
 	else 
 		HRDY=0
 	end
+	if 			GetCastName(myHero,SUMMONER_1):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_1)==0 then IRDY=1
+	elseif  GetCastName(myHero,SUMMONER_2):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_2)==0 then IRDY=1
+	else IRDY=0
+	end
 end
+--Set Damage for skills
 function DamageFunc()
 	xAA = (GetBaseDamage(myHero)+GetBonusDmg(myHero))
 	xQ = xAA+30*GetCastLevel(myHero,_Q)+(.3*GetBonusDmg(myHero))
@@ -105,55 +115,46 @@ function DamageFunc()
 	xE = 1+((GetCastLevel(myHero,_E)*3)*.01)
 	xR = 70+(GetCastLevel(myHero,_R)*50)+(.75*GetBonusDmg(myHero)) --can hit 2 times, needs double cast
 	xHYDRA = (.6*(GetBaseDamage(myHero)+GetBonusDmg(myHero)))*HRDY
+	xIgnite = (50+GetLevel(myHero)*20)*IRDY
 end
 --Check Talon Attacks for AA-Reset, and Hydra Cast--
 OnProcessSpell(function(Object,Spell)
   local ObjName = GetObjectName(Object)
-  local ObjPos2D  = GetOrigin(Object)
-  local ObjPos = WorldToScreen(1,ObjPos2D)
-  while (Object and Spell) do --if any Object use a spell/attack
-    if ObjName == GetObjectName(myHero) then --so we know the spell caster is our hero
-      if Spell.name:lower():find("basicattack") or Spell.name:lower():find("critattack") then --so we know our hero attacks
-        Attack = {
-         Time = { 
-          Start=GetTickCount(),
-          End  =Spell.animationTime*1000,
-          Reset=Spell.windUpTime*1100},
-         Target=Spell.target,
-         Pos = {
-          Start = {
-           x = Spell.startPos.x,
-           y = Spell.startPos.y,
-           z = Spell.startPos.z},
-          End = {
-           x = Spell.endPos.x,
-           y = Spell.endPos.y,
-           z = Spell.endPos.z}},
-         Type  =Basic}
-         break
-      elseif Spell.name:lower():find("noxiandiploma") then
-        Attack = {
-         Time = { 
-          Start=GetTickCount(),
-          End  =Spell.animationTime*1000,
-          Reset=Spell.windUpTime*1000},
-         Target=Spell.target,
-         Pos = {
-          Start = {
-           x = Spell.startPos.x,
-           y = Spell.startPos.y,
-           z = Spell.startPos.z},
-          End = {
-           x = Spell.endPos.x,
-           y = Spell.endPos.y,
-           z = Spell.endPos.z}},
-         Type  =Q}
-         break
-      else
-      	break
-      end
-   	else
-    	break
+  if Object and ObjName == GetObjectName(myHero) then
+    if Spell.name:lower():find("attack") then --so we know our hero attacks
+      Attack = {
+       Time = { 
+        Start=GetTickCount(),
+        End  =Spell.animationTime*1000,
+        Reset=Spell.windUpTime*1100},
+       Target=Spell.target,
+       Pos = {
+        Start = {
+         x = Spell.startPos.x,
+         y = Spell.startPos.y,
+         z = Spell.startPos.z},
+        End = {
+         x = Spell.endPos.x,
+         y = Spell.endPos.y,
+         z = Spell.endPos.z}},
+       Type  =Basic}
+    elseif Spell.name:lower():find("noxiandiploma") then
+      Attack = {
+       Time = { 
+        Start=GetTickCount(),
+        End  =Spell.animationTime*1000,
+        Reset=Spell.windUpTime*1000},
+       Target=Spell.target,
+       Pos = {
+        Start = {
+         x = Spell.startPos.x,
+         y = Spell.startPos.y,
+         z = Spell.startPos.z},
+        End = {
+         x = Spell.endPos.x,
+         y = Spell.endPos.y,
+         z = Spell.endPos.z}},
+       Type  =Q}
     end
   end
 	if GetObjectName(Spell) and GetObjectname(Spell) =="ItemTiamatCleave" and HydraCast==0 then
@@ -169,15 +170,17 @@ function GetAA()
     return 2 --means Attack is on Cast
   elseif not Attack.Target and not Damage.Success then
    	return 3 --means Script started or No AA recorded yet
+  else
+  	return 4
   end
 end
-
+--Check for aa finishs
 OnCreateObj(function(Object)
   local Name  = GetObjectBaseName(Object)
-  local Pos2D   = GetOrigin(Object)
-  local Pos = WorldToScreen(1,Pos2D)
   if Name:lower():find("bloodslash") then
   	if Attack.Target then
+  		local Pos2D   = GetOrigin(Object)
+ 		  local Pos = WorldToScreen(1,Pos2D)
       if GetDistanceXYZ(Pos2D.x,Pos2D.z,Attack.Pos.End.x,Attack.Pos.End.z)<100 then
           Damage = {Success=true,
            Position = {
@@ -233,51 +236,86 @@ function EnemyHandling()
 end
 --Main Function, calcs the Killnotis and which Spell to use on Combo--
 function SpellSequence()
-	--How Talon can kill
-		KSN[1]  = {a=0,b=0,c=0,d=1,e=0,H=xR, text='R1'}
-		KSN[2]  = {a=1,b=0,c=0,d=1,e=0,H=xQ+xQ2+xR, text='Q-R1'}
-		KSN[3]  = {a=0,b=1,c=0,d=1,e=0,H=xW+xR, text='W-R1'}
-		KSN[4]  = {a=0,b=0,c=1,d=1,e=0,H=xR*xE, text='E-R1'}
-		KSN[5]  = {a=1,b=0,c=1,d=1,e=0,H=(xQ*(xE+0.1))+xR*xE+xQ2, text='E-Q-R1'}
-		KSN[6]  = {a=0,b=1,c=1,d=1,e=0,H=(xW+xR)*(xE), text='E-W-R1'}
-		KSN[7]  = {a=1,b=1,c=0,d=1,e=0,H=xQ+xQ2+xR+xW, text='Q-W-R1'}
-		KSN[8]  = {a=1,b=1,c=1,d=1,e=0,H=(xQ*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-Q-W-R1'}
-		KSN[9]  = {a=0,b=0,c=0,d=0,e=1,H=xR, text='R2'}		
-		KSN[10]  = {a=1,b=0,c=0,d=0,e=1,H=xQ+xQ2+xR, text='Q-R2'}		
-		KSN[11]  = {a=0,b=1,c=0,d=0,e=1,H=xW+xR, text='W-R2'}	
-		KSN[12]  = {a=0,b=0,c=1,d=0,e=1,H=xR*xE, text='E-R2'}
-		KSN[13]  = {a=1,b=0,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xR*xE+xQ2, text='E-Q-R2'}		
-		KSN[14]  = {a=0,b=1,c=1,d=0,e=1,H=(xW+xR)*(xE), text='E-W-R2'}		
-		KSN[15]  = {a=1,b=1,c=0,d=0,e=1,H=xQ+xQ2+xR+xW, text='Q-W-R2'}		
-		KSN[16]  = {a=1,b=1,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-Q-W-R2'}
-		KSN[17]  = {a=0,b=0,c=0,d=1,e=n,H=xR*2, text='R1R2'}
-		KSN[18]  = {a=1,b=0,c=0,d=1,e=n,H=xQ+xQ2+xR*2, text='Q+R1R2'}
-		KSN[19]  = {a=0,b=1,c=0,d=1,e=n,H=xW+xR*2, text='W+R1R2'}
-		KSN[20]  = {a=0,b=0,c=1,d=1,e=n,H=xR+xR*xE, text='E+R1R2'}
-		KSN[21]  = {a=1,b=1,c=1,d=0,e=1,H=(xQ*(xE+0.1))+xQ2+(xR*2)*xE, text='E-Q-R1-R2'}
-		KSN[22]  = {a=1,b=1,c=1,d=0,e=1,H=(xW+xR*2)*xE, text='E-R1-W-R2'}
-		KSN[23]  = {a=1,b=1,c=1,d=0,e=1,H=xQ+xQ2+xW+xR*2, text='R1-Q-W-R2'}
-		KSN[24]  = {a=1,b=1,c=1,d=1,e=n,H=(xQ*(0.1+xE))+(xW+xR)*xE+xQ2+xR, text='E-Q-W-R1R2'}
-		KSN[25]  = {a=1,b=1,c=1,d=1,e=n,H=((xQ+xAA)*(0.1+xE))+(xW+xR)*xE+xQ2+xR, text='E-AA-Q-W-R1R2'}
-		KSN[26]  = {a=0,b=0,c=0,d=0,e=0,H=xAA, text='AA'}
-		KSN[27]  = {a=1,b=0,c=0,d=0,e=0,H=xQ+xQ2, text='Q'}
-		KSN[28]  = {a=0,b=1,c=0,d=0,e=0,H=xW, text='W'}
-		KSN[29]  = {a=0,b=1,c=1,d=0,e=0,H=xW*xE, text='E-W'}
-		KSN[30]  = {a=1,b=0,c=1,d=0,e=0,H=(xQ*(xE+0.1))+xQ2, text='E-Q'}
-		KSN[31]  = {a=1,b=1,c=0,d=0,e=0,H=xQ+xQ2+xW, text='Q-W'}
-		KSN[32]  = {a=1,b=1,c=1,d=0,e=0,H=xW*xE+xQ2+xQ*(0.1+xE), text='E-Q-W'}	
--------------------------------------
+--Skill Sequences--
+	KSN[1]  = {a=1,b=0,c=0,d=1,e=0,H=xAA+xQ+xQ2+xR, text='AA-Q-R1'}
+	KSN[2]  = {a=1,b=0,c=0,d=0,e=0,H=xAA+xQ+xQ2, text='AA-Q'}
+	KSN[3]  = {a=1,b=0,c=0,d=0,e=1,H=xAA+xQ+xQ2+xR, text='AA-Q-R2'}
+	KSN[4]  = {a=1,b=0,c=0,d=1,e=n,H=xAA+xQ+xQ2+xR*2, text='AA-Q+R1R2'}
+	KSN[5]  = {a=1,b=1,c=0,d=1,e=0,H=xAA+xQ+xQ2+xR+xW, text='AA-Q-W-R1'}
+	KSN[6]  = {a=1,b=1,c=0,d=0,e=0,H=xQ+xQ2+xW, text='Q-W'}
+	KSN[7]  = {a=1,b=1,c=0,d=0,e=1,H=xAA+xQ+xQ2+xR+xW, text='AA-Q-W-R2'}
+	KSN[8]  = {a=1,b=1,c=0,d=1,e=n,H=xAA+xQ+xQ2+xW+xR*2, text='R1-AA-Q-W-R2'}	
+	KSN[9]  = {a=1,b=0,c=1,d=1,e=0,H=((xAA+xQ)*(xE+0.1))+xR*xE+xQ2, text='E-AA-Q-R1'}
+	KSN[10] = {a=1,b=0,c=1,d=0,e=0,H=((xAA+xQ)*(xE+0.1))+xQ2, text='E-AA-Q'}
+	KSN[11] = {a=1,b=0,c=1,d=0,e=1,H=((xAA+xQ)*(xE+0.1))+xR*xE+xQ2, text='E-AA-Q-R2'}
+	KSN[12] = {a=1,b=0,c=1,d=1,e=n,H=((xAA+xQ)*(xE+0.1))+xQ2+(xR*2)*xE, text='E-AA-Q-R1-R2'}	
+	KSN[13] = {a=1,b=1,c=1,d=1,e=0,H=((xAA+xQ)*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-AA-Q-W-R1'}
+	KSN[14] = {a=1,b=1,c=1,d=0,e=0,H=xW*xE+xQ2+(xQ+xAA)*(0.1+xE), text='E-AA-Q-W'}
+	KSN[15] = {a=1,b=1,c=1,d=0,e=1,H=((xAA+xQ)*(xE+0.1))+xQ2+(xW+xR)*xE, text='E-AA-Q-W-R2'}	
+	KSN[16] = {a=1,b=1,c=1,d=1,e=n,H=((xAA+xQ)*(xE+0.1))+(xW+xR)*xE+xQ2+xR, text='E-AA-Q-W-R1R2'}
+	KSN[17] = {a=1,b=1,c=1,d=1,e=n,H=((xQ+xAA)*(xE+0.1))+(xW+xR)*xE+xQ2+xR, text='E-AA-Q-W-R1R2'}	
+	KSN[18] = {a=0,b=0,c=0,d=1,e=0,H=xR, text='R1'}
+	KSN[19] = {a=0,b=0,c=0,d=0,e=0,H=xAA, text='AA'}
+	KSN[20] = {a=0,b=0,c=0,d=0,e=1,H=xR, text='R2'}
+	KSN[21] = {a=0,b=0,c=0,d=1,e=n,H=xR*2, text='R1R2'}
+	KSN[22] = {a=0,b=1,c=0,d=1,e=0,H=xW+xR, text='W-R1'}
+	KSN[23] = {a=0,b=1,c=0,d=0,e=0,H=xW, text='W'}
+	KSN[24] = {a=0,b=1,c=0,d=0,e=1,H=xW+xR, text='W-R2'}	
+	KSN[25] = {a=0,b=1,c=0,d=1,e=n,H=xW+xR*2, text='W+R1R2'}
+	KSN[26] = {a=0,b=0,c=1,d=1,e=0,H=xR*xE, text='E-R1'}
+	KSN[27] = {a=0,b=0,c=1,d=0,e=1,H=xR*xE, text='E-R2'}
+	KSN[28] = {a=0,b=0,c=1,d=1,e=n,H=xR+xR*xE, text='E+R1R2'}
+	KSN[29] = {a=0,b=1,c=1,d=1,e=0,H=(xW+xR)*(xE), text='E-W-R1'}
+	KSN[30] = {a=0,b=1,c=1,d=0,e=0,H=xW*xE, text='E-W'}
+	KSN[31] = {a=0,b=1,c=1,d=0,e=1,H=(xW+xR)*(xE), text='E-W-R2'}
+	KSN[32] = {a=0,b=1,c=1,d=0,e=1,H=(xW+xR*2)*xE, text='E-R1-W-R2'}
+	
+	if 		 CD(1,0,0,n,n)==1 then
+		from=1
+		to=4
+	elseif CD(1,1,0,n,n)==1 then
+		from=5
+		to=8
+	elseif CD(1,0,1,n,n)==1 then
+		from=9
+		to=12
+	elseif CD(1,1,1,n,n)==1 then
+		from=13
+		to=17
+	elseif CD(0,0,0,n,n)==1 then
+		from=18
+		to=21
+	elseif CD(0,1,0,n,n)==1 then
+		from=22
+		to=25
+	elseif CD(0,0,1,n,n)==1 then
+		from=26
+		to=28
+	elseif CD(0,1,1,n,n)==1 then
+		from=29
+		to=32
+	end
 	if #enemies > 0 then
     for i,enemy in ipairs(enemies) do
-    	if GOS:GetDistance(enemy.hero)<=2000 and Talon.KS.Percent then
+    	if GOS:GetDistance(enemy.hero)<=2000 and Talon.KS.Percent and Valid(enemy.hero) then
 	    	local drawing = WorldToScreen(1,enemy.Pos.x,enemy.Pos.y,enemy.Pos.z)
-				for v=1,32 do
-					local SUM=0
-					if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H and IsVisible(enemy.hero) and not IsDead(enemy.hero) then
+	    	local SUM=0
+				for v=from,to do
+					if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xHydra+xIgnite then
 						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
+						KillType=HI
+					elseif CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xHydra then
+						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
+						KillType=H
+					elseif CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xIgnite then
+						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
+						KillType=I
+					elseif CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H then
+						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
+						KillType=N
 					else
-						if IsVisible(enemy.hero) and not IsDead(enemy.hero) then
-							SUM= math.max(
+						KillType=nil
+						SUM= math.max(
 							KSN[1].H*CD(KSN[1].a,KSN[1].b,KSN[1].c,KSN[1].d,KSN[1].e)*Mana(KSN[1].a,KSN[1].b,KSN[1].c,KSN[1].d,KSN[1].e),
 							KSN[2].H*CD(KSN[2].a,KSN[2].b,KSN[2].c,KSN[2].d,KSN[2].e)*Mana(KSN[2].a,KSN[2].b,KSN[2].c,KSN[2].d,KSN[2].e),
 							KSN[3].H*CD(KSN[3].a,KSN[3].b,KSN[3].c,KSN[3].d,KSN[3].e)*Mana(KSN[3].a,KSN[3].b,KSN[3].c,KSN[3].d,KSN[3].e),
@@ -310,9 +348,8 @@ function SpellSequence()
 							KSN[30].H*CD(KSN[30].a,KSN[30].b,KSN[30].c,KSN[30].d,KSN[30].e)*Mana(KSN[30].a,KSN[30].b,KSN[30].c,KSN[30].d,KSN[30].e),
 							KSN[31].H*CD(KSN[31].a,KSN[31].b,KSN[31].c,KSN[31].d,KSN[31].e)*Mana(KSN[31].a,KSN[31].b,KSN[31].c,KSN[31].d,KSN[31].e),
 							KSN[32].H*CD(KSN[32].a,KSN[32].b,KSN[32].c,KSN[32].d,KSN[32].e)*Mana(KSN[32].a,KSN[32].b,KSN[32].c,KSN[32].d,KSN[32].e))
-							if Round(((enemy.health-SUM)/enemy.maxHealth*100),0)>0 then 
-								DrawText("\n\n" .. Round(((enemy.health-SUM)/enemy.maxHealth*100),0) .. "%",15,drawing.x,drawing.y,0xffff0000) 
-							end
+						if Round(((enemy.health-SUM)/enemy.maxHealth*100),0)>0 then 
+							DrawText("\n\n" .. Round(((enemy.health-SUM)/enemy.maxHealth*100),0) .. "%",15,drawing.x,drawing.y,0xffff0000) 
 						end
 					end
 				end
@@ -321,21 +358,29 @@ function SpellSequence()
 	end
 	if Talon.Combo:Value() and not IsDead(myHero) then
 		target=GetCurrentTarget()
-		if target and not IsDead(target) and IsTargetable(target) and not IsImmune(target) and IsVisible(target) and GOS:GetDistance(target)<=700 then
+		if target and Valid(target) and GOS:GetDistance(target)<=700 then
+			if CD(0,0,0,0,0)==1 or Mana(1,1,1)==0 and Talon.KS.Ignite then
+				if KillType then
+					if GetCastName(myHero,SUMMONER_1):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_1)==0 then CastTargetSpell(target,SUMMONER_1)
+					elseif GetCastName(myHero,SUMMONER_2):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_2)==0 then CastTargetSpell(target,SUMMONER_2)
+					end
+				end
+			end
+					
 			if GOS:GetDistance(target)<400 then 
 				GOS:CastOffensiveItems(target)
 			end
-			if GOS:GetDistance(target)<=240 then
-				if GetAA()==1 or (GetAA()==1 and ((CD(1,0,0,0,0)==1 and Mana(1,0,0,0,0)==1) or (CD(1,n,n,n,n)==1 and Mana(1,0,0,0,0)==1))) then
+			if GOS:GetDistance(target)<=250-(GetMoveSpeed(target)*.15) then
+				if GetAA()==1  then
 					CastSpell(_Q)
 				else
 					AttackUnit(target)
 				end
+			elseif GOS:GetDistance(target)>260 or GetAA()==4 then
+				MoveToMouse()
 			end
-			if GOS:GetDistance(target)<=700 and (CanUseSpell(myHero,_Q)~=READY or (CanUseSpell(myHero,_Q)==READY and GOS:GetDistance(target)>250)) then
-				if ((CD(0,1,0,0,0)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,0)==1 and Mana(1,1,0,0,0)==1) or (CD(n,1,0,0,0)==1 and Mana(0,1,0,0,0)==1)) then
-					W(target)
-				end
+			if GOS:GetDistance(target)<=700 and (CanUseSpell(myHero,_Q)==ONCOOLDOWN or (CanUseSpell(myHero,_Q)==READY and GOS:GetDistance(target)>250)) then
+				W(target)
 			end
 			if GOS:GetDistance(target)<=650 and GetCastName(myHero,_R)~="talonshadowassaulttoggle" then
 				local DMG = math.max(((CD(0,0,0,1,n)*Mana(0,0,0,1,n))*xR*2),((CD(1,0,0,1,n)*Mana(1,0,0,1,n))*(xAA+xQ+xQ2+xR*2)),((CD(n,0,0,1,n)* Mana(0,0,0,1,n))*xR*2),((CD(0,1,0,1,n)*Mana(0,1,0,1,n))*(xW+xR*2)),((CD(0,n,0,1,n)*Mana(0,0,0,1,n))*(xR*2)),((CD(1,1,0,1,n)*Mana(1,1,0,1,n))*(xAA+xQ+xQ2+xW+xR*2)),((CD(n,n,0,1,n)*Mana(0,0,0,1,n)))*xR*2)
@@ -420,12 +465,11 @@ function SpellSequence()
 		else
 			MoveToMouse()
 		end
-		if GetAA()==1 and CanUseSpell(myHero,_Q)~=READY then MoveToMouse() end
 	end
 end
 --Spells
 function W(o)
-	if GOS:GetDistance(o)<=700 then
+	if GOS:GetDistance(o)<=700-GetMoveSpeed(o)*.15 then
 		CastTargetSpell(o,_W)
 	end
 end
@@ -509,4 +553,11 @@ function CheckEnemy(name)
 		end
 	end
 	return nil
+end
+function Valid(unit)
+  if unit and not IsDead(unit) and IsTargetable(unit) and not IsImmune(unit) and IsVisible(unit) then
+    return true
+  else
+    return false
+  end
 end
