@@ -1,14 +1,21 @@
 --Credits to Huntera LB
 
 local showCircle = {}
+local myHero = GetMyHero()
 
 OnLoop(function(myHero)
+  local myHeroPos = GetOrigin(myHero)
 	for i, obj in pairs(showCircle) do
 		if obj and obj.target and not IsDead(obj.target) then
 			if obj.timeShow>GetTickCount() then
 				if not IsVisible(obj.target) then
-					DrawCircle(obj.pos.x,obj.pos.y,obj.pos.z,100,5,0,0xffff0000)
-					break
+                                  if GetDistanceXYZ(obj.pos.x, obj.pos.z, myHeroPos.x, myHeroPos.z)>700 then
+                                    local O=Vector(obj.pos.x, obj.pos.y, obj.pos.z)
+                                    local M=Vector(myHeroPos.x, myHeroPos.y, myHeroPos.z
+                                    local Pos=M+(M-O)*(-0.7)  
+                                    DrawCircle(Pos.x, Pos.y, Pos.z,100,5,0,0xffff0000)
+				    break
+                                  end
 				end
 			else
 				table.remove(showCircle, i)
@@ -27,3 +34,21 @@ OnProcessSpell(function(Object,spellProc)
 		end
 	end
 end)
+
+function GetDistanceXYZ(x,z,x2,z2)
+	if (x and z and x2 and z2)~=nil then
+		a=x2-x
+		b=z2-z
+		if (a and b)~=nil then
+			a2=a*a
+			b2=b*b
+			if (a2 and b2)~=nil then
+				return math.sqrt(a2+b2)
+			else
+				return 99999
+			end
+		else
+			return 99999
+		end
+	end	
+end
