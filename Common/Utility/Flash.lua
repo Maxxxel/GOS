@@ -12,7 +12,7 @@ OnLoop(function(myHero)
                                   if GetDistanceXYZ(obj.pos.x, obj.pos.z, myHeroPos.x, myHeroPos.z)>700 then
                                     local O=Vector(obj.pos.x, obj.pos.y, obj.pos.z)
                                     local M=Vector(myHeroPos.x, myHeroPos.y, myHeroPos.z)
-                                    local Pos=M+(M-O)*(-0.7)  
+                                    local Pos=M+(M-O)*(-0.7/GetDistanceXYZ(obj.pos.x, obj.pos.z, myHeroPos.x, myHeroPos.z))  
                                     DrawCircle(Pos.x, Pos.y, Pos.z,100,5,0,0xffff0000) 
 				    break
                                   end
