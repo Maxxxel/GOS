@@ -1,3 +1,8 @@
+--Note:
+--[[
+To check if AAReset is possible use: AttackReadiness()<1
+--]]
+
 Talon=Menu("Talon","Maxxxel Talon God")
 Talon:Key("Combo","Combo",string.byte(" "))
 Talon:SubMenu("KS","Killfunctions")
@@ -6,18 +11,18 @@ Talon.KS:Boolean("R", "Smart Ulti",true)
 Talon.KS:Boolean("Percent","Show % Kill",true)
 
 --Variables--
-local version = 0.6 --updated with ignite, faster FPS
+local version = 0.7 --updated ignite
 local xHydra,HRDY,QRDY,WRDY,ERDY,R1RDY,R2RDY,HydraCast,HydraCastTime,LastWhisper=0,0,0,0,0,0,0,0,0,1
 local target
-local xAA,xQ,xQ2,xW,xE,xR,from,to,IRDY,xIgnite,KillType
+local xAA,xQ,xQ2,xW,xE,xR,from,to,IRDY,xIgnite
+local Check = 0
 
 local KSN = {}
 local enemies = {}
 local Enemy = {}
-local Attack = {Target=nil}
+local Attack = {Target=nil,Time ={Start=0,Reset =0}}
 local Damage = {Success=false}
 local myHero = GetMyHero()
-
 
 --Every Loop do following funcs--
 OnLoop(function(myHero)
@@ -27,63 +32,33 @@ OnLoop(function(myHero)
 		SpellSequence()
 		AAHandling()
 		EnemyHandling()
-		GetAA()
 	end
 end)
 --AA stuff
 function AAHandling()
-	local Clock = GetTickCount()
-  if Attack.Target and Damage.Success then --if we did an attack, reset its variables after animation did and damage aplied or damage aplied and auto attacked.
-		if (Clock-Attack.Time.Start>Attack.Time.End) or 
-       (Clock-Attack.Time.Start>Attack.Time.Reset) then
-			Attack = {
-         Time = { 
-          Start= 0,
-          End  =0,
-          Reset=0},
-         Target=nil,
-         Pos = {
-          Start = {
-           x = 0,
-           y = 0,
-           z = 0},
-          End = {
-           x = 0,
-           y = 0,
-           z = 0}},
-         Type  =nil}
-			Damage = {Success=false,
-           Position = {
-            x = 0,
-            y = 0,
-            z = 0},
-           Time = 0} 
-    end
-  elseif Attack.Target and not Damage.Success then --if we die or target dead or time>windUp 
-    if (IsDead(myHero)) or (IsDead(Attack.Target)) or (Clock-Attack.Time.Start>Attack.Time.Reset) or (Clock-Attack.Time.Start>Attack.Time.End) then
-      Attack = {
-         Time = { 
-          Start=0,
-          End  =0,
-          Reset=0},
-         Target=nil,
-         Pos = {
-          Start = {
-           x = 0,
-           y = 0,
-           z = 0},
-          End = {
-           x = 0,
-           y = 0,
-           z = 0}},
-         Type  =nil}
-       Damage = {Success=false,
-           Position = {
-            x = 0,
-            y = 0,
-            z = 0},
-           Time =0}  
-     end
+	if (AttackReadiness() >= 1 and Damage.Success) or (AttackReadiness() >=1 and Attack.Time.Start>GetTickCount()+1500) then
+		Attack = {
+     Time = { 
+      Start= 0,
+      End  =0,
+      Reset=0},
+     Target=nil,
+     Pos = {
+      Start = {
+       x = 0,
+       y = 0,
+       z = 0},
+      End = {
+       x = 0,
+       y = 0,
+       z = 0}},
+     Type  =nil}
+		Damage = {Success=false,
+     Position = {
+      x = 0,
+      y = 0,
+      z = 0},
+     Time = 0}
   end
 end
 --Check Cooldown of Hydra Function--
@@ -101,9 +76,10 @@ function CheckItemCD()
 	else 
 		HRDY=0
 	end
-	if 			GetCastName(myHero,SUMMONER_1):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_1)==0 then IRDY=1
-	elseif  GetCastName(myHero,SUMMONER_2):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_2)==0 then IRDY=1
-	else IRDY=0
+	if CanUseSpell(myHero,Ignite)==0 then
+		IRDY=1
+	else 
+		IRDY=0
 	end
 end
 --Set Damage for skills
@@ -117,16 +93,34 @@ function DamageFunc()
 	xHYDRA = (.6*(GetBaseDamage(myHero)+GetBonusDmg(myHero)))*HRDY
 	xIgnite = (50+GetLevel(myHero)*20)*IRDY
 end
+--Attack 2.0--
+function AttackReadiness()
+	if Damage.Success then
+		local time = GetTickCount()
+		local APS = (Attack.Time.End-time)/2 --time between DamageProcs
+	  local xTime = (Attack.Time.Start~=0 and Attack.Time.Start + APS) or time
+	  local value = time-xTime
+	  if Check == 0 then
+			Check = value
+		elseif Check~=0 and value>APS or (Attack.Time.Reset<=value and not Damage.Success) then
+			Check = 0
+		end
+		return Check~=0 and 1-value/Check<1 and 1-value/Check or 1
+	else
+		return 1
+	end
+end
 --Check Talon Attacks for AA-Reset, and Hydra Cast--
 OnProcessSpell(function(Object,Spell)
   local ObjName = GetObjectName(Object)
   if Object and ObjName == GetObjectName(myHero) then
+  	local time= GetTickCount()
     if Spell.name:lower():find("attack") then --so we know our hero attacks
       Attack = {
        Time = { 
-        Start=GetTickCount(),
-        End  =Spell.animationTime*1000,
-        Reset=Spell.windUpTime*1100},
+        Start=time,
+        End  =time+Spell.animationTime*1000,
+        Reset=time+Spell.windUpTime*1000},
        Target=Spell.target,
        Pos = {
         Start = {
@@ -137,13 +131,13 @@ OnProcessSpell(function(Object,Spell)
          x = Spell.endPos.x,
          y = Spell.endPos.y,
          z = Spell.endPos.z}},
-       Type  =Basic}
+       Type = "Basic"}
     elseif Spell.name:lower():find("noxiandiploma") then
       Attack = {
        Time = { 
-        Start=GetTickCount(),
-        End  =Spell.animationTime*1000,
-        Reset=Spell.windUpTime*1000},
+        Start=time,
+        End  =time+Spell.animationTime*1000,
+        Reset=0},
        Target=Spell.target,
        Pos = {
         Start = {
@@ -154,43 +148,33 @@ OnProcessSpell(function(Object,Spell)
          x = Spell.endPos.x,
          y = Spell.endPos.y,
          z = Spell.endPos.z}},
-       Type  =Q}
+       Type = "Q"}
     end
-  end
-	if GetObjectName(Spell) and GetObjectname(Spell) =="ItemTiamatCleave" and HydraCast==0 then
-		HydraCast=1
-		HydraCastTime=GetTickCount()
+		if GetObjectName(Spell) and GetObjectname(Spell) =="ItemTiamatCleave" and HydraCast==0 then
+			HydraCast=1
+			HydraCastTime=GetTickCount()
+		end
 	end
 end)
---Check if Talons Attacks are aaReady,inAnimation or aaResetReady--
-function GetAA()
-  if Attack.Target and Damage.Success then
-    return 1 --means AA reset possible
-  elseif Attack.Target and not Damage.Success then
-    return 2 --means Attack is on Cast
-  elseif not Attack.Target and not Damage.Success then
-   	return 3 --means Script started or No AA recorded yet
-  else
-  	return 4
-  end
-end
 --Check for aa finishs
 OnCreateObj(function(Object)
-  local Name  = GetObjectBaseName(Object)
-  if Name:lower():find("bloodslash") then
-  	if Attack.Target then
-  		local Pos2D   = GetOrigin(Object)
- 		  local Pos = WorldToScreen(1,Pos2D)
-      if GetDistanceXYZ(Pos2D.x,Pos2D.z,Attack.Pos.End.x,Attack.Pos.End.z)<100 then
-          Damage = {Success=true,
-           Position = {
-            x = Pos.x,
-            y = Pos.y,
-            z = Pos.z},
-           Time = GetTickCount()}
-      end
-    end
-  end         
+	if Object and GOS:GetDistance(Object)<=700 then
+	  local Name  = GetObjectBaseName(Object)
+	  if Name:lower():find("bloodslash") then
+	  	if Attack.Target then
+	  		local Pos2D   = GetOrigin(Object)
+	 		  local Pos = WorldToScreen(1,Pos2D)
+	      if GetDistanceXYZ(Pos2D.x,Pos2D.z,Attack.Pos.End.x,Attack.Pos.End.z)<100 then
+	          Damage = {Success=true,
+	           Position = {
+	            x = Pos.x,
+	            y = Pos.y,
+	            z = Pos.z},
+	           Time = GetTickCount()}
+	      end
+	    end
+	  end 
+	end       
 end)
 --Enemies---
 function EnemyHandling()
@@ -301,20 +285,19 @@ function SpellSequence()
 	    	local drawing = WorldToScreen(1,enemy.Pos.x,enemy.Pos.y,enemy.Pos.z)
 	    	local SUM=0
 				for v=from,to do
-					if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xHydra+xIgnite then
-						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
-						KillType=HI
-					elseif CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xHydra then
-						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
-						KillType=H
-					elseif CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xIgnite then
-						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
-						KillType=I
+					if HRDY*IRDY==1 and CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xHydra+xIgnite then
+						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,200,10,0,0xffff0000)
+						enemy.KillType=1
+					elseif HRDY==1 and CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xHydra then
+						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,200,10,0,0xffff0000)
+						enemy.KillType=2
+					elseif IRDY==1 and CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H+xIgnite then
+						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,200,10,0,0xffff0000)
+						enemy.KillType=3
 					elseif CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and Mana(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e)==1 and enemy.health<KSN[v].H then
 						DrawCircle(enemy.Pos.x,enemy.Pos.y,enemy.Pos.z,100,10,0,0xffff0000)
-						KillType=N
+						enemy.KillType=nil
 					else
-						KillType=nil
 						SUM= math.max(
 							KSN[1].H*CD(KSN[1].a,KSN[1].b,KSN[1].c,KSN[1].d,KSN[1].e)*Mana(KSN[1].a,KSN[1].b,KSN[1].c,KSN[1].d,KSN[1].e),
 							KSN[2].H*CD(KSN[2].a,KSN[2].b,KSN[2].c,KSN[2].d,KSN[2].e)*Mana(KSN[2].a,KSN[2].b,KSN[2].c,KSN[2].d,KSN[2].e),
@@ -352,6 +335,18 @@ function SpellSequence()
 							DrawText("\n\n" .. Round(((enemy.health-SUM)/enemy.maxHealth*100),0) .. "%",15,drawing.x,drawing.y,0xffff0000) 
 						end
 					end
+					if enemy.KillType==1 and GOS:GetDistance(enemy.hero)<=600 then
+						if GOS:GetDistance(enemy.hero)<=300 and HRDY==1 then
+							GOS:CastOffensiveItems(enemy.hero)
+						end
+						if IRDY==1 then
+							CastTargetSpell(enemy.hero,Ignite)
+						end
+					elseif enemy.KillType==3 and GOS:GetDistance(enemy.hero)<=600 and IRDY==1 then
+						CastTargetSpell(enemy.hero,Ignite)
+					elseif enemy.KillType==2 and GOS:GetDistance(enemy.hero)<=300 and HRDY==1 then
+						GOS:CastOffensiveItems(enemy.hero)
+					end
 				end
 			end
 		end
@@ -359,109 +354,101 @@ function SpellSequence()
 	if Talon.Combo:Value() and not IsDead(myHero) then
 		target=GetCurrentTarget()
 		if target and Valid(target) and GOS:GetDistance(target)<=700 then
-			if CD(0,0,0,0,0)==1 or Mana(1,1,1)==0 and Talon.KS.Ignite then
-				if KillType then
-					if GetCastName(myHero,SUMMONER_1):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_1)==0 then CastTargetSpell(target,SUMMONER_1)
-					elseif GetCastName(myHero,SUMMONER_2):lower():find("ignite") and CanUseSpell(myHero,SUMMONER_2)==0 then CastTargetSpell(target,SUMMONER_2)
-					end
-				end
-			end
-					
-			if GOS:GetDistance(target)<400 then 
-				GOS:CastOffensiveItems(target)
-			end
-			if GOS:GetDistance(target)<=250-(GetMoveSpeed(target)*.15) then
-				if GetAA()==1  then
-					CastSpell(_Q)
-				else
-					AttackUnit(target)
-				end
-			elseif GOS:GetDistance(target)>260 or GetAA()==4 then
+			if ((AttackReadiness()~=1 and CanUseSpell(myHero,_Q)~=0 and QRDY==0) or GOS:GetDistance(target)>260) and GOS:GetDistance(target)>100 then
 				MoveToMouse()
 			end
-			if GOS:GetDistance(target)<=700 and (CanUseSpell(myHero,_Q)==ONCOOLDOWN or (CanUseSpell(myHero,_Q)==READY and GOS:GetDistance(target)>250)) then
+			local DMG = math.max((CD(0,0,1,1,n)*Mana(0,0,1,1,n)*xR*2*xE),(CD(0,0,1,0,1)*Mana(0,0,1,0,0)*xE*xR),(CD(1,0,1,1,n)*Mana(1,0,1,1,n)*((xAA+xQ)*(0.1+xE)+xQ2+xR*2*xE)),(CD(1,0,1,0,1)*Mana(1,0,1,0,0)*((xAA+xQ)*(0.1+xE)+xQ2+xR*xE)),(CD(0,1,1,1,n)*Mana(0,1,1,1,n)*xE*(xW+xR*2)),(CD(0,1,1,0,1)*Mana(0,1,1,0,0)*xE*(xW+xR)),(CD(1,1,1,1,n)*Mana(1,1,1,1,n)*((xQ+xAA)*(0.1+xE)+(xW+xR*2)*xE)),(CD(1,1,1,0,1)*Mana(1,1,1,0,0)*((xQ+xAA)*(0.1+xE)+(xW+xR)*xE)))
+			if Talon.KS.R and GOS:GetDistance(target)<=650 and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
+				if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -(DMG-xR*2))<=0 then
+					if ((CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1)) then
+						E(target)
+					end
+				else
+					if ((CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
+						E(target)
+					end
+				end
+			elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
+				if ((CD(0,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,0)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,0)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,0)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(n,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or 	(CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(n,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
+					E(target)
+				end
+			else
+				if ((CD(0,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,0)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,0)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,0)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(n,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(n,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
+					E(target)
+				end
+			end
+			if GOS:GetDistance(target)<=700-(GetMoveSpeed(target)*.15) and ((AttackReadiness()<1 and CanUseSpell(myHero,_Q)~=0 and QRDY==0 ) or (CanUseSpell(myHero,_Q)==0 and GOS:GetDistance(target)>260)) then
 				W(target)
 			end
-			if GOS:GetDistance(target)<=650 and GetCastName(myHero,_R)~="talonshadowassaulttoggle" then
-				local DMG = math.max(((CD(0,0,0,1,n)*Mana(0,0,0,1,n))*xR*2),((CD(1,0,0,1,n)*Mana(1,0,0,1,n))*(xAA+xQ+xQ2+xR*2)),((CD(n,0,0,1,n)* Mana(0,0,0,1,n))*xR*2),((CD(0,1,0,1,n)*Mana(0,1,0,1,n))*(xW+xR*2)),((CD(0,n,0,1,n)*Mana(0,0,0,1,n))*(xR*2)),((CD(1,1,0,1,n)*Mana(1,1,0,1,n))*(xAA+xQ+xQ2+xW+xR*2)),((CD(n,n,0,1,n)*Mana(0,0,0,1,n)))*xR*2)
-				if Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then --if 2xR kills him
-					if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-(DMG-xR*2))<=0 then --if killable without R
-						if 		 (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GOS:GetDistance(target)<=245 then
+			if GOS:GetDistance(target)<=650 then
+				if GetCastName(myHero,_R)~="talonshadowassaulttoggle" then
+					local DMG = math.max(((CD(0,0,0,1,n)*Mana(0,0,0,1,n))*xR*2),((CD(1,0,0,1,n)*Mana(1,0,0,1,n))*(xAA+xQ+xQ2+xR*2)),((CD(n,0,0,1,n)* Mana(0,0,0,1,n))*xR*2),((CD(0,1,0,1,n)*Mana(0,1,0,1,n))*(xW+xR*2)),((CD(0,n,0,1,n)*Mana(0,0,0,1,n))*(xR*2)),((CD(1,1,0,1,n)*Mana(1,1,0,1,n))*(xAA+xQ+xQ2+xW+xR*2)),((CD(n,n,0,1,n)*Mana(0,0,0,1,n)))*xR*2)
+					if Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then --if 2xR kills him
+						if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-(DMG-xR*2))<=0 then --if killable without R
+							if 		 (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GOS:GetDistance(target)<=250 and AttackReadiness()<1 then
+								CastSpell(_Q)
+							elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1)) and GOS:GetDistance(target)<=700-(GetMoveSpeed(target)*.15) then
+								W(target)
+							end
+						elseif (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then
+							if ((CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) or	(CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1)) then
+								R1(target)
+							end
+						end
+					elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
+						if		 (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) then 
+							--PrintChat("TO MUCH DMG 1")
+						elseif (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GOS:GetDistance(target)<=250 and AttackReadiness()<1 then
 							CastSpell(_Q)
-						elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1)) and GOS:GetDistance(target)<=650 then
+						elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(n,1,0,1,n)==1 and Mana(0,1,0,1,n)==1)) and GOS:GetDistance(target)<=700-(GetMoveSpeed(target)*.15) then 
+							W(target)
+						elseif (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) and GOS:GetDistance(target)<=700-(GetMoveSpeed(target)*.15) then 
 							W(target)
 						end
-					elseif (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6-DMG)<=0 then
-						if ((CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) or	(CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1)) then
+					else
+						if ((CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) or (CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1)) then
 							R1(target)
 						end
 					end
-				elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
-					if		 (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) then 
-
-					elseif (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) and GOS:GetDistance(target)<=245 and GetAA()==1 then 
-						CastSpell(_Q)
-					elseif ((CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(n,1,0,1,n)==1 and Mana(0,1,0,1,n)==1)) and GOS:GetDistance(target)<=650 then 
-						W(target)
-					elseif (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) and GOS:GetDistance(target)<=650 then 
-						W(target)
-					end
-				else
-					if ((CD(0,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,0,0,1,n)==1 and Mana(1,0,0,1,n)==1) or (CD(n,0,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(0,1,0,1,n)==1 and Mana(0,1,0,1,n)==1) or (CD(0,n,0,1,n)==1 and Mana(0,0,0,1,n)==1) or (CD(1,1,0,1,n)==1 and Mana(1,1,0,1,n)==1) or (CD(n,n,0,1,n)==1 and Mana(0,0,0,1,n)==1)) then
-						R1(target)
-					end
-				end
-			end
-			if GOS:GetDistance(target)<=650 and GetCastName(myHero,_R)=="talonshadowassaulttoggle" then
-				local DMG= math.max((CD(0,0,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(1,0,0,0,1)*Mana(1,0,0,0,0)*(xAA+xQ+xQ2+xR)),(CD(n,0,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(0,1,0,0,1)*Mana(0,1,0,0,0)*(xW+xR)),(CD(0,n,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(1,1,0,0,1)*Mana(1,1,0,0,0)*(xAA+xQ+xQ2+xR)),(CD(n,n,0,0,1)*Mana(0,0,0,0,0)*xR))
-				if Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
-					if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -(DMG-xR))<=0 then --killable without the ult?
-						if 		  (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GOS:GetDistance(target)<=245 then
+				elseif GetCastName(myHero,_R)=="talonshadowassaulttoggle" then
+					local DMG= math.max((CD(0,0,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(1,0,0,0,1)*Mana(1,0,0,0,0)*(xAA+xQ+xQ2+xR)),(CD(n,0,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(0,1,0,0,1)*Mana(0,1,0,0,0)*(xW+xR)),(CD(0,n,0,0,1)*Mana(0,0,0,0,0)*xR),(CD(1,1,0,0,1)*Mana(1,1,0,0,0)*(xAA+xQ+xQ2+xR)),(CD(n,n,0,0,1)*Mana(0,0,0,0,0)*xR))
+					if Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
+						if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -(DMG-xR))<=0 then --killable without the ult?
+							if 		  (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GOS:GetDistance(target)<=250 and AttackReadiness()<1 then
+								CastSpell(_Q)
+							elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GOS:GetDistance(target)<=700-(GetMoveSpeed(target)*.15) then
+								W(target)
+							end
+						else
+							if ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) or (CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1) or (CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
+								R2(target)
+							end
+						end
+					elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
+						if 		 ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
+							--PrintChat("TO MUCH DMG 2")
+						elseif (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GOS:GetDistance(target)<=250 and AttackReadiness()<1 then
 							CastSpell(_Q)
-						elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GOS:GetDistance(target)<=650 then
+						elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GOS:GetDistance(target)<=700-(GetMoveSpeed(target)*.15) then 
 							W(target)
 						end
 					else
-						if ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) or (CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1) or (CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
+						if ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or	(CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) or	(CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or	(CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or	(CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1) or (CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
 							R2(target)
 						end
 					end
-				elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
-					if 		 ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) or ((CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
-
-					elseif (CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) and GOS:GetDistance(target)<=245 and GetAA()==1 then 
-						CastSpell(_Q)
-					elseif ((CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1)) and GOS:GetDistance(target)<=650 then 
-						W(target)
-					end
-				else
-					if ((CD(0,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or	(CD(1,0,0,0,1)==1 and Mana(1,0,0,0,0)==1) or	(CD(n,0,0,0,1)==1 and Mana(0,0,0,0,0)==1) or	(CD(0,1,0,0,1)==1 and Mana(0,1,0,0,0)==1) or	(CD(0,n,0,0,1)==1 and Mana(0,0,0,0,0)==1) or (CD(1,1,0,0,1)==1 and Mana(1,1,0,0,0)==1) or (CD(n,n,0,0,1)==1 and Mana(0,0,0,0,0)==1)) then
-						R2(target)
-					end
 				end
-			end
-			if GOS:GetDistance(target)<=700 then
-				local DMG = math.max((CD(0,0,1,1,n)*Mana(0,0,1,1,n)*xR*2*xE),(CD(0,0,1,0,1)*Mana(0,0,1,0,0)*xE*xR),(CD(1,0,1,1,n)*Mana(1,0,1,1,n)*((xAA+xQ)*(0.1+xE)+xQ2+xR*2*xE)),(CD(1,0,1,0,1)*Mana(1,0,1,0,0)*((xAA+xQ)*(0.1+xE)+xQ2+xR*xE)),(CD(0,1,1,1,n)*Mana(0,1,1,1,n)*xE*(xW+xR*2)),(CD(0,1,1,0,1)*Mana(0,1,1,0,0)*xE*(xW+xR)),(CD(1,1,1,1,n)*Mana(1,1,1,1,n)*((xQ+xAA)*(0.1+xE)+(xW+xR*2)*xE)),(CD(1,1,1,0,1)*Mana(1,1,1,0,0)*((xQ+xAA)*(0.1+xE)+(xW+xR)*xE)))
-				if Talon.KS.R and GOS:GetDistance(target)<=650 and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)<=0 then
-					if (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -(DMG-xR*2))<=0 then
-						if ((CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1)) then
-							E(target)
-						end
-					else
-						if ((CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
-							E(target)
+				if GOS:GetDistance(target)<400-GetMoveSpeed(target)*.15 then 
+					GOS:CastOffensiveItems(target)
+					if GOS:GetDistance(target)<=250-GetMoveSpeed(target)*.07 then
+						if AttackReadiness()<1 then
+							CastSpell(_Q)
+						else
+							AttackUnit(target)
 						end
 					end
-				elseif Talon.KS.R and (GetCurrentHP(target)*((100+(((GetArmor(target)*LastWhisper)-GetArmorPenFlat(myHero))*GetArmorPenPercent(myHero)))/100)+GetHPRegen(target)*6 -DMG)>0 then
-					if ((CD(0,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,0)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,0)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,0)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(n,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or 	(CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(n,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
-						E(target)
-					end
-				else
-					if ((CD(0,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,0)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,0)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,1,n)==1 and Mana(0,0,1,1,n)==1) or (CD(0,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,1)==1 and Mana(0,0,1,0,0)==1) or (CD(0,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,0)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,1,n)==1 and Mana(1,0,1,1,n)==1) or (CD(n,0,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,0,1,0,1)==1 and Mana(1,0,1,0,0)==1) or (CD(n,0,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,1,n)==1 and Mana(0,1,1,1,n)==1) or (CD(0,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(0,1,1,0,1)==1 and Mana(0,1,1,0,0)==1) or (CD(0,n,1,0,n)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,1,n)==1 and Mana(1,1,1,1,n)==1) or (CD(n,n,1,n,0)==1 and Mana(0,0,1,0,0)==1) or (CD(1,1,1,0,1)==1 and Mana(1,1,1,0,0)==1) or (CD(n,n,1,0,n)==1 and Mana(0,0,1,0,0)==1)) then
-						E(target)
-					end
 				end
-			end
+			end	
 		else
 			MoveToMouse()
 		end
@@ -479,7 +466,7 @@ function E(o)
 	end
 end
 function R1(o)
-	if GOS:GetDistance(o)<=650 then
+	if GOS:GetDistance(o)<=650-GetMoveSpeed(o)*.15 then
 		CastSpell(_R)
 	end
 end
