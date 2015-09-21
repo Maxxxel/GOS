@@ -172,7 +172,7 @@ class "Point" -- {
 -- }
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
---[[
+
 class "Line" -- {
     function Line:__init(point1, point2)
         self.points = {point1, point2}
@@ -281,7 +281,7 @@ class "Line" -- {
         end
     end
 -- }
---]]
+
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
 --Makes problems with Cirlces():draw
 --[[
