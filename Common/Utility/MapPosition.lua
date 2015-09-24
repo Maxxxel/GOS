@@ -508,7 +508,7 @@ class "MapPosition" -- {
 
 	function MapPosition:inWall(point)
 		for wallId, wall in pairs(self.wallSpatialHashMap:getSpatialObjects(point)) do
-			if wall:contains(point) then
+			if wall:__contains(point) then
 				return true
 			end
 		end
