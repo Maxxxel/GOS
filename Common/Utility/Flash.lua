@@ -13,9 +13,11 @@ OnLoop(function(myHero)
           	local dis = 700
             local O = Vector(obj.pos.x, obj.pos.y, obj.pos.z)
             local M = Vector(myHeroPos.x, myHeroPos.y, myHeroPos.z)
-            local Pos = O - (O - M) * (dis / GetDistanceXYZ(obj.pos.x, obj.pos.z, myHeroPos.x, myHeroPos.z)) 
-            DrawCircle(Pos.x, Pos.y, Pos.z,100,5,0,0xffff0000) 
+            local Pos = M - (M - O) * (dis / GetDistanceXYZ(obj.pos.x, obj.pos.z, myHeroPos.x, myHeroPos.z)) 
+            DrawCircle(Pos.x, Pos.y, Pos.z,100,0,0,0xffff0000) 
 				    break
+					else
+						DrawCircle(obj.pos.x, obj.pos.y, obj.pos.z,100,0,0,0xffff0000) 
 					end
 				end
 			else
