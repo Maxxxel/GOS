@@ -15,7 +15,7 @@ LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
 LeBlanc.Misc:Boolean("Move", "Move to mouse", true)
 	
 --Variables--
-local version = 0.1
+local version = 0.2 --small fix
 local mapID = GetMapID()
 local ls
 local target
@@ -704,7 +704,7 @@ OnProcessSpell(function(unit, spell)
 end)
 --Valid target
 function Valid(unit)
-  if unit and not IsDead(unit) and IsTargetable(unit) and not IsImmune(unit) and IsVisible(unit) then
+  if unit and not IsDead(unit) and IsTargetable(unit) and not IsImmune(unit, myHero) and IsVisible(unit) then
     return true
   else
     return false
