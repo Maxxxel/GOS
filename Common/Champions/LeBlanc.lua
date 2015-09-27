@@ -15,14 +15,14 @@ LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
 LeBlanc.Misc:Boolean("Move", "Move to mouse", true)
 	
 --Variables--
-local version = 0.3 --small fixes
+local version = 0.3.1 --small fixes
 local mapID = GetMapID()
 local ls
 local target
 local myHero = GetMyHero()
 local VoidStaff,multi = 1,1
 local xQ,xW,xE,xR,xRW
-local from,to,SUM,Wall,WallT
+local from,to,SUM,Wall,WallT = 0,0,0,0,0
 local WPos,W2Pos,WPred,EPred,EPos,HPos
 --Tables--
 local KSN = {}
@@ -69,7 +69,10 @@ end
 local function Harass()
 	WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
 	if mapID==SUMMONERS_RIFT then
-		if MapPosition:inWall(Point(WPred.PredPos.x,0,WPred.PredPos.z))==true then 
+		EPos = Vector(targetPos.x,0,targetPos.z)
+		HPos = Vector(myHeroPos.x,0,myHeroPos.z)
+		WPos = HPos+(HPos-EPos)*(-650/GOS:GetDistance(HPos,EPos))
+		if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 			Wall = 1
 		else 
 			Wall = 0 
@@ -370,7 +373,10 @@ local function SpellSequence()
 					EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy.hero,GetMoveSpeed(enemy.hero),1550,150,950,55,true,true)
 					WPred = GetPredictionForPlayer(GetOrigin(myHero),enemy.hero,GetMoveSpeed(enemy.hero),1450,250,600,250,false,true)
 					if mapID==SUMMONERS_RIFT then
-						if MapPosition:inWall(Point(WPred.PredPos.x,0,WPred.PredPos.z))==true then 
+						EPos = Vector(enemy.Pos.x,0,enemy.Pos.z)
+						HPos = Vector(myHeroPos.x,0,myHeroPos.z)
+						WPos = HPos+(HPos-EPos)*(-650/GOS:GetDistance(HPos,EPos))
+						if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 							Wall = 1
 						else 
 							Wall = 0 
@@ -606,7 +612,10 @@ local function SpellSequence()
 			EPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1550,150,950,55,true,true)
 			WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
 			if mapID==SUMMONERS_RIFT then
-				if MapPosition:inWall(Point(WPred.PredPos.x,0,WPred.PredPos.z))==true then 
+				EPos = Vector(targetPos.x,0,targetPos.z)
+				HPos = Vector(myHeroPos.x,0,myHeroPos.z)
+				WPos = HPos+(HPos-EPos)*(-650/GOS:GetDistance(HPos,EPos))
+				if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 					WallT = 1
 				else 
 					WallT = 0 
@@ -690,7 +699,7 @@ local function SpellSequence()
 								CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1) and EPred.HitChance==1 then
 					ER(target)
 				end
-			elseif GOS:GetDistance(target)>700 and GOS:GetDistance(target)<1300 then
+			elseif GOS:GetDistance(target)>700 and GOS:GetDistance(target)<1300 - GetMoveSpeed(target) * .08 then
 				if 			CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then WL(target) end	
 			end
 		end
@@ -729,6 +738,7 @@ end)
 OnLoop(function(myHero)
 	myHeroPos = GetOrigin(myHero)
 	target = GetCurrentTarget()
+	targetPos = GetOrigin(target)
 	DamageCalc()
 	EnemyHandling()
 	SpellSequence()
