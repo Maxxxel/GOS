@@ -244,9 +244,6 @@ local function Draw()
 		if (CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,n)==1) or CD(1,n,0,1,n,n,n,1)==1 then 
 			DrawCircle(GetOrigin(myHero),1300,0,0,0xffffff00)
 		end
-		if (CD(1,n,1,n,1,n,n,n,1)==1 and Mana(1,1,n)==1) or CD(1,n,1,n,n,n,n,1)==1 then
-			DrawCircle(GetOrigin(myHero),2000,0,0,0xffffff00)
-		end
 		local number=0
 		if CanUseSpell(myHero,_Q)==READY and GetCastName(myHero,_R) ~= 'LeblancChaosOrbM' then
 			HNS[1]  = {a=1,b=0,c=0,d=n,e=0,f=n,g=0,h=0,i=n, text ="Q"}
@@ -693,7 +690,7 @@ local function SpellSequence()
 								CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1) and EPred.HitChance==1 then
 					ER(target)
 				end
-			elseif GOS:GetDistance(target)>700 then
+			elseif GOS:GetDistance(target)>700 and GOS:GetDistance(target)<1300 then
 				if 			CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then WL(target) end	
 			end
 		end
