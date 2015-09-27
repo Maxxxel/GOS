@@ -8,6 +8,7 @@ LeBlanc.Keys:Key("DoE", "E", string.byte("E"))
 LeBlanc.Keys:Key("Harass", "Harass", string.byte("X"))
 LeBlanc.Keys:Key("Combo", "Combo", string.byte(" "))
 LeBlanc:SubMenu("KS","Kill Functions")
+LeBlanc.KS:Boolean("Mult", "Calc 2 E proc", false)
 LeBlanc.KS:Boolean("KSNotes", "KS Notes", true)
 LeBlanc.KS:Boolean("Percent", "Percent Notes", true)
 LeBlanc:SubMenu("Misc","Misc")
@@ -15,12 +16,13 @@ LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
 LeBlanc.Misc:Boolean("Move", "Move to mouse", true)
 	
 --Variables--
-local version = 0.4.1 --updated code syntax
+--version = 0.4.1 --updated code syntax
 local mapID = GetMapID()
 local ls
 local target
 local myHero = GetMyHero()
-local VoidStaff,multi = 1,1
+local VoidStaff = 1
+local multi = LeBlanc.KS.Mult:Value() and 2 or 1
 local xQ,xW,xE,xR,xRW
 local from,to,SUM,Wall,WallT = 0,0,0,0,0
 local WPos,W2Pos,WPred,EPred,EPos,HPos
