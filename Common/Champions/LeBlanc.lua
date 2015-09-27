@@ -15,7 +15,7 @@ LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
 LeBlanc.Misc:Boolean("Move", "Move to mouse", true)
 	
 --Variables--
-local version = 0.2 --small fix
+local version = 0.3 --small fixes
 local mapID = GetMapID()
 local ls
 local target
@@ -29,20 +29,210 @@ local KSN = {}
 local HNS = {}
 local enemies = {}
 local Enemy = {}
-local _registry = {}
 
-OnLoop(function(myHero)
-	myHeroPos = GetOrigin(myHero)
-	target = GetCurrentTarget()
-	DamageCalc()
-	EnemyHandling()
-	SpellSequence()
-	CheckItemCD()
-	if LeBlanc.Keys.Harass:Value() and target then Harass() end
-	if LeBlanc.Misc.Draw then Draw() end
-end)
---Draw--
-function Draw()
+--Valid target
+local function Valid(unit)
+  if unit and not IsDead(unit) and IsTargetable(unit) and not IsImmune(unit, myHero) and IsVisible(unit) then
+    return true
+  else
+    return false
+  end
+end
+local function GetDistanceXYZ(x,z,x2,z2)
+	if (x and z and x2 and z2)~=nil then
+		a=x2-x
+		b=z2-z
+		if (a and b)~=nil then
+			a2=a*a
+			b2=b*b
+			if (a2 and b2)~=nil then
+				return math.sqrt(a2+b2)
+			else
+				return 99999
+			end
+		else
+			return 99999
+		end
+	end	
+end
+
+local function CheckEnemy(name)
+	if #enemies > 0 then
+		for i,enemy in ipairs(enemies) do
+			if enemy.hero and enemy.hero~= nil and GetObjectName(enemy.hero):find(name) then return enemy end
+		end
+	end
+	return nil
+end
+
+--harass--
+local function Harass()
+	WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
+	if mapID==SUMMONERS_RIFT then
+		if MapPosition:inWall(Point(WPred.PredPos.x,0,WPred.PredPos.z))==true then 
+			Wall = 1
+		else 
+			Wall = 0 
+		end
+	else
+		--No Other Maps Supported atm
+		Wall=0
+	end
+	if LeBlanc.Keys.Harass:Value() and GOS:GetDistance(target)<=700 then
+		if 		 CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,n)==1 then Q(target)
+		elseif CD(n,n,1,n,n,n,n,n,n)==1 and Mana(n,1,n)==1 and Wall==0 then W(target)
+		elseif CD(n,n,n,1,n,n,n,n,n)==1 then W2()
+		end
+	end
+end
+--Damage Calc--
+local function DamageCalc()
+	xQ = GetCastLevel(myHero,_Q)*25+30+.4*GetBonusAP(myHero)
+	xW = GetCastLevel(myHero,_W)*40+45+.6*GetBonusAP(myHero)
+	xE = GetCastLevel(myHero,_E)*25+15+.5*GetBonusAP(myHero)
+	xR = GetCastLevel(myHero,_R)*100+.65*GetBonusAP(myHero)
+	xRW = GetCastLevel(myHero,_R)*150+.975*GetBonusAP(myHero)
+end
+--ITEM CD--
+local function CheckItemCD()
+	if GetItemSlot(myHero,3135)>0 then
+		VoidStaff=0.65
+	else
+		VoidStaff=1
+	end
+end
+--Enemy Handling--
+local function EnemyHandling()
+	for i,enemy in pairs(GOS:GetEnemyHeroes()) do
+		if #enemies~= 5 then
+			local entry = {hero = CheckEnemy(GetObjectName(enemy))}
+			if entry.hero == nil then
+				drawPos= GetOrigin(enemy)
+				textPos= WorldToScreen(1,drawPos.x,drawPos.y,drawPos.z)
+				Enemy = {hero = enemy, name = GetObjectName(enemy), maxHealth = GetMaxHP(enemy)*((100+(((GetMagicResist(enemy)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy)*6 ,health = GetCurrentHP(enemy)*((100+(((GetMagicResist(enemy)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy)*6, Pos ={x=drawPos.x,y=drawPos.y,z=drawPos.z}, Text={x=textPos.x,y=textPos.y,z=textPos.z}}
+        table.insert(enemies, Enemy)
+			elseif entry.hero ~= enemy then
+				entry.hero = enemy
+			end
+		end
+	end
+	if #enemies > 0 then
+    for i,enemy in ipairs(enemies) do
+			if enemy == nil or enemy.hero == nil or not enemy then
+				table.remove(enemies,i)
+			elseif enemy.name == nil or GetObjectName(enemy.hero):find(enemy.name) == nil then
+				table.remove(enemies,i)
+      else
+				if IsVisible(enemy.hero) then
+					drawPos = GetOrigin(enemy.hero)
+					textPos = WorldToScreen(1,drawPos.x,drawPos.y,drawPos.z)
+					if GetCurrentHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6 ~= enemy.health then
+						enemy.health = GetCurrentHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6
+					end
+					if GetMaxHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6 ~= enemy.maxHealth then
+						enemy.maxHealth = GetMaxHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6
+					end
+					if enemy.Pos.x~= drawPos.x then
+						enemy.Pos.x=drawPos.x
+						enemy.Pos.y=drawPos.y
+						enemy.Pos.z=drawPos.z
+					end
+					if enemy.Text.x~= textPos.x then
+					 enemy.Text.x=textPos.x
+					 enemy.Text.y=textPos.y
+					end
+				end
+			end
+		end
+	end
+end
+
+--Mana Handling--
+local function Mana(a,b,c) --Q,W,R only have mana
+	if a == 1 then 
+		a = 40+(GetCastLevel(myHero,_Q)*10) 
+	else 
+		a = 0  
+	end
+	if b == 1 then 
+		b = 75+(GetCastLevel(myHero,_W)*5)
+	else 
+		b = 0 
+	end
+	if c == 1 then 
+		c = 80
+	else 
+		c = 0 
+	end
+	if GetCurrentMana(myHero) > a+b+c then 
+		return 1
+	else
+		return 0
+	end
+end
+--CD Handling--
+local function CD(a,b,c,d,e,f,g,h,i)
+--Q
+	if GetCastName(myHero,_Q) == 'LeblancChaosOrb' and GetCastLevel(myHero,_Q)>= 1 and CanUseSpell(myHero, _Q)==READY then 
+		Q1RDY = 1
+	else
+		Q1RDY = 0 
+	end
+--RQ
+	if GetCastName(myHero,_R) == 'LeblancChaosOrbM' and GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
+		Q2RDY = 1
+	else 
+		Q2RDY = 0 
+	end
+--W
+	if GetCastName(myHero,_W) == 'LeblancSlide' and GetCastLevel(myHero,_W)>= 1 and CanUseSpell(myHero, _W)==READY then 
+		W1RDY = 1
+	else 
+		W1RDY = 0 
+	end
+--W2
+	if GetCastName(myHero,_W) == 'leblancslidereturn' and GetCastLevel(myHero,_W)>= 1 and CanUseSpell(myHero, _W)==READY then 
+		W2RDY = 1
+	else 
+		W2RDY = 0 
+	end
+--RW
+	if GetCastName(myHero,_R) == 'LeblancSlideM' and GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
+		W3RDY = 1
+	else 
+		W3RDY = 0 
+	end
+--RW2
+	if GetCastLevel(myHero,_R)>= 1 and GetCastName(myHero,_R) ~= 'leblancslidereturnm' and CanUseSpell(myHero, _R)==READY then 
+		W4RDY = 1
+	else 
+		W4RDY = 0 
+	end
+--E
+	if GetCastName(myHero,_E) == 'LeblancSoulShackle' and GetCastLevel(myHero,_E)>= 1 and CanUseSpell(myHero, _E)==READY then 
+		E1RDY = 1
+	else
+	  E1RDY = 0 
+	end
+--RE
+	if GetCastName(myHero,_R) == 'LeblancSoulShackleM' and GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
+		E2RDY = 1
+	else 
+		E2RDY = 0 
+	end
+	if GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
+		RRDY = 1
+	else 
+		RRDY = 0
+	end
+	if (Q1RDY == a or a == n) and (Q2RDY == b or b == n) and (W1RDY == c or c == n) and (W2RDY == d or d == n) and (W3RDY == e or e == n) and (W4RDY == f or f == n) and (E1RDY == g or g == n) and (E2RDY == h or h == n) and (RRDY == i or i == n) then
+		return 1
+	else
+		return 0
+	end
+end
+--Draw
+local function Draw()
 	if not IsDead(myHero) then
 		local myHeroWorld = WorldToScreen(1,myHeroPos.x,myHeroPos.y,myHeroPos.z)
 		if (CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,n,n)==1) or CD(0,1,n,n,n,n,n,1)==1 then 
@@ -105,90 +295,74 @@ function Draw()
 			end
 		end
 	end
+end      
+--Move to Mouse--
+local function MoveToMouse()
+	MoveToXYZ(GetMousePos())
 end
---harass--
-function Harass()
-	WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
-	if mapID==SUMMONERS_RIFT then
-		if MapPosition:inWall({x=WPred.PredPos.x,y=0,z=WPred.PredPos.z})==true then 
-			Wall = 1
-		else 
-			Wall = 0 
-		end
-	else
-		--No Other Maps Supported atm
-		Wall=0
-	end
-	if LeBlanc.Keys.Harass:Value() and GOS:GetDistance(target)<=700 then
-		if 		 CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,n)==1 then Q(target)
-		elseif CD(n,n,1,n,n,n,n,n,n)==1 and Mana(n,1,n)==1 and Wall==0 then W(target)
-		elseif CD(n,n,n,1,n,n,n,n,n)==1 then W2()
-		end
-	end
-end
---Damage Calc--
-function DamageCalc()
-	xQ = GetCastLevel(myHero,_Q)*25+30+.4*GetBonusAP(myHero)
-	xW = GetCastLevel(myHero,_W)*40+45+.6*GetBonusAP(myHero)
-	xE = GetCastLevel(myHero,_E)*25+15+.5*GetBonusAP(myHero)
-	xR = GetCastLevel(myHero,_R)*100+.65*GetBonusAP(myHero)
-	xRW = GetCastLevel(myHero,_R)*150+.975*GetBonusAP(myHero)
-end
---ITEM CD--
-function CheckItemCD()
-	if GetItemSlot(myHero,3135)>0 then
-		VoidStaff=0.65
-	else
-		VoidStaff=1
-	end
-end
---Enemy Handling--
-function EnemyHandling()
-	for i,enemy in pairs(GOS:GetEnemyHeroes()) do
-		if #enemies~= 5 then
-			local entry = {hero = CheckEnemy(GetObjectName(enemy))}
-			if entry.hero == nil then
-				drawPos= GetOrigin(enemy)
-				textPos= WorldToScreen(1,drawPos.x,drawPos.y,drawPos.z)
-				Enemy = {hero = enemy, name = GetObjectName(enemy), maxHealth = GetMaxHP(enemy)*((100+(((GetMagicResist(enemy)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy)*6 ,health = GetCurrentHP(enemy)*((100+(((GetMagicResist(enemy)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy)*6, Pos ={x=drawPos.x,y=drawPos.y,z=drawPos.z}, Text={x=textPos.x,y=textPos.y,z=textPos.z}}
-        table.insert(enemies, Enemy)
-			elseif entry.hero ~= enemy then
-				entry.hero = enemy
-			end
-		end
-	end
+--Check Enemy--
+local function CheckEnemy(name)
 	if #enemies > 0 then
-    for i,enemy in ipairs(enemies) do
-			if enemy == nil or enemy.hero == nil or not enemy then
-				table.remove(enemies,i)
-			elseif enemy.name == nil or GetObjectName(enemy.hero):find(enemy.name) == nil then
-				table.remove(enemies,i)
-      else
-				if IsVisible(enemy.hero) then
-					drawPos = GetOrigin(enemy.hero)
-					textPos = WorldToScreen(1,drawPos.x,drawPos.y,drawPos.z)
-					if GetCurrentHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6 ~= enemy.health then
-						enemy.health = GetCurrentHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6
-					end
-					if GetMaxHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6 ~= enemy.maxHealth then
-						enemy.maxHealth = GetMaxHP(enemy.hero)*((100+(((GetMagicResist(enemy.hero)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(enemy.hero)*6
-					end
-					if enemy.Pos.x~= drawPos.x then
-						enemy.Pos.x=drawPos.x
-						enemy.Pos.y=drawPos.y
-						enemy.Pos.z=drawPos.z
-					end
-					if enemy.Text.x~= textPos.x then
-					 enemy.Text.x=textPos.x
-					 enemy.Text.y=textPos.y
-					end
-				end
-			end
+		for i,enemy in ipairs(enemies) do
+			if enemy.hero and enemy.hero~= nil and GetObjectName(enemy.hero):find(name) then return enemy end
 		end
 	end
+	return nil
 end
+--Round--
+local function Round(val, decimal)
+	if (decimal) then
+		return math.floor( (val * 10 ^ decimal) + 0.5) / (10 ^ decimal)
+	else
+		return math.floor(val + 0.5)
+	end
+end
+--Spell functions--
+local function Q(o)
+	CastTargetSpell(o,_Q)
+end
+local function QR(o)
+	CastTargetSpell(o,_R)
+end
+local function W(o)
+	WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
+	if WPred.HitChance==1 then
+		CastSkillShot(_W,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
+	end
+end
+local function W2(o)
+	CastSpell(_W)
+end
+local function WR(o)
+	WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
+	if WPred.HitChance==1 then
+		CastSkillShot(_R,WPred.PredPos.x,Wpred.PredPos.y,WPred.PredPos.z)
+	end
+end
+local function WR2(o)
+	CastSpell(_R)
+end
+local function E(o)
+	EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,150,950,55,true,true)
+	if EPred.HitChance==1 then
+		CastSkillShot(_E,EPred.PredPos.x,EPred.PredPos.y,EPred.PredPos.z)
+	end
+end
+local function ER(o)
+	EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,150,950,55,true,true)
+	if EPred.Hithance==1 then
+		CastSkillShot(_R,EPred.PredPos.x,EPred.PredPos.y,EPred.PredPos.z)
+	end
+end
+local function WL(o)
+	local Pos=GetOrigin(o)
+	if GetCastName(myHero,_W)~= 'leblancslidereturn' then 
+		CastSkillShot(_W,Pos.x,Pos.y,Pos.z) 
+	end
+end
+
 --Spell Sequence--
-function SpellSequence()
+local function SpellSequence()
 	if LeBlanc.Misc.Move and (LeBlanc.Keys.Combo:Value() or LeBlanc.Keys.Harass:Value()) then 
 		MoveToMouse()
 	end
@@ -199,7 +373,7 @@ function SpellSequence()
 					EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy.hero,GetMoveSpeed(enemy.hero),1550,150,950,55,true,true)
 					WPred = GetPredictionForPlayer(GetOrigin(myHero),enemy.hero,GetMoveSpeed(enemy.hero),1450,250,600,250,false,true)
 					if mapID==SUMMONERS_RIFT then
-						if MapPosition:inWall({x=WPred.PredPos.x,y=0,z=WPred.PredPos.z})==true then 
+						if MapPosition:inWall(Point(WPred.PredPos.x,0,WPred.PredPos.z))==true then 
 							Wall = 1
 						else 
 							Wall = 0 
@@ -435,7 +609,7 @@ function SpellSequence()
 			EPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1550,150,950,55,true,true)
 			WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
 			if mapID==SUMMONERS_RIFT then
-				if MapPosition:inWall({x=WPred.PredPos.x,y=0,z=WPred.PredPos.z})==true then 
+				if MapPosition:inWall(Point(WPred.PredPos.x,0,WPred.PredPos.z))==true then 
 					WallT = 1
 				else 
 					WallT = 0 
@@ -542,154 +716,6 @@ function SpellSequence()
 		end
 	end
 end
---Mana Handling--
-function Mana(a,b,c) --Q,W,R only have mana
-	if a == 1 then 
-		a = 40+(GetCastLevel(myHero,_Q)*10) 
-	else 
-		a = 0  
-	end
-	if b == 1 then 
-		b = 75+(GetCastLevel(myHero,_W)*5)
-	else 
-		b = 0 
-	end
-	if c == 1 then 
-		c = 80
-	else 
-		c = 0 
-	end
-	if GetCurrentMana(myHero) > a+b+c then 
-		return 1
-	else
-		return 0
-	end
-end
---CD Handling--
-function CD(a,b,c,d,e,f,g,h,i)
---Q
-	if GetCastName(myHero,_Q) == 'LeblancChaosOrb' and GetCastLevel(myHero,_Q)>= 1 and CanUseSpell(myHero, _Q)==READY then 
-		Q1RDY = 1
-	else
-		Q1RDY = 0 
-	end
---RQ
-	if GetCastName(myHero,_R) == 'LeblancChaosOrbM' and GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
-		Q2RDY = 1
-	else 
-		Q2RDY = 0 
-	end
---W
-	if GetCastName(myHero,_W) == 'LeblancSlide' and GetCastLevel(myHero,_W)>= 1 and CanUseSpell(myHero, _W)==READY then 
-		W1RDY = 1
-	else 
-		W1RDY = 0 
-	end
---W2
-	if GetCastName(myHero,_W) == 'leblancslidereturn' and GetCastLevel(myHero,_W)>= 1 and CanUseSpell(myHero, _W)==READY then 
-		W2RDY = 1
-	else 
-		W2RDY = 0 
-	end
---RW
-	if GetCastName(myHero,_R) == 'LeblancSlideM' and GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
-		W3RDY = 1
-	else 
-		W3RDY = 0 
-	end
---RW2
-	if GetCastLevel(myHero,_R)>= 1 and GetCastName(myHero,_R) ~= 'leblancslidereturnm' and CanUseSpell(myHero, _R)==READY then 
-		W4RDY = 1
-	else 
-		W4RDY = 0 
-	end
---E
-	if GetCastName(myHero,_E) == 'LeblancSoulShackle' and GetCastLevel(myHero,_E)>= 1 and CanUseSpell(myHero, _E)==READY then 
-		E1RDY = 1
-	else
-	  E1RDY = 0 
-	end
---RE
-	if GetCastName(myHero,_R) == 'LeblancSoulShackleM' and GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
-		E2RDY = 1
-	else 
-		E2RDY = 0 
-	end
-	if GetCastLevel(myHero,_R)>= 1 and CanUseSpell(myHero, _R)==READY then 
-		RRDY = 1
-	else 
-		RRDY = 0
-	end
-	if (Q1RDY == a or a == n) and (Q2RDY == b or b == n) and (W1RDY == c or c == n) and (W2RDY == d or d == n) and (W3RDY == e or e == n) and (W4RDY == f or f == n) and (E1RDY == g or g == n) and (E2RDY == h or h == n) and (RRDY == i or i == n) then
-		return 1
-	else
-		return 0
-	end
-end
---Move to Mouse--
-function MoveToMouse()
-	MoveToXYZ(GetMousePos())
-end
---Check Enemy--
-function CheckEnemy(name)
-	if #enemies > 0 then
-		for i,enemy in ipairs(enemies) do
-			if enemy.hero and enemy.hero~= nil and GetObjectName(enemy.hero):find(name) then return enemy end
-		end
-	end
-	return nil
-end
---Round--
-function Round(val, decimal)
-	if (decimal) then
-		return math.floor( (val * 10 ^ decimal) + 0.5) / (10 ^ decimal)
-	else
-		return math.floor(val + 0.5)
-	end
-end
---Spell functions--
-function Q(o)
-	CastTargetSpell(o,_Q)
-end
-function QR(o)
-	CastTargetSpell(o,_R)
-end
-function W(o)
-	WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
-	if WPred.HitChance==1 then
-		CastSkillShot(_W,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
-	end
-end
-function W2(o)
-	CastSpell(_W)
-end
-function WR(o)
-	WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
-	if WPred.HitChance==1 then
-		CastSkillShot(_R,WPred.PredPos.x,Wpred.PredPos.y,WPred.PredPos.z)
-	end
-end
-function WR2(o)
-	CastSpell(_R)
-end
-function E(o)
-	EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,150,950,55,true,true)
-	if EPred.HitChance==1 then
-		CastSkillShot(_E,EPred.PredPos.x,EPred.PredPos.y,EPred.PredPos.z)
-	end
-end
-function ER(o)
-	EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,150,950,55,true,true)
-	if EPred.Hithance==1 then
-		CastSkillShot(_R,EPred.PredPos.x,EPred.PredPos.y,EPred.PredPos.z)
-	end
-end
-function WL(o)
-	local Pos=GetOrigin(o)
-	if GetCastName(myHero,_W)~= 'leblancslidereturn' then 
-		CastSkillShot(_W,Pos.x,Pos.y,Pos.z) 
-	end
-end
 
 --Check for lastSpell--
 OnProcessSpell(function(unit, spell)
@@ -702,36 +728,14 @@ OnProcessSpell(function(unit, spell)
 		if spell.name == 'LeblancSoulShackleM' then ls = 'ER' end
 	end
 end)
---Valid target
-function Valid(unit)
-  if unit and not IsDead(unit) and IsTargetable(unit) and not IsImmune(unit, myHero) and IsVisible(unit) then
-    return true
-  else
-    return false
-  end
-end
-function GetDistanceXYZ(x,z,x2,z2)
-	if (x and z and x2 and z2)~=nil then
-		a=x2-x
-		b=z2-z
-		if (a and b)~=nil then
-			a2=a*a
-			b2=b*b
-			if (a2 and b2)~=nil then
-				return math.sqrt(a2+b2)
-			else
-				return 99999
-			end
-		else
-			return 99999
-		end
-	end	
-end
-function CheckEnemy(name)
-	if #enemies > 0 then
-		for i,enemy in ipairs(enemies) do
-			if enemy.hero and enemy.hero~= nil and GetObjectName(enemy.hero):find(name) then return enemy end
-		end
-	end
-	return nil
-end
+
+OnLoop(function(myHero)
+	myHeroPos = GetOrigin(myHero)
+	target = GetCurrentTarget()
+	DamageCalc()
+	EnemyHandling()
+	SpellSequence()
+	CheckItemCD()
+	if LeBlanc.Keys.Harass:Value() and target then Harass() end
+	if LeBlanc.Misc.Draw then Draw() end
+end)
