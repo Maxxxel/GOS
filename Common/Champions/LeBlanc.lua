@@ -15,7 +15,7 @@ LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
 LeBlanc.Misc:Boolean("Move", "Move to mouse", true)
 	
 --Variables--
-local version = 0.4 --updated code syntax
+local version = 0.4.1 --updated code syntax
 local mapID = GetMapID()
 local ls
 local target
@@ -156,7 +156,7 @@ end
 local function WR(o)
 	WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
 	if WPred.HitChance==1 then
-		CastSkillShot(_R,WPred.PredPos.x,Wpred.PredPos.y,WPred.PredPos.z)
+		CastSkillShot(_R,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
 	end
 end
 local function WR2(o)
