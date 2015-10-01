@@ -1,4 +1,4 @@
---Version 0.6 //TEST
+--Version 0.6.1 //Small KS fix
 Brand = Menu("Brand", "Brand")
 Brand:Key("Combo", "Combo", string.byte(" "))
 
@@ -225,36 +225,34 @@ local function Combo()
     local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
     local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(target)
     TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
-    if Health < TotalDamage then
-      if Health < TotalDamage - RDmg * RRDY * (1 + GetRBounce(target)) then
-        if ERDY == 1 then doE(target) end
-        if QRDY == 1 then doQ(target) end
-        if WRDY == 1 then
-	        if IsBurning(target) == 1 or (ERDY == 0 and QRDY == 0) or (QRDY == 1 and QH ~= 1) then
-	          doW(target)
-	        end
-	      end
-	      if RRDY == 1 then
-	        if not KR then
-	          doR(target)
-	        end
-	      end
-        if Brand.KS.I:Value() then
-          CastTargetSpell(target, Ignite)
+    if Health < TotalDamage - RDmg * RRDY * (1 + GetRBounce(target)) then
+      if ERDY == 1 then doE(target) end
+      if QRDY == 1 then doQ(target) end
+      if WRDY == 1 then
+        if IsBurning(target) == 1 or (ERDY == 0 and QRDY == 0) or (QRDY == 1 and QH ~= 1) then
+          doW(target)
         end
-      else
-	      if ERDY == 1 then doE(target) end
-        if QRDY == 1 then doQ(target) end
-	      if IsBurning(target) == 1 then
-	        doW(target)
-	      end
-	      if Brand.KS.I:Value() then
-          CastTargetSpell(target, Ignite)
+      end
+      if RRDY == 1 then
+        if not KR then
+          doR(target)
         end
-        if RRDY == 1 then
-	      	doR(target)
-	      end
-	    end
+      end
+      if Brand.KS.I:Value() then
+        CastTargetSpell(target, Ignite)
+      end
+    elseif Health < TotalDamage then
+      if ERDY == 1 then doE(target) end
+      if QRDY == 1 then doQ(target) end
+      if IsBurning(target) == 1 then
+        doW(target)
+      end
+      if Brand.KS.I:Value() then
+        CastTargetSpell(target, Ignite)
+      end
+      if RRDY == 1 then
+      	doR(target)
+      end
     else
       if IsBurning(target) == 1 then
         if QRDY == 1 then doQ(target) end
@@ -301,7 +299,7 @@ local function Kills()
     	local QH = QPred.HitChance == 1 and 1 or 0
   		local WH = WPred.HitChance == 1 and 1 or 0
 			local test = Q and QRDY * QH > 0 and QRDY * 1050 or W and WRDY * WH > 0 and WRDY * 875 or E and ERDY > 0 and ERDY * 650 or R and RRDY > 0 and RRDY * 750 or IRDY * 650 or 0
-    	if Health < xIgnite + IRDY then
+    	if Health < xIgnite + IRDY and DIST < 650 then
     		if QRDY + WRDY + ERDY + RRDY <= 2 then
     			if Brand.KS.I:Value() then
           	CastTargetSpell(n[i], Ignite)
@@ -328,7 +326,7 @@ local function Kills()
 					doQ(n[i])
 				elseif Health < WDmg + PDMG  and WRDY == 1 and Mana(0,1,0,0) == 1 and WPred.HitChance == 1 and DIST < test then
 					doW(n[i])
-				elseif Health < EDmg + PDMG  and ERDY == 1 and Mana(0,0,1,0) == 1 and DIST < test then
+				elseif Health < EDmg + PDMG  and ERDY == 1 and Mana(0,0,1,0) == 1 and DIST < 650 then
 					doE(n[i])
 				elseif Health < EDmg + WDmg * 1.25 + PDMG and ERDY == 1 and WRDY == 1 and Mana(0,1,1,0) == 1 and DIST < test then
 					doEW(n[i])
