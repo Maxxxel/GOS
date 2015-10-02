@@ -247,7 +247,7 @@ local function Combo()
       end
     elseif Health < TotalDamage then
     	if RRDY == 1 then
-      	dooR(target) PrintChat("Test Value, Brand wants to Cast R on "..GetObjectName(target)..", with "..(1 + GetRBounce(target)).." enemies around. Expected Damage of R: "..RDmg * RRDY * (1 + GetRBounce(target)))
+      	dooR(target)
       end
       if ERDY == 1 then doE(target) end
       if QRDY == 1 then doQ(target) end
