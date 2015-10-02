@@ -1,4 +1,4 @@
---Version 0.6.1 //Small KS fix
+--Version 0.7 // changed some stuff on ignite, fixed Ulti
 Brand = Menu("Brand", "Brand")
 Brand:Key("Combo", "Combo", string.byte(" "))
 
@@ -60,12 +60,12 @@ local function GetSpellCD()
   RRDY = GetCastLevel(myHero, _R) > 0 and CanUseSpell(myHero, _R) == 0 and 1 or 0
 end
 --Mana ready
-local function Mana(q,w,e,r)
+local function Mana(mq,mw,me,mr)
   local Qmana = 50
   local Wmana = 5 * GetCastLevel(myHero, _W) + 65
   local Emana = 5 * GetCastLevel(myHero, _E) + 65
   local Rmana = 100
-  return Qmana * q + Wmana * w + Emana * e + Rmana * r < GetCurrentMana(myHero) and 1 or 0
+  return Qmana * mq + Wmana * mw + Emana * me + Rmana * mr < GetCurrentMana(myHero) and 1 or 0
 end
 --Spells
 local function doQ(o)
@@ -89,7 +89,7 @@ local function doE(o)
     CastTargetSpell(o, _E)
   end
 end
-local function doR(o)
+local function dooR(o)
   if R and GOS:GetDistance(o) < 750 then
     CastTargetSpell(o, _R)
   end
@@ -192,7 +192,8 @@ end
 --Bouncing fire :)
 local function GetRBounce(o)
 	local Speed = o and GetMoveSpeed(o) or 0
-	return o and (math.min(CountEnemyObjectsInRange(o, 400 - Speed * .25), 4) - 1) == 1 and 2 or o and (math.min(CountEnemyObjectsInRange(o, 400 - Speed * .25), 4) - 1) == 2 and 1 or o and (math.min(CountEnemyObjectsInRange(o, 400 - Speed * .25), 4) - 1) >= 3 and 0 or 0
+	local NumEnemies = (math.min(CountEnemyObjectsInRange(o, 400 - Speed * .25), 4) - 1)
+	return o and NumEnemies == 1 and 2 or o and NumEnemies == 2 and 1 or o and NumEnemies >= 3 and 0 or 0
 end
 --have ignite?
 local function IsIgnited(o)
@@ -224,8 +225,11 @@ local function Combo()
     local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
     local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
     local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(target)
-    TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
-    if Health < TotalDamage - RDmg * RRDY * (1 + GetRBounce(target)) then
+    local TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
+    local TotalDamageNoR = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
+    local TotalDamageNoIgnite = (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
+    local TotalDamageNoRNoIgnite = (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
+    if Health < TotalDamageNoR then
       if ERDY == 1 then doE(target) end
       if QRDY == 1 then doQ(target) end
       if WRDY == 1 then
@@ -233,25 +237,25 @@ local function Combo()
           doW(target)
         end
       end
-      if RRDY == 1 then
-        if not KR then
-          doR(target)
+      if not KR then
+        if RRDY == 1 then
+          dooR(target)
         end
       end
-      if Brand.KS.I:Value() then
+      if Brand.KS.I:Value() and Health > TotalDamageNoRNoIgnite and DIST < 650 then
         CastTargetSpell(target, Ignite)
       end
     elseif Health < TotalDamage then
+    	if RRDY == 1 then
+      	dooR(target) PrintChat("Test Value, Brand wants to Cast R on "..GetObjectName(target)..", with "..(1 + GetRBounce(target)).." enemies around. Expected Damage of R: "..RDmg * RRDY * (1 + GetRBounce(target)))
+      end
       if ERDY == 1 then doE(target) end
       if QRDY == 1 then doQ(target) end
       if IsBurning(target) == 1 then
         doW(target)
       end
-      if Brand.KS.I:Value() then
+      if Brand.KS.I:Value() and Health > TotalDamageNoIgnite and DIST < 650 then
         CastTargetSpell(target, Ignite)
-      end
-      if RRDY == 1 then
-      	doR(target)
       end
     else
       if IsBurning(target) == 1 then
@@ -260,20 +264,20 @@ local function Combo()
         if WRDY == 1 then doW(target) end
         if RRDY == 1 then
         	if not KR then
-         	  doR(target)
+         	  dooR(target)
         	end
         end
       else
       	if WRDY == 1 then doW(target) end
         if ERDY == 1 then doE(target) end
         if QRDY == 1 then
-	        if (ERDY + WRDY == 0) or (DIST > 875) then
+	        if (ERDY + WRDY == 0) or (DIST > 875) or (WRDY == 1 and WH == 0) or (ERDY == 1 and DIST > 650) then
 	          doQ(target)
 	        end
 	      end
 	      if RRDY == 1 then
        	  if not KR then
-          	doR(target)
+          	dooR(target)
           end
         end
       end
@@ -300,7 +304,7 @@ local function Kills()
   		local WH = WPred.HitChance == 1 and 1 or 0
 			local test = Q and QRDY * QH > 0 and QRDY * 1050 or W and WRDY * WH > 0 and WRDY * 875 or E and ERDY > 0 and ERDY * 650 or R and RRDY > 0 and RRDY * 750 or IRDY * 650 or 0
     	if Health < xIgnite + IRDY and DIST < 650 then
-    		if QRDY + WRDY + ERDY + RRDY <= 2 then
+    		if QRDY + WRDY + ERDY + RRDY <= 1 then
     			if Brand.KS.I:Value() then
           	CastTargetSpell(n[i], Ignite)
         	end
