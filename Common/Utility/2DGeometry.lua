@@ -231,6 +231,11 @@ class "Line" --{
     	PrintChat("Error on Line:__distance, ObjectType is unexpected")
     end
 	end
+	function Line:__draw(color, width)
+		local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
+		local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
+		DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
+  end
 --}
 
 class "Circle" -- {
@@ -418,7 +423,11 @@ class "LineSegment" -- {
     end
 
     function LineSegment:__draw(color, width)
-    	DrawLine(self.points[1].x,self.points[1].y,self.points[2].x,self.points[2].y,width or 4,color or 0XFF00FF00);
+    	local newPoint1 = WorldToScreen(1, self.points[1].x, 0, self.points[1].y)
+			local newPoint2 = WorldToScreen(1, self.points[2].x, 0, self.points[2].y)
+			if newPoint1.flag and newPoint2.flag then
+				DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
+			end
     end
 
 -- }
