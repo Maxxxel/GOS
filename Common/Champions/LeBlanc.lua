@@ -13,16 +13,15 @@ LeBlanc.KS:Boolean("KSNotes", "KS Notes", true)
 LeBlanc.KS:Boolean("Percent", "Percent Notes", true)
 LeBlanc:SubMenu("Misc","Misc")
 LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
-LeBlanc.Misc:Boolean("Move", "Move to mouse", true)
-	
+LeBlanc.Misc:Boolean("MR", "Manual Return", true)
 --Variables--
---version = 0.4.1 --updated code syntax
+--version = 0.5 --added manual return option
 local mapID = GetMapID()
 local ls
 local target
 local myHero = GetMyHero()
 local VoidStaff = 1
-local multi = LeBlanc.KS.Mult:Value() and 2 or 1
+local multi = 1
 local xQ,xW,xE,xR,xRW
 local from,to,SUM,Wall,WallT = 0,0,0,0,0
 local WPos,W2Pos,WPred,EPred,EPos,HPos
@@ -284,10 +283,6 @@ local function Draw()
 		end
 	end
 end      
---Move to Mouse--
-local function MoveToMouse()
-	MoveToXYZ(GetMousePos())
-end
 --Round--
 local function Round(val, decimal)
 	if (decimal) then
@@ -298,9 +293,6 @@ local function Round(val, decimal)
 end
 --Spell Sequence--
 local function SpellSequence()
-	if LeBlanc.Misc.Move:Value() and (LeBlanc.Keys.Combo:Value() or LeBlanc.Keys.Harass:Value()) then 
-		MoveToMouse()
-	end
 	if #n > 0 then
 		for  i = 1, #n do
 	    local maxHealth = GetMaxHP(n[i])*((100+(((GetMagicResist(n[i])*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[i])*6 
@@ -428,12 +420,12 @@ local function SpellSequence()
 						from=60
 						to=65
 					else
-						from = 0
-						to = 0
+						from = 1
+						to = 1
 					end
 					for v=from,to do
 						if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e,KSN[v].f,KSN[v].g,KSN[v].h,KSN[v].i)==1 and Mana(KSN[v].a,KSN[v].c,KSN[v].g)==1 and health < KSN[v].Damage then
-							if KSN[v].Dist==1 and GOS:GetDistance(n[i])>700 and GOS:GetDistance(n[i])<=1300 and LeBlanc.KS.KSNotes:Value() then
+							if KSN[v].Dist==1 and GOS:GetDistance(n[i])>700 and GOS:GetDistance(n[i])<=1300 - GetMoveSpeed(n[i]) * .3 and LeBlanc.KS.KSNotes:Value() then
 								if (KSN[v].Block==1 and Block==1) or (KSN[v].Wall==1 and Wall==1) then 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
 								else 
@@ -579,7 +571,7 @@ local function SpellSequence()
 								CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
 								CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
 								CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
-					Q(target)
+					Q(target) PrintChat("Q")
 				elseif (CD(0,1,0,n,0,n,0,0,1)==1 and Mana(0,0,0)==1 or
 								CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
 								CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
@@ -591,7 +583,7 @@ local function SpellSequence()
 								CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
 								CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
 								CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
-					QR(target)
+					QR(target) PrintChat("QR")
 				elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or
 								CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
 								CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
@@ -604,7 +596,7 @@ local function SpellSequence()
 								CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
 								CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
 								CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
-					W(target)
+					W(target) PrintChat("W")
 				elseif (CD(0,0,0,n,1,n,0,0,1)==1 and Mana(0,0,0)==1 or
 								CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
 								CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
@@ -615,7 +607,7 @@ local function SpellSequence()
 								CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
 								CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
 								CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
-					WR(target)
+					WR(target) PrintChat("WR")
 				elseif (CD(0,0,0,n,0,n,1,0,n)==1 and Mana(0,0,1)==1 or
 								CD(0,n,0,n,n,n,1,n,1)==1 and Mana(0,0,1)==1 or
 								CD(0,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 or
@@ -625,8 +617,9 @@ local function SpellSequence()
 								CD(0,0,n,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
 								CD(0,n,0,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 or
 								CD(n,0,0,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
+								CD(0,0,0,0,0,0,1,0,0)==1 and Mana(0,0,1)==1 or
 								CD(0,0,0,n,0,n,1,n,0)==1 and Mana(0,0,1)==1) and EPred.HitChance==1 then
-					E(target)
+					E(target) PrintChat("E")
 				elseif (CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1 or											
 								CD(0,0,0,n,0,n,1,1,1)==1 and Mana(0,0,1)==1 or							
 								CD(1,0,n,n,0,n,n,1,1)==1 and Mana(1,0,0)==1 or								
@@ -635,17 +628,20 @@ local function SpellSequence()
 								CD(1,0,n,n,0,n,1,1,1)==1 and Mana(1,0,1)==1 or								
 								CD(n,0,1,n,0,n,1,1,1)==1 and Mana(0,1,1)==1 or
 								CD(0,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+								CD(0,0,0,0,0,0,0,1,1)==1 and Mana(0,0,0)==1 or
 								CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1) and EPred.HitChance==1 then
-					ER(target)
+					ER(target) PrintChat("ER")
 				end
 			elseif GOS:GetDistance(target)>700 and GOS:GetDistance(target)<1300 - GetMoveSpeed(target) * .3 then
 				if 			CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then WL(target) end	
 			end
 		end
-		if	CD(0,0,0,1,0,1,0,0,1)==1 or CD(0,0,0,0,0,1,0,0,1)==1 then
-			WR2() 
-		elseif CD(0,0,0,1,0,0,0,0,0)==1 then
-			W2()
+		if not LeBlanc.Misc.MR:Value() then
+			if	CD(0,0,0,1,0,1,0,0,1)==1 or CD(0,0,0,0,0,1,0,0,1)==1 then
+				WR2() 
+			elseif CD(0,0,0,1,0,0,0,0,0)==1 then
+				W2()
+			end
 		end
 	end
 	if Valid(target) and not IsDead(myHero) then
@@ -679,6 +675,7 @@ OnLoop(function(myHero)
 	myHeroPos = GetOrigin(myHero)
 	target = GetCurrentTarget()
 	targetPos = GetOrigin(target)
+	multi = LeBlanc.KS.Mult:Value() and 2 or 1
 	DamageCalc()
 	SpellSequence()
 	CheckItemCD()
