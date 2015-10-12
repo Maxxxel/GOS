@@ -6,8 +6,8 @@ Talon.KS:Boolean("R", "Smart Ulti",true)
 Talon.KS:Boolean("Percent","Show % Kill",true)
 
 ------------------------------------------
---version = 1.0
---updated Performance, Code Syntax
+--version = 1.1
+--fixed ignite
 ------------------------------------------
 
 ------------------------------------------
@@ -31,7 +31,7 @@ local function CheckItemCD()
   HydraCast = HydraCastTime ~= 0 and HydraCast == 1 and (GetTickCount() - HydraCastTime) >= 10000 and 0 or HydraCast
   HydraCastTime = HydraCastTime ~= 0 and HydraCast == 1 and (GetTickCount() - HydraCastTime) >= 10000 and 0 or HydraCastTime
   HRDY = GetItemSlot(myHero,3077) + GetItemSlot(myHero,3074) > 0 and HydraCast == 0 and 1 or 0
-  IRDY = CanUseSpell(myHero, Ignite) == 0 and 1 or 0
+  IRDY = Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
 end
 ------------------------------------------
 --Check for Spell Damage
