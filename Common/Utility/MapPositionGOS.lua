@@ -15,6 +15,10 @@
 
 require 'MapPosition'
 
+local function file_exists(name)
+    local f = io.open(name, "r") if f ~= nil then io.close(f) return true else return false end
+end
+
 local lclass = class
 local function bclass(name)
     local c = lclass()
@@ -24,20 +28,15 @@ end
 class = bclass
 class = lclass
 
---local walls_cached = file_check("Orianna.lua")
---local bushes_cached = file_exists("MapPosition_bushes_1.lua")
+if SCRIPT_PATH == nil then SCRIPT_PATH = '' end
+SCRIPT_PATH = SCRIPT_PATH .. "//Common//"
+if package.path:find([[;.\?]], 1, true) == nil then
+    package.path = package.path..[[;.\?]]
+    package.path = package.path..[[;.\?.lua]]
+end
 
---if walls_cached then
---    PrintChat("MapPositionGOS: loading wall cache")
---    else
---    PrintChat("MapPositionGOS: generating wall cache")
---end
-
---if bushes_cached then
---   PrintChat("MapPositionGOS: loading bush cache")
---else
---   PrintChat("MapPositionGOS: generating bush cache")
---end
+local walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_1.lua")
+local bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_1.lua")
 
 local bushQuads = { 
 -- this data slightly inaccurate in places
@@ -146,7 +145,11 @@ function MapPosition:inMyJungle(unit)
 end
 
 -- spatial maps --
-
+if walls_cached then
+    PrintChat('*** MapPositionGOS: loading wall cache')
+else
+    PrintChat('*** MapPositionGOS: generating wall cache')
+end
 MapPosition:__init()
 
 -- wrap inWall so it accepts units as well as points
@@ -162,6 +165,11 @@ function MapPosition:inWall(o)
     return MapPosition:inWallReal(point)
 end
 
+if bushes_cached then
+    PrintChat('*** MapPositionGOS: loading bush cache')
+else
+    PrintChat('*** MapPositionGOS: generating bush cache')
+end
 MapPosition.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_1")
 
 function MapPosition:inBush(o)  
