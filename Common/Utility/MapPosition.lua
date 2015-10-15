@@ -305,7 +305,7 @@ class "SpatialHashMap" -- {
 	end
 
 	function SpatialHashMap:loadObjects(spatialObjects)
-		if self.cacheId then
+		if self.cacheId and fileExists(SCRIPT_PATH .. "MapPosition_" .. self.cacheId .. ".lua") then
 			_G.s = spatialObjects require ("MapPosition_" .. self.cacheId)
 
 			self.hashTables = _G.h return
@@ -369,7 +369,12 @@ class "SpatialHashMap" -- {
 			res = res .. cols .. "}"
 		end
 		res = res .. "}"
-
+		local file, error = assert(io.open(SCRIPT_PATH .. "MapPosition_" .. self.cacheId .. ".lua", "w+")) 
+		if error then 
+			return error 
+		end 
+		file:write(res) 
+		file:close()
 	end
 
 	function SpatialHashMap:add(spatialObject)
@@ -383,7 +388,7 @@ class "SpatialHashMap" -- {
 			rightX = -math.huge
 			bottomY = math.huge
 			topY = -math.huge
-			for i, point in ipairs(spatialObject:getPoints()) do
+			for i, point in ipairs(spatialObject:__getPoints()) do
 				leftX = math.min(leftX, point.x)
 				rightX = math.max(rightX, point.x)
 				bottomY = math.min(bottomY, point.y)
@@ -407,13 +412,13 @@ class "SpatialHashMap" -- {
 				end
 			end
 		else
-			for i, lineSegment in ipairs(spatialObject:getLineSegments()) do
+			for i, lineSegment in ipairs(spatialObject:__getLineSegments()) do
 				for x = math.floor(leftX / self.intervalSize), math.floor(rightX / self.intervalSize), 1 do
 					for y = math.floor(bottomY / self.intervalSize), math.floor(topY / self.intervalSize), 1 do
 						local quadraliterate = Polygon(Point(x * self.intervalSize, y * self.intervalSize), Point(x * self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize))
 
 						hashCode = self:calculateHashCode(quadraliterate.points[1])
-						if (quadraliterate:intersects(lineSegment) or spatialObject:contains(quadraliterate.points[1]) or quadraliterate:contains(lineSegment)) and foundHashCodes[hashCode] == nil then
+						if (quadraliterate:__intersects(lineSegment) or spatialObject:__contains(quadraliterate.points[1]) or quadraliterate:__contains(lineSegment)) and foundHashCodes[hashCode] == nil then
 							if self.hashTables[hashCode] == nil then
 								self.hashTables[hashCode] = {}
 							end
@@ -433,7 +438,7 @@ class "SpatialHashMap" -- {
 		rightX = -math.huge
 		bottomY = math.huge
 		topY = -math.huge
-		for i, point in ipairs(spatialObject:getPoints()) do
+		for i, point in ipairs(spatialObject:__getPoints()) do
 			leftX = math.min(leftX, point.x)
 			rightX = math.max(rightX, point.x)
 			bottomY = math.min(bottomY, point.y)
@@ -441,13 +446,13 @@ class "SpatialHashMap" -- {
 		end
 
 		foundHashCodes = {}
-		for i, lineSegment in ipairs(spatialObject:getLineSegments()) do
+		for i, lineSegment in ipairs(spatialObject:__getLineSegments()) do
 			for x = math.floor(leftX / self.intervalSize), math.floor(rightX / self.intervalSize), 1 do
 				for y = math.floor(bottomY / self.intervalSize), math.floor(topY / self.intervalSize), 1 do
 					local quadraliterate = Polygon(Point(x * self.intervalSize, y * self.intervalSize), Point(x * self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize))
 
 					hashCode = self:calculateHashCode(quadraliterate.points[1])
-					if (quadraliterate:intersects(lineSegment) or spatialObject:contains(quadraliterate.points[1]) or quadraliterate:contains(lineSegment)) and foundHashCodes[hashCode] == nil then
+					if (quadraliterate:__intersects(lineSegment) or spatialObject:__contains(quadraliterate.points[1]) or quadraliterate:__contains(lineSegment)) and foundHashCodes[hashCode] == nil then
 						self.hashTables[hashCode][tostring(spatialObject.uniqueId)] = nil
 
 						foundHashCodes[hashCode] = hashCode
@@ -521,7 +526,7 @@ class "MapPosition" -- {
 
 		return not los(math.floor(lineSegment.points[1].x / self.wallSpatialHashMap.intervalSize), math.floor(lineSegment.points[1].y / self.wallSpatialHashMap.intervalSize), math.floor(lineSegment.points[2].x / self.wallSpatialHashMap.intervalSize), math.floor(lineSegment.points[2].y / self.wallSpatialHashMap.intervalSize), function(x, y)
 			for wallId, wall in pairs(self.wallSpatialHashMap:getSpatialObjects(Point(x * self.wallSpatialHashMap.intervalSize, y * self.wallSpatialHashMap.intervalSize))) do
-				if wall:intersects(lineSegment) then
+				if wall:__intersects(lineSegment) then
 					return false
 				end
 			end
@@ -537,11 +542,11 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inTopRiver(unit)
-		return regions["topOuterRiver"]:contains(Point(unit.x, unit.z))
+		return regions["topOuterRiver"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inTopInnerRiver(unit)
-		return regions["topInnerRiver"]:contains(Point(unit.x, unit.z))
+		return regions["topInnerRiver"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inTopOuterRiver(unit)
@@ -549,11 +554,11 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inBottomRiver(unit)
-		return regions["bottomOuterRiver"]:contains(Point(unit.x, unit.z))
+		return regions["bottomOuterRiver"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inBottomInnerRiver(unit)
-		return regions["bottomInnerRiver"]:contains(Point(unit.x, unit.z))
+		return regions["bottomInnerRiver"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inBottomOuterRiver(unit)
@@ -575,11 +580,11 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inLeftBase(unit)
-		return regions["inLeftBase"]:contains(Point(unit.x, unit.z))
+		return regions["inLeftBase"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inRightBase(unit)
-		return regions["inRightBase"]:contains(Point(unit.x, unit.z))
+		return regions["inRightBase"]:__contains(Point(unit.x, unit.z))
 	end
 
 	-- Lane Positions ---------------------------------------------------------
@@ -591,19 +596,19 @@ class "MapPosition" -- {
 	function MapPosition:onTopLane(unit)
 		unitPoint = Point(unit.x, unit.z)
 
-		return regions["leftTopLane"]:contains(unitPoint) or regions["centerTopLane"]:contains(unitPoint) or regions["rightTopLane"]:contains(unitPoint)
+		return regions["leftTopLane"]:contains(unitPoint) or regions["centerTopLane"]:contains(unitPoint) or regions["rightTopLane"]:__contains(unitPoint)
 	end
 
 	function MapPosition:onMidLane(unit)
 		unitPoint = Point(unit.x, unit.z)
 
-		return regions["leftMidLane"]:contains(unitPoint) or regions["centerMidLane"]:contains(unitPoint) or regions["rightMidLane"]:contains(unitPoint)
+		return regions["leftMidLane"]:contains(unitPoint) or regions["centerMidLane"]:contains(unitPoint) or regions["rightMidLane"]:__contains(unitPoint)
 	end
 
 	function MapPosition:onBotLane(unit)
 		unitPoint = Point(unit.x, unit.z)
 
-		return regions["leftBotLane"]:contains(unitPoint) or regions["centerBotLane"]:contains(unitPoint) or regions["rightBotLane"]:contains(unitPoint)
+		return regions["leftBotLane"]:contains(unitPoint) or regions["centerBotLane"]:contains(unitPoint) or regions["rightBotLane"]:__contains(unitPoint)
 	end
 
 	-- Jungle Positions -------------------------------------------------------
@@ -633,7 +638,7 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inTopLeftJungle(unit)
-		return regions["topLeftOuterJungle"]:contains(Point(unit.x, unit.z))
+		return regions["topLeftOuterJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inTopLeftOuterJungle(unit)
@@ -641,11 +646,11 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inTopLeftInnerJungle(unit)
-		return regions["topLeftInnerJungle"]:contains(Point(unit.x, unit.z))
+		return regions["topLeftInnerJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inBottomLeftJungle(unit)
-		return regions["bottomLeftOuterJungle"]:contains(Point(unit.x, unit.z))
+		return regions["bottomLeftOuterJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inBottomLeftOuterJungle(unit)
@@ -653,7 +658,7 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inBottomLeftInnerJungle(unit)
-		return regions["bottomLeftInnerJungle"]:contains(Point(unit.x, unit.z))
+		return regions["bottomLeftInnerJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inRightJungle(unit)
@@ -669,7 +674,7 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inTopRightJungle(unit)
-		return regions["topRightOuterJungle"]:contains(Point(unit.x, unit.z))
+		return regions["topRightOuterJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inTopRightOuterJungle(unit)
@@ -677,11 +682,11 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inTopRightInnerJungle(unit)
-		return regions["topRightInnerJungle"]:contains(Point(unit.x, unit.z))
+		return regions["topRightInnerJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inBottomRightJungle(unit)
-		return regions["bottomRightOuterJungle"]:contains(Point(unit.x, unit.z))
+		return regions["bottomRightOuterJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inBottomRightOuterJungle(unit)
@@ -689,7 +694,7 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:inBottomRightInnerJungle(unit)
-		return regions["bottomRightInnerJungle"]:contains(Point(unit.x, unit.z))
+		return regions["bottomRightInnerJungle"]:__contains(Point(unit.x, unit.z))
 	end
 
 	function MapPosition:inTopJungle(unit)
