@@ -4,10 +4,13 @@ Talon:SubMenu("KS","Killfunctions")
 Talon.KS:Boolean("Ignite","Auto-Ignite",true)
 Talon.KS:Boolean("R", "Smart Ulti",true)
 Talon.KS:Boolean("Percent","Show % Kill",true)
-
+Talon:SubMenu("Harass", "Harass Menu")
+Talon.Harass:Key("DoIt","Harass",string.byte("X"))
+Talon.Harass:Boolean("Auto", "Auto Harass", false)
+Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.1
---fixed ignite
+--version = 1.2
+--updated fixed an error with to early Ulti, added prediction on W
 ------------------------------------------
 
 ------------------------------------------
@@ -31,7 +34,7 @@ local function CheckItemCD()
   HydraCast = HydraCastTime ~= 0 and HydraCast == 1 and (GetTickCount() - HydraCastTime) >= 10000 and 0 or HydraCast
   HydraCastTime = HydraCastTime ~= 0 and HydraCast == 1 and (GetTickCount() - HydraCastTime) >= 10000 and 0 or HydraCastTime
   HRDY = GetItemSlot(myHero,3077) + GetItemSlot(myHero,3074) > 0 and HydraCast == 0 and 1 or 0
-  IRDY = Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
+  IRDY = CanUseSpell(myHero, Ignite) == 0 and 1 or 0
 end
 ------------------------------------------
 --Check for Spell Damage
@@ -66,11 +69,11 @@ local function HasE(unit)
 end
 
 local function Emulti(unit)
-  return HasE(unit) and 1 or 0
+  return HasE(unit) and ERDY == 0 and 1 or 0
 end
 
 local function Wmulti()
-  return GetTickCount() - Wtime <= 0 and 1 or 0
+  return GetTickCount() - Wtime <= 0 and WRDY == 0 and 1 or 0
 end
 
 local function HasQ2(unit)
@@ -130,7 +133,10 @@ end
 ------------------------------------------
 local function W(o)
 	if GOS:GetDistance(o) <= 700 - GetMoveSpeed(o) * IsMoving(o) * .1 then
-		CastTargetSpell(o, _W)
+		local WSS = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 2400, 250, 700, 701 - GOS:GetDistance(o), false, false)
+		if WSS.HitChance == 1 then
+			CastSkillShot(_W, WSS.PredPos)
+		end
 	end
 end
 
@@ -246,7 +252,9 @@ local function Combo()
 		if not Talon.KS.R:Value() or LIFE < maxDMG and LIFE > maxDMGNoR then
 			R1(target)
 		end
-		if WRDY == 1 and (AttackReadiness() ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0 or DIST > myRange) then W(target) end
+		if WRDY == 1 and (AttackReadiness() ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0 or DIST > myRange) then
+			W(target) 
+		end
 		if DIST > myRange + 50 then
 			MoveToMouse()
 		elseif DIST < myRange and AttackReadiness() <= 0.5 and QRDY == 0 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 then
@@ -326,6 +334,14 @@ OnLoop(function(myHero)
 		CD()
   	if Talon.Combo:Value() then
     	Combo()
+  	elseif Talon.Harass.DoIt:Value() or Talon.Harass.Auto:Value() then
+  		if GetCurrentMana(myHero) / (GetMaxMana(myHero) * .01) >= Talon.Harass.Mana:Value() then
+  			if WRDY == 1 then
+  				local targetH = GOS:GetTarget(700, DAMAGE_PHYSICAL)
+  				if targetH and GOS:GetDistance(targetH) < 700 then W(targetH) end
+  				if Talon.Harass.DoIt:Value() then MoveToMouse() end
+  			end
+  		end
   	end
 	end
 	local buffer = 0
