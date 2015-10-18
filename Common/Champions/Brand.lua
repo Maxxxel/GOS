@@ -1,4 +1,4 @@
---Version 0.7 // changed some stuff on ignite, fixed Ulti
+--Version 0.8 // improved Damage Calc and Ignite
 Brand = Menu("Brand", "Brand")
 Brand:Key("Combo", "Combo", string.byte(" "))
 
@@ -41,7 +41,7 @@ local QRDY, WRDY, ERDY, RRDY, IRDY = 0, 0, 0, 0, 0
 local myRange, DIST, VoidStaff = 0, 0, 0
 --Items CD
 local function GetItemCD()
-  IRDY = CanUseSpell(myHero, Ignite) == 0 and 1 or 0
+  IRDY = Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
 end
 --Damage
 local function Damage()
@@ -180,10 +180,10 @@ local function Draw()
   dW = WRDY == 1 and Brand.Draw.DW:Value() and 875 or 0
   dE = ERDY == 1 and Brand.Draw.DE:Value() and 650 or 0
   dR = RRDY == 1 and Brand.Draw.DR:Value() and 750 or 0
-  DrawCircle(GetOrigin(myHero), dQ, 0, 0, 0xffff0000)
-  DrawCircle(GetOrigin(myHero), dW, 0, 0, 0xffff0000)
-  DrawCircle(GetOrigin(myHero), dE, 0, 0, 0xffff0000)
-  DrawCircle(GetOrigin(myHero), dR, 0, 0, 0xffff0000)
+  if dQ ~= 0 then DrawCircle(GetOrigin(myHero), dQ, 0, 0, 0xffff0000) end
+  if dW ~= 0 then DrawCircle(GetOrigin(myHero), dW, 0, 0, 0xffff0000) end
+  if dE ~= 0 then DrawCircle(GetOrigin(myHero), dE, 0, 0, 0xffff0000) end
+  if dR ~= 0 then DrawCircle(GetOrigin(myHero), dR, 0, 0, 0xffff0000) end
 end
 --Burns?!
 local function IsBurning(o)
@@ -213,7 +213,7 @@ local function Combo()
   myRange = 1050
   DIST = GOS:GetDistance(target)
   local QPred = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), (math.floor(math.random() * 200) + 1600), 250, 1050, 60, true, false)
-  local WPred = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), 99999, (math.floor(math.random() * 250) + 250), 875, 200, false, false)
+  local WPred = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), 99999, (math.floor(math.random() * 500) + 500), 875, 200, false, false)
   local QH = QPred.HitChance == 1 and 1 or 0
   local WH = WPred.HitChance == 1 and 1 or 0
 	local test = Q and QRDY * QH > 0 and QRDY * 1050 or W and WRDY * WH > 0 and WRDY * 875 or E and ERDY > 0 and ERDY * 650 or R and RRDY > 0 and RRDY * 750 or IRDY * 650 or 0
@@ -222,9 +222,11 @@ local function Combo()
 	  local hp = GetCurrentHP(target)
 	  local mhp = GetMaxHP(target)
 	  local hpreg = GetHPRegen(target) * (1 - (IsOrWillBeIgnited(target) * .5))
-    local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
-    local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
-    local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(target)
+    local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(target)
+    local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(target)
+    local care = GetBuffData(target, "brandablaze")
+    local burntime = care.ExpireTime - GetTickCount() > 0 and (care.ExpireTime - GetTickCount()) * .001 or 4
+    local PDMG = ((maxHealth * .02 * burntime) - (hpreg * .2 * burntime)) * IsBurning(target)
     local TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
     local TotalDamageNoR = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
     local TotalDamageNoIgnite = (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
@@ -246,14 +248,14 @@ local function Combo()
         CastTargetSpell(target, Ignite)
       end
     elseif Health < TotalDamage then
+    	if QRDY == 1 then doQ(target) end
+      if IsBurning(target) == 1 then
+        doW(target)
+      end
     	if RRDY == 1 then
       	dooR(target)
       end
       if ERDY == 1 then doE(target) end
-      if QRDY == 1 then doQ(target) end
-      if IsBurning(target) == 1 then
-        doW(target)
-      end
       if Brand.KS.I:Value() and Health > TotalDamageNoIgnite and DIST < 650 then
         CastTargetSpell(target, Ignite)
       end
@@ -294,17 +296,17 @@ local function Kills()
 	    local hp = GetCurrentHP(n[i])
 	    local mhp = GetMaxHP(n[i])
 	    local hpreg = GetHPRegen(n[i]) * (1 - (IsOrWillBeIgnited(n[i]) * .5))
-      local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
-      local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6
+      local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[i])
+      local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[i])
       local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(n[i])
       local QPred = GetPredictionForPlayer(GetOrigin(myHero), n[i], GetMoveSpeed(n[i]), (math.floor(math.random() * 200) + 1600), 250, 1050, 60, true, false)
-  		local WPred = GetPredictionForPlayer(GetOrigin(myHero), n[i], GetMoveSpeed(n[i]), 99999, (math.floor(math.random() * 250) + 250), 875, 200, false, false)
+  		local WPred = GetPredictionForPlayer(GetOrigin(myHero), n[i], GetMoveSpeed(n[i]), 99999, (math.floor(math.random() * 500) + 500), 875, 200, false, false)
     	TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(n[i]) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
     	local QH = QPred.HitChance == 1 and 1 or 0
   		local WH = WPred.HitChance == 1 and 1 or 0
 			local test = Q and QRDY * QH > 0 and QRDY * 1050 or W and WRDY * WH > 0 and WRDY * 875 or E and ERDY > 0 and ERDY * 650 or R and RRDY > 0 and RRDY * 750 or IRDY * 650 or 0
-    	if Health < xIgnite + IRDY and DIST < 650 then
-    		if QRDY + WRDY + ERDY + RRDY <= 1 then
+    	if Health < xIgnite * IRDY and DIST < 650 then
+    		if QRDY + WRDY + ERDY + RRDY <= 1 and (IsBurning(n[i]) == 0 or (IsBurning(n[i]) == 1 and Health - PDMG > 0)) then
     			if Brand.KS.I:Value() then
           	CastTargetSpell(n[i], Ignite)
         	end
