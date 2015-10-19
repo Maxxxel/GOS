@@ -1,4 +1,4 @@
---Version 0.8 // improved Damage Calc and Ignite
+--Version 0.9 // new long range Ulti KS, OnDraw and OnTick added, some improvements on prediction
 Brand = Menu("Brand", "Brand")
 Brand:Key("Combo", "Combo", string.byte(" "))
 
@@ -8,7 +8,8 @@ Brand.Spells:Boolean("CQ", "Q", true)
 Brand.Spells:Boolean("CW", "W", true)
 Brand.Spells:Boolean("CE", "E", true)
 Brand.Spells:Boolean("CR", "R", true)
-Brand.Spells:Info("InfoSpells2", "Will cast R only if target will be killed by it")
+Brand.Spells:Info("InfoSpells2", "Will cast R only if target will be")
+Brand.Spells:Info("InfoSpells3", "killed by it")
 Brand.Spells:Boolean("KR", "R to kill only", true)
 
 Brand:SubMenu("KS", "Killstuff")
@@ -23,6 +24,9 @@ Brand.KS:Info("InfoKS4", "enemy. Percent: show percent of")
 Brand.KS:Info("InfoKS5", "HP left after full Combo")
 Brand.KS:Boolean("Note", "Notes", true)
 Brand.KS:Boolean("Percent", "Percent", true)
+Brand.KS:Info("InfoKS6", "Long Ulti: cast Ulti if target behind")
+Brand.KS:Info("InfoKS7", "another target can be killed")
+Brand.KS:Boolean("KSR", "Long Ulti", true)
 
 Brand:SubMenu("Draw", "Drawings")
 Brand.Draw:Boolean("Draw", "Draw", true)
@@ -95,21 +99,21 @@ local function dooR(o)
   end
 end
 local function doEW(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875 + 125, 185, false, false)
 	if WPred.HitChance == 1 and GOS:GetDistance(o) < 650 then
 		CastTargetSpell(o, _E)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 	end
 end
 local function doQE(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
 	if QPred.HitChance == 1 and GOS:GetDistance(o) < 650 then
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastTargetSpell(o, _E)
 	end
 end
 local function doWQ(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
 	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
 	if WPred.HitChance == 1 and QPred.HitChance == 1 and GOS:GetDistance(o) < 875 then
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
@@ -118,15 +122,15 @@ local function doWQ(o)
 end
 local function doQW(o)
 	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875 + 125, 185, false, false)
 	if WPred.HitChance == 1 and QPred.HitChance == 1 and GOS:GetDistance(o) < 875 then
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 	end
 end
 local function doEQW(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875 + 250, 185, false, false)
 	if WPred.HitChance == 1 and QPred.HitChance == 1 and GOS:GetDistance(o) < 650 then
 		CastTargetSpell(o, _E)
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
@@ -173,17 +177,6 @@ local function CountEnemyObjectsInRange(Object, range)
   local a = CountEnemyHeroInRange(Object, range)
   local b = CountEnemyMinionInRange(Object, range)
   return a + b
-end
---Draw things
-local function Draw()
-  dQ = QRDY == 1 and Brand.Draw.DQ:Value() and 1050 or 0
-  dW = WRDY == 1 and Brand.Draw.DW:Value() and 875 or 0
-  dE = ERDY == 1 and Brand.Draw.DE:Value() and 650 or 0
-  dR = RRDY == 1 and Brand.Draw.DR:Value() and 750 or 0
-  if dQ ~= 0 then DrawCircle(GetOrigin(myHero), dQ, 0, 0, 0xffff0000) end
-  if dW ~= 0 then DrawCircle(GetOrigin(myHero), dW, 0, 0, 0xffff0000) end
-  if dE ~= 0 then DrawCircle(GetOrigin(myHero), dE, 0, 0, 0xffff0000) end
-  if dR ~= 0 then DrawCircle(GetOrigin(myHero), dR, 0, 0, 0xffff0000) end
 end
 --Burns?!
 local function IsBurning(o)
@@ -252,7 +245,7 @@ local function Combo()
       if IsBurning(target) == 1 then
         doW(target)
       end
-    	if RRDY == 1 then
+    	if RRDY == 1 and QRDY + WRDY + ERDY <= 2 then
       	dooR(target)
       end
       if ERDY == 1 then doE(target) end
@@ -291,7 +284,6 @@ local function Kills()
   for i = 1, #n do
   	local DIST = GOS:GetDistance(n[i])
     if Valid(n[i]) and DIST < 2000 then
-      local drawPos = GetOrigin(n[i])
       local armor = GetArmor(n[i])
 	    local hp = GetCurrentHP(n[i])
 	    local mhp = GetMaxHP(n[i])
@@ -305,52 +297,82 @@ local function Kills()
     	local QH = QPred.HitChance == 1 and 1 or 0
   		local WH = WPred.HitChance == 1 and 1 or 0
 			local test = Q and QRDY * QH > 0 and QRDY * 1050 or W and WRDY * WH > 0 and WRDY * 875 or E and ERDY > 0 and ERDY * 650 or R and RRDY > 0 and RRDY * 750 or IRDY * 650 or 0
-    	if Health < xIgnite * IRDY and DIST < 650 then
-    		if QRDY + WRDY + ERDY + RRDY <= 1 and (IsBurning(n[i]) == 0 or (IsBurning(n[i]) == 1 and Health - PDMG > 0)) then
-    			if Brand.KS.I:Value() then
-          	CastTargetSpell(n[i], Ignite)
-        	end
-    		end
-    	end
-    	if Health < TotalDamage - RDmg * RRDY * (1 + GetRBounce(n[i])) then
-    		if Brand.KS.Note:Value() then
-          DrawCircle(drawPos.x, drawPos.y, drawPos.z, 50, 0, 0, 0xffff0000)
-        end
-      elseif Health < TotalDamage then
-        if Brand.KS.Note:Value() then
-          DrawCircle(drawPos.x, drawPos.y, drawPos.z, 100, 0, 0, 0xffff0000)
-        end
-      else
-      	if Round(((Health - TotalDamage) / maxHealth * 100), 0) > 0 and Brand.KS.Percent:Value() then
-					local drawing = WorldToScreen(1, drawPos)
-					local rounded = Round(((Health - TotalDamage) / maxHealth * 100), 0)
-					DrawText("\n\n" .. rounded .. "%", 15, drawing.x, drawing.y, 0xffff0000) 
-				end
-      end
       if Brand.KS.KS:Value() then
-	      if Health < QDmg + PDMG and QRDY == 1 and GetCurrentMana(myHero) >= 50 and QPred.HitChance == 1 and DIST < test then
-					doQ(n[i])
-				elseif Health < WDmg + PDMG  and WRDY == 1 and Mana(0,1,0,0) == 1 and WPred.HitChance == 1 and DIST < test then
+	      if Health < QDmg + PDMG and QRDY == 1 and GetCurrentMana(myHero) >= 50 and QH == 1 and DIST < test then
+					doQ(n[i])	
+				elseif Health < WDmg + PDMG  and WRDY == 1 and Mana(0,1,0,0) == 1 and WH == 1 and DIST < test then
 					doW(n[i])
 				elseif Health < EDmg + PDMG  and ERDY == 1 and Mana(0,0,1,0) == 1 and DIST < 650 then
 					doE(n[i])
-				elseif Health < EDmg + WDmg * 1.25 + PDMG and ERDY == 1 and WRDY == 1 and Mana(0,1,1,0) == 1 and DIST < test then
+				elseif Health < EDmg + WDmg * 1.25 + PDMG and ERDY == 1 and WRDY == 1 and Mana(0,1,1,0) == 1 and DIST < test and WH == 1 then
 					doEW(n[i])
-				elseif Health < EDmg + QDmg + PDMG  and ERDY == 1 and QRDY == 1 and Mana(1,0,1,0) == 1 and DIST < test and QPred.HitChance == 1 then
+				elseif Health < EDmg + QDmg + PDMG  and ERDY == 1 and QRDY == 1 and Mana(1,0,1,0) == 1 and DIST < test and QH == 1 then
 					doQE(n[i])
-				elseif Health < QDmg + WDmg + PDMG  and QRDY == 1 and WRDY == 1 and Mana(1,1,0,0) == 1 and DIST < test and QPred.HitCHance == 1 and WPred.HitChance == 1 then
+				elseif Health < QDmg + WDmg + PDMG  and QRDY == 1 and WRDY == 1 and Mana(1,1,0,0) == 1 and DIST < test and QH == 1 and WH == 1 then
 					doWQ(n[i])
-				elseif Health < QDmg + WDmg * 1.25 + PDMG  and QRDY == 1 and WRDY == 1 and Mana(1,1,0,0) == 1 and DIST < test and QPred.HitCHance == 1 and WPred.HitChance == 1 then
+				elseif Health < QDmg + WDmg * 1.25 + PDMG  and QRDY == 1 and WRDY == 1 and Mana(1,1,0,0) == 1 and DIST < test and QH == 1 and WH == 1 then
 					doQW(n[i])
-				elseif Health < QDmg + WDmg + EDmg + PDMG  and QRDY == 1 and WRDY == 1 and ERDY == 1 and Mana(1,1,1,0) == 1 and DIST < test then
+				elseif Health < QDmg + WDmg + EDmg + PDMG  and QRDY == 1 and WRDY == 1 and ERDY == 1 and Mana(1,1,1,0) == 1 and DIST < test and QH == 1 and WH == 1 then
 					doEQW(n[i])
+				end
+				for j = 1, #n do
+					if n[j] ~= n[i] and n[j] ~= 0 and n[i] ~= 0 then
+						local hp = GetCurrentHP(n[j])
+						local armor = GetArmor(n[j])
+						local hpreg = GetHPRegen(n[j]) * (1 - (IsOrWillBeIgnited(n[j]) * .5))
+						local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[j])
+						local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(n[j])
+						if Health < (RDmg * RRDY * (1 + GetRBounce(n[j])) + PDMG) * Mana(0,0,0,1) and Brand.KS.KSR:Value() and DIST < 750 and GOS:GetDistance(n[j]) > 750 and GOS:GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
+							dooR(n[i])
+						end
+					end
 				end
 			end
     end
   end
 end
+--Draw things
+OnDraw(function(myHero)
+	if Brand.Draw.Draw:Value() then
+	  dQ = QRDY == 1 and Brand.Draw.DQ:Value() and 1050 or 0
+	  dW = WRDY == 1 and Brand.Draw.DW:Value() and 875 or 0
+	  dE = ERDY == 1 and Brand.Draw.DE:Value() and 650 or 0
+	  dR = RRDY == 1 and Brand.Draw.DR:Value() and 750 or 0
+	  if dQ ~= 0 then DrawCircle(GetOrigin(myHero), dQ, 0, 0, 0xffff0000) end
+	  if dW ~= 0 then DrawCircle(GetOrigin(myHero), dW, 0, 0, 0xffff0000) end
+	  if dE ~= 0 then DrawCircle(GetOrigin(myHero), dE, 0, 0, 0xffff0000) end
+	  if dR ~= 0 then DrawCircle(GetOrigin(myHero), dR, 0, 0, 0xffff0000) end
+	  for i = 1, #n do
+  		local DIST = GOS:GetDistance(n[i])
+    	if Valid(n[i]) and DIST < 2000 then
+	      local drawPos = GetOrigin(n[i])
+	      local armor = GetArmor(n[i])
+		    local hp = GetCurrentHP(n[i])
+		    local mhp = GetMaxHP(n[i])
+		    local hpreg = GetHPRegen(n[i]) * (1 - (IsOrWillBeIgnited(n[i]) * .5))
+	      local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[i])
+	      local maxHealth = mhp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[i])
+	    	if Health < TotalDamage - RDmg * RRDY * (1 + GetRBounce(n[i])) then
+	    		if Brand.KS.Note:Value() then
+	          DrawCircle(drawPos.x, drawPos.y, drawPos.z, 50, 0, 0, 0xffff0000)
+	        end
+	      elseif Health < TotalDamage then
+	        if Brand.KS.Note:Value() then
+	          DrawCircle(drawPos.x, drawPos.y, drawPos.z, 100, 0, 0, 0xffff0000)
+	        end
+	      else
+	      	if Round(((Health - TotalDamage) / maxHealth * 100), 0) > 0 and Brand.KS.Percent:Value() then
+						local drawing = WorldToScreen(1, drawPos)
+						local rounded = Round(((Health - TotalDamage) / maxHealth * 100), 0)
+						DrawText("\n\n" .. rounded .. "%", 15, drawing.x, drawing.y, 0xffff0000) 
+					end
+	      end
+	    end
+	  end
+	end
+end)
 --Call every loop
-OnLoop(function(myHero)
+OnTick(function(myHero)
   GetItemCD()
   GetSpellCD()
   Damage()
@@ -360,7 +382,4 @@ OnLoop(function(myHero)
     Combo()
   end
   Kills()
-  if Brand.Draw.Draw:Value() then
-    Draw()
-  end
 end)
