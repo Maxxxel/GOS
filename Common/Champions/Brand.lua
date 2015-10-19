@@ -322,7 +322,7 @@ local function Kills()
 						local hpreg = GetHPRegen(n[j]) * (1 - (IsOrWillBeIgnited(n[j]) * .5))
 						local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[j])
 						local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(n[j])
-						if Health < (RDmg * RRDY * (1 + GetRBounce(n[j])) + PDMG) * Mana(0,0,0,1) and Brand.KS.KSR:Value() and DIST < 750 and GOS:GetDistance(n[j]) > 750 and GOS:GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
+						if Health < (RDmg * RRDY + PDMG) * Mana(0,0,0,1) and Brand.KS.KSR:Value() and DIST < 750 and GOS:GetDistance(n[j]) > 750 and GOS:GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
 							dooR(n[i])
 						end
 					end
