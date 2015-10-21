@@ -1,4 +1,4 @@
---Version 0.9 // new long range Ulti KS, OnDraw and OnTick added, some improvements on prediction
+--Version 0.91 // small fixes on Combo
 Brand = Menu("Brand", "Brand")
 Brand:Key("Combo", "Combo", string.byte(" "))
 
@@ -241,14 +241,14 @@ local function Combo()
         CastTargetSpell(target, Ignite)
       end
     elseif Health < TotalDamage then
+    	if ERDY == 1 then doE(target) end
     	if QRDY == 1 then doQ(target) end
       if IsBurning(target) == 1 then
         doW(target)
       end
-    	if RRDY == 1 and QRDY + WRDY + ERDY <= 2 then
+    	if IsBurning(target) == 1 and RRDY == 1 then
       	dooR(target)
       end
-      if ERDY == 1 then doE(target) end
       if Brand.KS.I:Value() and Health > TotalDamageNoIgnite and DIST < 650 then
         CastTargetSpell(target, Ignite)
       end
@@ -263,8 +263,8 @@ local function Combo()
         	end
         end
       else
+      	if ERDY == 1 then doE(target) end
       	if WRDY == 1 then doW(target) end
-        if ERDY == 1 then doE(target) end
         if QRDY == 1 then
 	        if (ERDY + WRDY == 0) or (DIST > 875) or (WRDY == 1 and WH == 0) or (ERDY == 1 and DIST > 650) then
 	          doQ(target)
