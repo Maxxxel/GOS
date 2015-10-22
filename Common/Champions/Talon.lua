@@ -254,16 +254,18 @@ end
 ------------------------------------------
 OnProcessSpellComplete(function(Object,Spell)
 	if Object == GetMyHero() then
-		if Spell.name:lower():find("attack") then
-			doQ = true
-			lastAA = GetTickCount()
-			CastEmote(EMOTE_DANCE)
-			MoveToXYZ(GetMousePos())
-    elseif Spell.name:lower():find("noxiandiplomacy") then
-    	doQ = false
-    	QRDY = 0
-    	LS = "Q"
-    end
+		if Talon.Combo:Value() then
+			if Spell.name:lower():find("attack") then
+				doQ = true
+				lastAA = GetTickCount()
+				CastEmote(EMOTE_DANCE)
+				MoveToXYZ(GetMousePos())
+	    elseif Spell.name:lower():find("noxiandiplomacy") then
+	    	doQ = false
+	    	QRDY = 0
+	    	LS = "Q"
+	    end
+	  end
      if Spell.name:lower():find("rake") then 
     	LS = "W"
     	Wtime = Spell.animationTime * 125 + GetTickCount()
