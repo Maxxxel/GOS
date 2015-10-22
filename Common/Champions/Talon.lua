@@ -9,24 +9,22 @@ Talon.Harass:Key("DoIt","Harass",string.byte("X"))
 Talon.Harass:Boolean("Auto", "Auto Harass", false)
 Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.2
---updated fixed an error with to early Ulti, added prediction on W
+--version = 1.3
+--fixed WPred, fasten up Ulti + Script
 ------------------------------------------
 
 ------------------------------------------
 --Variables
 ------------------------------------------
-local xHydra, HRDY, QRDY, WRDY, ERDY, R1RDY, R2RDY, HydraCast, HydraCastTime, xAA, xQ, xQ2, xW, xE, xR, IRDY, xIgnite, Wtime, dmgOverTime, Check = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+local xHydra, HRDY, QRDY, WRDY, ERDY, R1RDY, R2RDY, HydraCast, HydraCastTime, xAA, xQ, xQ2, xW, xE, xR, IRDY, xIgnite, Wtime, dmgOverTime, Check, lastAA, AAREADY = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 local target, LS
 local myHero = GetMyHero()
-local stopMove = false
+local stopMove, doQ = false, false
 ------------------------------------------
 --Tables
 ------------------------------------------
 local KSN = {}
 local n = {}
-local Attack = {Target = nil, Time = {Start = 0, Reset = 0, End = 0}}
-local Damage = {Success = false}
 ------------------------------------------
 --Check for Items
 ------------------------------------------
@@ -110,30 +108,11 @@ local function Mana(a,b,c,d,e)
 	return GetCurrentMana(myHero) > a + b + c + d and 1 or 0
 end
 ------------------------------------------
---Check if Attack is ready
-------------------------------------------
-function AttackReadiness()
-	if Damage.Success then
-		local time = GetTickCount()
-		local APS = (Attack.Time.End - time) --time between DamageProcs
-	  local xTime = (Attack.Time.Start ~= 0 and Attack.Time.Start + APS) or time
-	  local value = time-xTime
-	  if Check == 0 then
-			Check = value
-		elseif Check~=0 and value>APS or (Attack.Time.Reset<=value and not Damage.Success) then
-			Check = 0
-		end
-		return Check~=0 and 1-value/Check<1 and 1-value/Check or 1
-	else
-		return 1
-	end
-end
-------------------------------------------
 --Spells
 ------------------------------------------
 local function W(o)
 	if GOS:GetDistance(o) <= 700 - GetMoveSpeed(o) * IsMoving(o) * .1 then
-		local WSS = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 2400, 250, 700, 701 - GOS:GetDistance(o), false, false)
+		local WSS = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 1200, 250, 700, 10, false, false)
 		if WSS.HitChance == 1 then
 			CastSkillShot(_W, WSS.PredPos)
 		end
@@ -144,7 +123,7 @@ local function E(o)
 	if GOS:GetDistance(o) <= 700 then
 		stopMove = true
 		CastTargetSpell(o, _E)
-		if (AttackReadiness() ~= 1 or Damage.Success) and GOS:GetDistance(o) <= 300 then
+		if AAREADY ~= 1 and doQ and GOS:GetDistance(o) <= 300 then
 			CastSpell(_Q)
 		end
 	end
@@ -168,14 +147,6 @@ local function Round(val, decimal)
 		return decimal ~= nil and math.floor((val * 10 ^ decimal) + 0.5) / (10 ^ decimal) or math.floor(val + 0.5)
 end
 ------------------------------------------
---Distance to xyz (xz) position
-------------------------------------------
-local function GetDistanceXYZ(x, z, x2, z2)
-	a = x2 - x or nil
-	b = z2 - z or nil
-  return math.sqrt( a * a + b * b) or 99999
-end
-------------------------------------------
 --Main Function, calcs the Killnotis and which Spell to use on Combo
 ------------------------------------------
 local function SpellSequence()
@@ -186,25 +157,17 @@ local function SpellSequence()
 	  	local hp = GetCurrentHP(n[i])
 	  	local mhp = GetMaxHP(n[i])
 	  	local hpreg = GetHPRegen(n[i])
-			local drawPos = GetOrigin(n[i])
 			local shield = GetDmgShield(n[i])
 		 	local maxHealth = mhp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
 		 	local health = hp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
     	if GOS:GetDistance(n[i]) <= 2000 and Talon.KS.Percent and Valid(n[i]) then
-      	local maxDMG = xHYDRA + xIgnite + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))) * (2 -  R2RDY))
-	      local maxDMGNoR = xHYDRA + xIgnite + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i]))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))))
+	      local maxDMG = xHYDRA + xIgnite + xAA * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))) * (2 -  R2RDY))
+	      local maxDMGNoR = xHYDRA + xIgnite + (xAA * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i])))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i]))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))))
     		local seconds = 0
     		local Q2Timer = 0
     		Q2Timer = HasQ2(n[i]) and Q2Timer == 0 and GetTickCount() or seconds >= 6 and 0 or Q2Timer
     		seconds = HasQ2(n[i]) and Q2Timer ~= 0 and (GetTickCount() - Q2Timer) * .001 or 0
     		dmgOverTime = HasQ2(n[i]) and seconds ~= 0 and ((10 * GetCastLevel(myHero,_Q) + GetBonusDmg(myHero)) / 6) * seconds or 0
-    		if health < xIgnite then
-    			DrawCircle(drawPos, 50, 0, 0, 0xff00ff00) --green
-    		elseif health < maxDMGNoR then
-    			DrawCircle(drawPos, 100, 0, 0, 0xffffff00) --yellow
-    		elseif health < maxDMG then
-    			DrawCircle(drawPos, 150, 0, 0, 0xffff0000) --red
-    		end
     		if health < R2RDY * xR then
     			R2(n[i])
     		end
@@ -218,11 +181,6 @@ local function SpellSequence()
     		elseif IRDY == 1 and health < xIgnite and GOS:GetDistance(n[i]) <= 600 then
     			CastTargetSpell(n[i], Ignite)
     		end
-				if Round(((health - maxDMG) / maxHealth * 100), 0) > 0 then
-					local drawing = WorldToScreen(1, GetOrigin(n[i]))
-					local rounded = Round(((health - maxDMG) / maxHealth * 100), 0)
-					DrawText("\n\n" .. rounded .. "%", 15, drawing.x, drawing.y, 0xffff0000) 
-				end
 			end
 		end
 	end
@@ -238,62 +196,75 @@ local function Combo()
 		local MOVE = GetMoveSpeed(target)
 		local SHIELD = GetDmgShield(target)
 		local LIFE = HP * ((100 + ((ARMOR - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + HPREG * 6 + SHIELD
-		local myRange = GetRange(myHero) + GetHitBox(target) + GetHitBox(myHero) - (GetMoveSpeed(myHero) - GetMoveSpeed(target)) * IsMoving(target) * ((Attack.Time.Reset - Attack.Time.Start) * .001 + GetLatency() * .001)
+		local myRange = GetRange(myHero) + GetHitBox(target) + GetHitBox(myHero) - math.min((GetMoveSpeed(target) - GetMoveSpeed(myHero)), 280) * IsMoving(target) * (GetWindUp(myHero) + GetLatency() * .001)
 		local maxDMG = xHYDRA + xIgnite + xAA * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target)))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(target))) + xE * (ERDY + Emulti(target)))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target)))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target))) * (2 -  R2RDY))
  		local maxDMGNoR = xHYDRA + xIgnite + (xAA * ((1 + (-1 * (ERDY + Emulti(target)))) + xE * (ERDY + Emulti(target)))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(target)))) + xE * (ERDY + Emulti(target))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target))))
 		if ERDY == 1 then E(target) end
-		if (AttackReadiness() == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
+		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
 			AttackUnit(target)
 			GOS:CastOffensiveItems(target)
 		end
-		if (AttackReadiness() ~= 1 or Damage.Success) and DIST < myRange and QRDY == 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 then
+		if DIST < myRange and QRDY == 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and doQ and AAREADY ~= 1 then
 			CastSpell(_Q)
 		end
 		if not Talon.KS.R:Value() or LIFE < maxDMG and LIFE > maxDMGNoR then
 			R1(target)
 		end
-		if WRDY == 1 and (AttackReadiness() ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0 or DIST > myRange) then
+		if WRDY == 1 and ((AAREADY ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange) then
 			W(target) 
 		end
 		if DIST > myRange + 50 then
 			MoveToMouse()
-		elseif DIST < myRange and AttackReadiness() <= 0.5 and QRDY == 0 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 then
+		elseif DIST < myRange and AAREADY ~= 1 and QRDY == 0 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 then
 			MoveToMouse()
 		end
 	else
 		MoveToMouse()
 	end
 end
-------------------------------------------
---AAHandling resets the variables for AA
-------------------------------------------
-local function AAHandling()
-	--Attack = AttackReadiness() == 1 and (Damage.Success or Attack.Time.End + (Attack.Time.End - Attack.Time.Start) * 2 < GetTickCount()) and {Time = {Start = 0, End  = 0, Reset = 0}, Target = nil, Pos = {Start = {x = 0, y = 0, z = 0}, End = {x = 0, y = 0, z = 0}}, Type = nil} or Attack
-	Damage = AttackReadiness() == 1 and (Damage.Success or Attack.Time.End < GetTickCount()) and {Success = false, Position = {x = 0, y = 0, z = 0}, Time = 0} or Damage
+--
+local function Harass()
+	if GetCurrentMana(myHero) / (GetMaxMana(myHero) * .01) >= Talon.Harass.Mana:Value() then
+		if WRDY == 1 then
+			local targetH = GOS:GetTarget(700, DAMAGE_PHYSICAL)
+			if targetH and GOS:GetDistance(targetH) < 700 then W(targetH) end
+			if Talon.Harass.DoIt:Value() then MoveToMouse() end
+		else
+			if Talon.Harass.DoIt:Value() then MoveToMouse() end
+		end
+	end
+end
+--
+local function MISC()
+	local buffer = 0
+	buffer = not LS and GetTickCount() or LS and buffer
+	LS = GetTickCount() - buffer < 2800 and LS ~= "E" and LS or GetTickCount() - buffer < 50 and LS == "E" and LS or nil
+	stopMove = LS ~= "E" and false or stopMove
+	AAREADY = (GetTickCount() - lastAA) * .001 + 0.001 >= GetWindUp(myHero) and 1 or 0
+	lastAA = AAREADY == 1 and 0 or 1
+	doQ = doQ and AAREADY == 1 and false or doQ
 end
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------- OnLoop, OnProcessSpell, OnCreateObject, all those Globals	----------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 ------------------------------------------
 --Check for Attack cast by Talon
 ------------------------------------------
-OnProcessSpell(function(Object,Spell)
-  local ObjName = GetObjectName(Object)
-  if Object and ObjName == GetObjectName(myHero) then
-    if Spell.name:lower():find("attack") then
-    	stopMove = true
-      local time = GetTickCount()
-      Attack = {Time = {Start = time, End  = time + Spell.animationTime * 1000, Reset = time + Spell.windUpTime * 1000}, Target = Spell.target, Pos = {Start = {x = Spell.startPos.x, y = Spell.startPos.y, z = Spell.startPos.z}, End = {x = Spell.endPos.x, y = Spell.endPos.y, z = Spell.endPos.z}}, Type = "Basic"}
+OnProcessSpellComplete(function(Object,Spell)
+	if Object == GetMyHero() then
+		if Spell.name:lower():find("attack") then
+			doQ = true
+			lastAA = GetTickCount()
+			CastEmote(EMOTE_DANCE)
+			MoveToXYZ(GetMousePos())
     elseif Spell.name:lower():find("noxiandiplomacy") then
-    	QRDY = 1
+    	doQ = false
+    	QRDY = 0
     	LS = "Q"
-      local time = GetTickCount()
-      Attack = {Time = {Start = time, End  = time + Spell.animationTime * 1000, Reset = 0}, Target = Spell.target, Pos = {Start = {x = Spell.startPos.x, y = Spell.startPos.y, z = Spell.startPos.z}, End = {x = Spell.endPos.x, y = Spell.endPos.y, z = Spell.endPos.z}}, Type = "Q"}
     end
-    if Spell.name:lower():find("rake") then 
+     if Spell.name:lower():find("rake") then 
     	LS = "W"
     	Wtime = Spell.animationTime * 125 + GetTickCount()
     end
@@ -305,47 +276,53 @@ OnProcessSpell(function(Object,Spell)
 	end
 end)
 ------------------------------------------
---Check for aa finishs
-------------------------------------------
-OnCreateObj(function(Object)
-	if Object and GOS:GetDistance(Object) <= 500 then
-	  local Name  = GetObjectBaseName(Object)
-	  if Name == "globalhit_bloodslash.troy" or Name == "Pulverize_cas3.troy" then
-	  	if Attack.Target then
-	  		local Pos = GetOrigin(Object)
-		    if GetDistanceXYZ(Pos.x, Pos.z, Attack.Pos.Start.x, Attack.Pos.Start.z) > 50 then
-		    	stopMove = false
-		      Damage = {Success = true, Position = {x = Pos.x, y = Pos.y, z = Pos.z}, Time = GetTickCount()}
-		   	end
-		  end
-	  end 
-	end       
-end)
-------------------------------------------
 --Loop, which functions are perma called
 ------------------------------------------
-OnLoop(function(myHero)
+OnDraw(function(myHero)
+	if #n > 0 then
+		for  i = 1, #n do
+			if GOS:GetDistance(n[i]) < 2000 and Valid(n[i]) then
+				local drawPos = GetOrigin(n[i])
+		  	local armor = GetArmor(n[i])
+		  	local hp = GetCurrentHP(n[i])
+		  	local mhp = GetMaxHP(n[i])
+		  	local hpreg = GetHPRegen(n[i])
+				local shield = GetDmgShield(n[i])
+			 	local maxHealth = mhp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
+			 	local health = hp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
+			 	local maxDMG = xHYDRA + xIgnite + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))) * (2 -  R2RDY))
+		    local maxDMGNoR = xHYDRA + xIgnite + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i]))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))))
+	    	if Talon.KS.Percent then
+	      	if Round(((health - maxDMG) / maxHealth * 100), 0) > 0 then
+						local drawing = WorldToScreen(1, GetOrigin(n[i]))
+						local rounded = Round(((health - maxDMG) / maxHealth * 100), 0)
+						DrawText("\n\n" .. rounded .. "%", 15, drawing.x, drawing.y, 0xffff0000) 
+					end
+				end
+				if health < xIgnite then
+	  			DrawCircle(drawPos, 50, 0, 0, 0xff00ff00) --green
+	  		elseif health < maxDMGNoR then
+	  			DrawCircle(drawPos, 100, 0, 0, 0xffffff00) --yellow
+	  		elseif health < maxDMG then
+	  			DrawCircle(drawPos, 150, 0, 0, 0xffff0000) --red
+	  		end
+	  	end
+	  end
+	end
+end)
+
+OnTick(function(myHero)
 	n = GOS:GetEnemyHeroes()
 	if not IsDead(myHero) then
 		CheckItemCD()
 		DamageFunc()
 		SpellSequence()
-		AAHandling()
 		CD()
   	if Talon.Combo:Value() then
     	Combo()
   	elseif Talon.Harass.DoIt:Value() or Talon.Harass.Auto:Value() then
-  		if GetCurrentMana(myHero) / (GetMaxMana(myHero) * .01) >= Talon.Harass.Mana:Value() then
-  			if WRDY == 1 then
-  				local targetH = GOS:GetTarget(700, DAMAGE_PHYSICAL)
-  				if targetH and GOS:GetDistance(targetH) < 700 then W(targetH) end
-  				if Talon.Harass.DoIt:Value() then MoveToMouse() end
-  			end
-  		end
+  		Harass()
   	end
 	end
-	local buffer = 0
-	buffer = not LS and GetTickCount() or LS and buffer
-	LS = GetTickCount() - buffer < 2800 and LS ~= "E" and LS or GetTickCount() - buffer < 50 and LS == "E" and LS or nil
-	stopMove = LS ~= "E" and false or stopMove
+	MISC()
 end)
