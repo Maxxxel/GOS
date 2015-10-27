@@ -1,12 +1,16 @@
+--version 0.1
+--updated for new loader
+
+require('Inspired')
 require('MapPositionGOS')
 
 function CreepBlock(x,y,z,width)
     local PosCheck={x=x,y=y,z=z}
     width=width+40
     if PosCheck.x~=nil then
-        local Q=GOS:ClosestMinion(PosCheck,MINION_ENEMY)
-        local J=GOS:ClosestMinion(PosCheck,MINION_JUNGLE)
-    local QPos,JPos=GetOrigin(Q),GetOrigin(J)
+        local Q=ClosestMinion(PosCheck,MINION_ENEMY)
+        local J=ClosestMinion(PosCheck,MINION_JUNGLE)
+        local QPos,JPos=GetOrigin(Q),GetOrigin(J)
     if Q~=nil or J~=nil then
             if GetDistanceXYZ(QPos.x,QPos.z,PosCheck.x,PosCheck.z)<=width then
                 return 1
