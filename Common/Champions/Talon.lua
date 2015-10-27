@@ -1,16 +1,16 @@
-Talon=Menu("Talon","Maxxxel Talon God")
+Talon=MenuConfig("Talon","Maxxxel Talon God")
 Talon:Key("Combo","Combo",string.byte(" "))
-Talon:SubMenu("KS","Killfunctions")
+Talon:Menu("KS","Killfunctions")
 Talon.KS:Boolean("Ignite","Auto-Ignite",true)
 Talon.KS:Boolean("R", "Smart Ulti",true)
 Talon.KS:Boolean("Percent","Show % Kill",true)
-Talon:SubMenu("Harass", "Harass Menu")
+Talon:Menu("Harass", "Harass Menu")
 Talon.Harass:Key("DoIt","Harass",string.byte("X"))
 Talon.Harass:Boolean("Auto", "Auto Harass", false)
 Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.3
---fixed WPred, fasten up Ulti + Script
+--version = 1.4
+--New Menu
 ------------------------------------------
 
 ------------------------------------------
@@ -82,9 +82,24 @@ local function IsMoving(unit)
 	local t = GetPredictionForPlayer(GetOrigin(myHero), unit, GetMoveSpeed(unit), 99999, 0, 2000, 1, false, false)
 	local k = {x = t.PredPos.x, y = t.PredPos.y, z = t.PredPos.z}
 	local p = GetOrigin(unit)
-	local d1 = GOS:GetDistance(p)
-	local d2 = GOS:GetDistance(k)
+	local d1 = GetDistance(p)
+	local d2 = GetDistance(k)
 	return d1 < d2 and 1 or 0
+end
+------------------------------------------
+--Get Target to Harass
+------------------------------------------
+function GetTarget(range, damageType)	
+	damageType = damageType or 2
+    local target, steps = nil, 10000
+    for _, k in pairs(GetEnemyHeroes()) do
+        local step = GetCurrentHP(k) / CalcDamage(GetMyHero(), k, DAMAGE_PHYSICAL == damageType and 100 or 0, DAMAGE_MAGIC == damageType and 100 or 0)
+        if k and ValidTarget(k, range) and step < steps then
+            target = k
+            steps = step
+        end
+    end
+    return target
 end
 ------------------------------------------
 --Check Spells for CD
@@ -111,7 +126,7 @@ end
 --Spells
 ------------------------------------------
 local function W(o)
-	if GOS:GetDistance(o) <= 700 - GetMoveSpeed(o) * IsMoving(o) * .1 then
+	if GetDistance(o) <= 700 - GetMoveSpeed(o) * IsMoving(o) * .1 then
 		local WSS = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 1200, 250, 700, 10, false, false)
 		if WSS.HitChance == 1 then
 			CastSkillShot(_W, WSS.PredPos)
@@ -120,23 +135,23 @@ local function W(o)
 end
 
 local function E(o)
-	if GOS:GetDistance(o) <= 700 then
+	if GetDistance(o) <= 700 then
 		stopMove = true
 		CastTargetSpell(o, _E)
-		if AAREADY ~= 1 and doQ and GOS:GetDistance(o) <= 300 then
+		if AAREADY ~= 1 and doQ and GetDistance(o) <= 300 then
 			CastSpell(_Q)
 		end
 	end
 end
 
 local function R1(o)
-	if GOS:GetDistance(o) <= 650 - GetMoveSpeed(o) * IsMoving(o) * .15 then
+	if GetDistance(o) <= 650 - GetMoveSpeed(o) * IsMoving(o) * .15 then
 		CastSpell(_R)
 	end
 end
 
 local function R2(o)
-	if GetCastName(myHero, _R) == "talonshadowassaulttoggle" and GOS:GetDistance(o) <= 650 - GetMoveSpeed(o) * IsMoving(o) * .15 then
+	if GetCastName(myHero, _R) == "talonshadowassaulttoggle" and GetDistance(o) <= 650 - GetMoveSpeed(o) * IsMoving(o) * .15 then
 	  CastSpell(_R)
 	end
 end
@@ -160,7 +175,7 @@ local function SpellSequence()
 			local shield = GetDmgShield(n[i])
 		 	local maxHealth = mhp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
 		 	local health = hp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
-    	if GOS:GetDistance(n[i]) <= 2000 and Talon.KS.Percent and Valid(n[i]) then
+    	if GetDistance(n[i]) <= 2000 and Talon.KS.Percent and Valid(n[i]) then
 	      local maxDMG = xHYDRA + xIgnite + xAA * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))) * (2 -  R2RDY))
 	      local maxDMGNoR = xHYDRA + xIgnite + (xAA * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i])))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i]))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))))
     		local seconds = 0
@@ -171,14 +186,14 @@ local function SpellSequence()
     		if health < R2RDY * xR then
     			R2(n[i])
     		end
-    		if		 HRDY == 1 and IRDY == 1 and health < maxDMG and GOS:GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
-					GOS:CastOffensiveItems(n[i])
+    		if		 HRDY == 1 and IRDY == 1 and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
+					CastOffensiveItems(n[i])
 					CastTargetSpell(n[i], Ignite)
-    		elseif HRDY == 1 and IRDY == 0 and health < maxDMG and GOS:GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
-    			GOS:CastOffensiveItems(n[i])
-    		elseif HRDY == 0 and IRDY == 1 and health < maxDMG and GOS:GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
+    		elseif HRDY == 1 and IRDY == 0 and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
+    			CastOffensiveItems(n[i])
+    		elseif HRDY == 0 and IRDY == 1 and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
     			CastTargetSpell(n[i], Ignite)
-    		elseif IRDY == 1 and health < xIgnite and GOS:GetDistance(n[i]) <= 600 then
+    		elseif IRDY == 1 and health < xIgnite and GetDistance(n[i]) <= 600 then
     			CastTargetSpell(n[i], Ignite)
     		end
 			end
@@ -188,8 +203,8 @@ end
 --
 local function Combo()
 	target = GetCurrentTarget()
-	if target and Valid(target) and GOS:GetDistance(target) <= 725 then
-		local DIST = GOS:GetDistance(target)
+	if target and Valid(target) and GetDistance(target) <= 725 then
+		local DIST = GetDistance(target)
 		local ARMOR = GetArmor(target)
 		local HPREG = GetHPRegen(target)
 		local HP = GetCurrentHP(target)
@@ -202,7 +217,7 @@ local function Combo()
 		if ERDY == 1 then E(target) end
 		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
 			AttackUnit(target)
-			GOS:CastOffensiveItems(target)
+			CastOffensiveItems(target)
 		end
 		if DIST < myRange and QRDY == 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and doQ and AAREADY ~= 1 then
 			CastSpell(_Q)
@@ -226,8 +241,8 @@ end
 local function Harass()
 	if GetCurrentMana(myHero) / (GetMaxMana(myHero) * .01) >= Talon.Harass.Mana:Value() then
 		if WRDY == 1 then
-			local targetH = GOS:GetTarget(700, DAMAGE_PHYSICAL)
-			if targetH and GOS:GetDistance(targetH) < 700 then W(targetH) end
+			local targetH = GetTarget(700, DAMAGE_PHYSICAL)
+			if targetH and GetDistance(targetH) < 700 then W(targetH) end
 			if Talon.Harass.DoIt:Value() then MoveToMouse() end
 		else
 			if Talon.Harass.DoIt:Value() then MoveToMouse() end
@@ -283,7 +298,7 @@ end)
 OnDraw(function(myHero)
 	if #n > 0 then
 		for  i = 1, #n do
-			if GOS:GetDistance(n[i]) < 2000 and Valid(n[i]) then
+			if GetDistance(n[i]) < 2000 and Valid(n[i]) then
 				local drawPos = GetOrigin(n[i])
 		  	local armor = GetArmor(n[i])
 		  	local hp = GetCurrentHP(n[i])
@@ -314,7 +329,7 @@ OnDraw(function(myHero)
 end)
 
 OnTick(function(myHero)
-	n = GOS:GetEnemyHeroes()
+	n = GetEnemyHeroes()
 	if not IsDead(myHero) then
 		CheckItemCD()
 		DamageFunc()
