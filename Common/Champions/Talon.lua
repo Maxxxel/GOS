@@ -1,5 +1,5 @@
-if GetObjectName(myHero) ~= "Talon" then return end
 require('Inspired')
+if GetObjectName(myHero) ~= "Talon" then return end
 
 Talon=MenuConfig("Talon","Maxxxel Talon God")
 Talon:Key("Combo","Combo",string.byte(" "))
