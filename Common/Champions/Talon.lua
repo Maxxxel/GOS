@@ -1,3 +1,4 @@
+if GetObjectName(myHero) ~= "Talon" then return end
 Talon=MenuConfig("Talon","Maxxxel Talon God")
 Talon:Key("Combo","Combo",string.byte(" "))
 Talon:Menu("KS","Killfunctions")
