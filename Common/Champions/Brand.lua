@@ -1,5 +1,5 @@
-if GetObjectName(myHero) ~= "Brand" then return end
 require('Inspired')
+if GetObjectName(myHero) ~= "Brand" then return end
 --Version 1.0 // new Menu
 
 Brand = MenuConfig("Brand", "Brand")
