@@ -1,21 +1,24 @@
-require 'MapPositionGOS'
---require Valdorian xD
+if GetObjectName(myHero) ~= "LeBlanc" then return end
+require('MapPositionGOS')
+require('Inspired')
 
-LeBlanc = Menu("LeBlanc", "LeBlanc")
-LeBlanc:SubMenu("Keys","Keys")
+--version = 0.6 
+--new loader
+
+LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
+LeBlanc:Menu("Keys","Keys")
 LeBlanc.Keys:Key("DoQ", "Q", string.byte("Q"))
 LeBlanc.Keys:Key("DoE", "E", string.byte("E"))
 LeBlanc.Keys:Key("Harass", "Harass", string.byte("X"))
 LeBlanc.Keys:Key("Combo", "Combo", string.byte(" "))
-LeBlanc:SubMenu("KS","Kill Functions")
+LeBlanc:Menu("KS","Kill Functions")
 LeBlanc.KS:Boolean("Mult", "Calc 2 E proc", false)
 LeBlanc.KS:Boolean("KSNotes", "KS Notes", true)
 LeBlanc.KS:Boolean("Percent", "Percent Notes", true)
-LeBlanc:SubMenu("Misc","Misc")
+LeBlanc:Menu("Misc","Misc")
 LeBlanc.Misc:Boolean("Draw", "Draw Circles", true)
 LeBlanc.Misc:Boolean("MR", "Manual Return", true)
 --Variables--
---version = 0.5 --added manual return option
 local mapID = GetMapID()
 local ls
 local target
@@ -188,7 +191,7 @@ local function Harass()
 	if mapID==SUMMONERS_RIFT then
 		EPos = Vector(targetPos.x,0,targetPos.z)
 		HPos = Vector(myHeroPos.x,0,myHeroPos.z)
-		WPos = HPos+(HPos-EPos)*(-650/GOS:GetDistance(HPos,EPos))
+		WPos = HPos+(HPos-EPos)*(-650/GetDistance(HPos,EPos))
 		if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 			Wall = 1
 		else 
@@ -198,7 +201,7 @@ local function Harass()
 		--No Other Maps Supported atm
 		Wall=0
 	end
-	if LeBlanc.Keys.Harass:Value() and GOS:GetDistance(target)<=700 then
+	if LeBlanc.Keys.Harass:Value() and GetDistance(target)<=700 then
 		if 		 CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,n)==1 then Q(target)
 		elseif CD(n,n,1,n,n,n,n,n,n)==1 and Mana(n,1,n)==1 and Wall==0 then W(target)
 		elseif CD(n,n,n,1,n,n,n,n,n)==1 then W2()
@@ -300,13 +303,13 @@ local function SpellSequence()
 	    local drawPos = GetOrigin(n[i])
 	    local testPos = WorldToScreen(1, drawPos)
     	if Valid(n[i]) then
-    		if GOS:GetDistance(n[i])<=2000 then
+    		if GetDistance(n[i])<=2000 then
 					EPred = GetPredictionForPlayer(GetOrigin(myHero),n[i],GetMoveSpeed(n[i]),1550,150,950,55,true,true)
 					WPred = GetPredictionForPlayer(GetOrigin(myHero),n[i],GetMoveSpeed(n[i]),1450,250,600,250,false,true)
 					if mapID==SUMMONERS_RIFT then
 						EPos = Vector(drawPos.x,0,drawPos.z)
 						HPos = Vector(myHeroPos.x,0,myHeroPos.z)
-						WPos = HPos+(HPos-EPos) * (-650 / GOS:GetDistance(HPos,EPos))
+						WPos = HPos+(HPos-EPos) * (-650 / GetDistance(HPos,EPos))
 						if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 							Wall = 1
 						else 
@@ -425,13 +428,13 @@ local function SpellSequence()
 					end
 					for v=from,to do
 						if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e,KSN[v].f,KSN[v].g,KSN[v].h,KSN[v].i)==1 and Mana(KSN[v].a,KSN[v].c,KSN[v].g)==1 and health < KSN[v].Damage then
-							if KSN[v].Dist==1 and GOS:GetDistance(n[i])>700 and GOS:GetDistance(n[i])<=1300 - GetMoveSpeed(n[i]) * .3 and LeBlanc.KS.KSNotes:Value() then
+							if KSN[v].Dist==1 and GetDistance(n[i])>700 and GetDistance(n[i])<=1300 - GetMoveSpeed(n[i]) * .3 and LeBlanc.KS.KSNotes:Value() then
 								if (KSN[v].Block==1 and Block==1) or (KSN[v].Wall==1 and Wall==1) then 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
 								else 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffff0000)
 								end
-							elseif KSN[v].Dist==0 and GOS:GetDistance(n[i])<700 and LeBlanc.KS.KSNotes:Value() then
+							elseif KSN[v].Dist==0 and GetDistance(n[i])<700 and LeBlanc.KS.KSNotes:Value() then
 								if (KSN[v].Block==1 and Block==1) or (KSN[v].Wall==1 and Wall==1) then 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
 								else 
@@ -537,7 +540,7 @@ local function SpellSequence()
 		end
 	end
 	if LeBlanc.Keys.Combo:Value() and Valid(target) and not IsDead(myHero) then
-		if GOS:GetDistance(target)<=2000 then
+		if GetDistance(target)<=2000 then
 			local targetPos = GetOrigin(target)
 			local targetHP = ( GetCurrentHP(target)*((100+(((GetMagicResist(target)*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(target)*6)
 			EPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1550,150,950,55,true,true)
@@ -545,7 +548,7 @@ local function SpellSequence()
 			if mapID==SUMMONERS_RIFT then
 				EPos = Vector(targetPos.x,0,targetPos.z)
 				HPos = Vector(myHeroPos.x,0,myHeroPos.z)
-				WPos = HPos+(HPos-EPos)*(-650/GOS:GetDistance(HPos,EPos))
+				WPos = HPos+(HPos-EPos)*(-650/GetDistance(HPos,EPos))
 				if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 					WallT = 1
 				else 
@@ -555,7 +558,7 @@ local function SpellSequence()
 				--No other maps supported atm
 				WallT=0
 			end
-			if GOS:GetDistance(target)<=700 then
+			if GetDistance(target)<=700 then
 			 --killable
 			 --normal
 						if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or
@@ -596,7 +599,7 @@ local function SpellSequence()
 								CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
 								CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
 								CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
-					W(target)
+					W(target) 
 				elseif (CD(0,0,0,n,1,n,0,0,1)==1 and Mana(0,0,0)==1 or
 								CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
 								CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
@@ -607,7 +610,7 @@ local function SpellSequence()
 								CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
 								CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
 								CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
-					WR(target)
+					WR(target) 
 				elseif (CD(0,0,0,n,0,n,1,0,n)==1 and Mana(0,0,1)==1 or
 								CD(0,n,0,n,n,n,1,n,1)==1 and Mana(0,0,1)==1 or
 								CD(0,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 or
@@ -619,7 +622,7 @@ local function SpellSequence()
 								CD(n,0,0,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
 								CD(0,0,0,0,0,0,1,0,0)==1 and Mana(0,0,1)==1 or
 								CD(0,0,0,n,0,n,1,n,0)==1 and Mana(0,0,1)==1) and EPred.HitChance==1 then
-					E(target)
+					E(target) 
 				elseif (CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1 or											
 								CD(0,0,0,n,0,n,1,1,1)==1 and Mana(0,0,1)==1 or							
 								CD(1,0,n,n,0,n,n,1,1)==1 and Mana(1,0,0)==1 or								
@@ -632,7 +635,7 @@ local function SpellSequence()
 								CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1) and EPred.HitChance==1 then
 					ER(target)
 				end
-			elseif GOS:GetDistance(target)>700 and GOS:GetDistance(target)<1300 - GetMoveSpeed(target) * .3 then
+			elseif GetDistance(target)>700 and GetDistance(target)<1300 - GetMoveSpeed(target) * .3 then
 				if 			CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then WL(target) end	
 			end
 		end
@@ -645,12 +648,12 @@ local function SpellSequence()
 		end
 	end
 	if Valid(target) and not IsDead(myHero) then
-		if LeBlanc.Keys.DoQ:Value() and Valid(target) and GOS:GetDistance(target)<=700 then
+		if LeBlanc.Keys.DoQ:Value() and Valid(target) and GetDistance(target)<=700 then
 			if 			CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,n,n)==1 then Q(target)
 			elseif 	CD(n,1,n,n,n,n,n,n,1)==1 and Mana(n,n,n)==1 then QR(target)
 			end
 		end
-		if LeBlanc.Keys.DoE:Value() and Valid(target) and GOS:GetDistance(target)<=950 then
+		if LeBlanc.Keys.DoE:Value() and Valid(target) and GetDistance(target)<=950 then
 			if 			CD(n,n,n,n,n,n,1,n,n)==1 and Mana(n,n,1)==1 then E(target)
 			elseif	CD(n,n,n,n,n,n,n,1,1 )==1 and Mana(n,n,n)==1 then ER(target)
 			end
@@ -671,7 +674,7 @@ OnProcessSpell(function(unit, spell)
 end)
 
 OnLoop(function(myHero)
-	n = GOS:GetEnemyHeroes()
+	n = GetEnemyHeroes()
 	myHeroPos = GetOrigin(myHero)
 	target = GetCurrentTarget()
 	targetPos = GetOrigin(target)
