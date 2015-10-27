@@ -1,9 +1,11 @@
+--version 0.1
+--updated to new loader
 --Credits to Huntera LB
 
 local showCircle = {}
 local myHero = GetMyHero()
 
-OnLoop(function(myHero)
+OnDraw(function(myHero)
   local myHeroPos = GetOrigin(myHero)
 	for i, obj in pairs(showCircle) do
 		if obj and obj.target and not IsDead(obj.target) then
