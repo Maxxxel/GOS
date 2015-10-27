@@ -1,4 +1,5 @@
 if GetObjectName(myHero) ~= "Brand" then return end
+require('Inspired')
 --Version 1.0 // new Menu
 
 Brand = MenuConfig("Brand", "Brand")
