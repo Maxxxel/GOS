@@ -1,4 +1,5 @@
---Version 0.9.3 // new Menu
+if GetObjectName(myHero) ~= "Brand" then return end
+--Version 1.0 // new Menu
 
 Brand = MenuConfig("Brand", "Brand")
 Brand:KeyBinding("Combo", "Combo", 32)
@@ -157,7 +158,7 @@ end
 local function CountEnemyMinionInRange(object, range)
   local minion = nil
   local minionInRange = 0
-  for k,v in pairs(GetAllMinions()) do
+  for k,v in pairs(minionManager.objects) do
     local objTeam = GetTeam(v)
     if not minion and v and objTeam == GetTeam(object) then 
       minion = v 
