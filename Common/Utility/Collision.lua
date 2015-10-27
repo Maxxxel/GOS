@@ -1,4 +1,6 @@
--- Geometry is more precise 
+--version 0.1
+--updated for new loader
+require('Inspired')
 
 class "Point" --{
 --initiating
@@ -284,22 +286,26 @@ DEACTIVATED
 		local mCollision = {}
 		if not mode then mode = ENEMY end
 		if mode == ALLY then
-			for i, mate in pairs(GOS:GetAllMinions(MINION_ALLY)) do
-				table.insert(heroes, mate)
+			for i, mate in pairs(minionManager.objects) do
+				if GetTeam(mate) == GetTeam(myHero) then
+					table.insert(heroes, mate)
+				end
 			end
 		elseif mode == ALL then
-			for i, all in pairs(GOS:GetAllMinions()) do
+			for i, all in pairs(minionManager.objects) do
 				table.insert(heroes, all)
 			end
 		elseif mode == ENEMY then
-			for i, enemy in pairs(GOS:GetAllMinions(MINION_ENEMY)) do
-				table.insert(heroes, enemy)
+			for i, enemy in pairs(minionManager.objects) do
+				if GetTeam(enemy) ~= GetTeam(myHero) then
+					table.insert(heroes, enemy)
+				end
       end
 		end
 		local distance = 0
 		local Track
 		if Pos1 and Pos2 then
-			distance = GOS:GetDistance(start,endu)
+			distance = GetDistance(start,endu)
 			Track = Line(Point(Pos1.x,Pos1.z),Point(Pos2.x,Pos2.z))
 		elseif Pos1 and not Pos2 then
 			local t = Point(Pos1.x,Pos1.z)
@@ -320,7 +326,7 @@ DEACTIVATED
 			if hero and not IsDead(hero) and IsVisible(hero) and Track then
 				local hPos = GetOrigin(hero)
 				local hP = Point(hPos.x,hPos.z)
-				if (GOS:GetDistance(start,hero) < distance) or type(start)~="userdata" and start:__distance(hP) < distance then
+				if (GetDistance(start,hero) < distance) or type(start)~="userdata" and start:__distance(hP) < distance then
 					if hP:__distance(Track)<=self.width+GetHitBox(hero) then
 						table.insert(mCollision,hero)
 					end
