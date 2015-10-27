@@ -1,8 +1,9 @@
---Version 0.91 // small fixes on Combo
-Brand = Menu("Brand", "Brand")
-Brand:Key("Combo", "Combo", string.byte(" "))
+--Version 0.9.3 // new Menu
 
-Brand:SubMenu("Spells", "Spells")
+Brand = MenuConfig("Brand", "Brand")
+Brand:KeyBinding("Combo", "Combo", 32)
+
+Brand:Menu("Spells", "Spells")
 Brand.Spells:Info("InfoSpells", "En-/Disable Spells to use in Combo")
 Brand.Spells:Boolean("CQ", "Q", true)
 Brand.Spells:Boolean("CW", "W", true)
@@ -12,7 +13,7 @@ Brand.Spells:Info("InfoSpells2", "Will cast R only if target will be")
 Brand.Spells:Info("InfoSpells3", "killed by it")
 Brand.Spells:Boolean("KR", "R to kill only", true)
 
-Brand:SubMenu("KS", "Killstuff")
+Brand:Menu("KS", "Killstuff")
 Brand.KS:Info("InfoKS", "Ignite: Will auto ignite target")
 Brand.KS:Info("InfoKS1", " if its killable")
 Brand.KS:Boolean("I", "Ignite", true)
@@ -28,7 +29,7 @@ Brand.KS:Info("InfoKS6", "Long Ulti: cast Ulti if target behind")
 Brand.KS:Info("InfoKS7", "another target can be killed")
 Brand.KS:Boolean("KSR", "Long Ulti", true)
 
-Brand:SubMenu("Draw", "Drawings")
+Brand:Menu("Draw", "Drawings")
 Brand.Draw:Boolean("Draw", "Draw", true)
 Brand.Draw:Boolean("DQ", "Draw Q", true)
 Brand.Draw:Boolean("DW", "Draw W", true)
@@ -47,6 +48,7 @@ local myRange, DIST, VoidStaff = 0, 0, 0
 local function GetItemCD()
   IRDY = Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
 end
+
 --Damage
 local function Damage()
   AP = GetBonusAP(myHero)
@@ -73,7 +75,7 @@ local function Mana(mq,mw,me,mr)
 end
 --Spells
 local function doQ(o)
-  if Q and GOS:GetDistance(o) < 1050 then
+  if Q and GetDistance(o) < 1050 then
     local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
     if QPred.HitChance == 1 then
       CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
@@ -81,7 +83,7 @@ local function doQ(o)
   end
 end
 local function doW(o)
-  if W and GOS:GetDistance(o) < 875 then
+  if W and GetDistance(o) < 875 then
     local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
 		if WPred.HitChance == 1 then
       CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
@@ -89,25 +91,25 @@ local function doW(o)
   end
 end
 local function doE(o)
-  if E and GOS:GetDistance(o) < 650 then
+  if E and GetDistance(o) < 650 then
     CastTargetSpell(o, _E)
   end
 end
 local function dooR(o)
-  if R and GOS:GetDistance(o) < 750 then
+  if R and GetDistance(o) < 750 then
     CastTargetSpell(o, _R)
   end
 end
 local function doEW(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875 + 125, 185, false, false)
-	if WPred.HitChance == 1 and GOS:GetDistance(o) < 650 then
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325) + 125, 875, 185, false, false)
+	if WPred.HitChance == 1 and GetDistance(o) < 650 then
 		CastTargetSpell(o, _E)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 	end
 end
 local function doQE(o)
 	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
-	if QPred.HitChance == 1 and GOS:GetDistance(o) < 650 then
+	if QPred.HitChance == 1 and GetDistance(o) < 650 then
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastTargetSpell(o, _E)
 	end
@@ -115,23 +117,23 @@ end
 local function doWQ(o)
 	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
 	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
-	if WPred.HitChance == 1 and QPred.HitChance == 1 and GOS:GetDistance(o) < 875 then
+	if WPred.HitChance == 1 and QPred.HitChance == 1 and GetDistance(o) < 875 then
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 	end
 end
 local function doQW(o)
 	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875 + 125, 185, false, false)
-	if WPred.HitChance == 1 and QPred.HitChance == 1 and GOS:GetDistance(o) < 875 then
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325) + 125, 875, 185, false, false)
+	if WPred.HitChance == 1 and QPred.HitChance == 1 and GetDistance(o) < 875 then
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 	end
 end
 local function doEQW(o)
 	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875 + 250, 185, false, false)
-	if WPred.HitChance == 1 and QPred.HitChance == 1 and GOS:GetDistance(o) < 650 then
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325) + 250, 875, 185, false, false)
+	if WPred.HitChance == 1 and QPred.HitChance == 1 and GetDistance(o) < 650 then
 		CastTargetSpell(o, _E)
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
@@ -145,8 +147,8 @@ end
 local function CountEnemyHeroInRange(object, range)
   object = object or myHero
   local enemyInRange = 0
-  for i, enemy in pairs(GOS:GetEnemyHeroes()) do
-    if (enemy~=nil and GetTeam(myHero)~=GetTeam(enemy) and IsDead(enemy)==false) and GOS:GetDistance(object, enemy) <= range then
+  for i, enemy in pairs(GetEnemyHeroes()) do
+    if (enemy~=nil and GetTeam(myHero)~=GetTeam(enemy) and IsDead(enemy)==false) and GetDistance(object, enemy) <= range then
       enemyInRange = enemyInRange + 1
     end
   end
@@ -155,15 +157,15 @@ end
 local function CountEnemyMinionInRange(object, range)
   local minion = nil
   local minionInRange = 0
-  for k,v in pairs(GOS:GetAllMinions()) do
+  for k,v in pairs(GetAllMinions()) do
     local objTeam = GetTeam(v)
     if not minion and v and objTeam == GetTeam(object) then 
       minion = v 
     end
-    if minion and v and objTeam == GetTeam(object) and GOS:GetDistanceSqr(GetOrigin(minion),GetOrigin(object)) > GOS:GetDistanceSqr(GetOrigin(v),GetOrigin(object)) then
+    if minion and v and objTeam == GetTeam(object) and GetDistanceSqr(GetOrigin(minion),GetOrigin(object)) > GetDistanceSqr(GetOrigin(v),GetOrigin(object)) then
       minion = v
     end
-    if minion and v and objTeam == GetTeam(object) and GOS:GetDistance(GetOrigin(minion),GetOrigin(object)) <= range then
+    if minion and v and objTeam == GetTeam(object) and GetDistance(GetOrigin(minion),GetOrigin(object)) <= range then
       minionInRange = minionInRange + 1
     end
   end
@@ -204,7 +206,7 @@ end
 local function Combo()
   target = GetCurrentTarget()
   myRange = 1050
-  DIST = GOS:GetDistance(target)
+  DIST = GetDistance(target)
   local QPred = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), (math.floor(math.random() * 200) + 1600), 250, 1050, 60, true, false)
   local WPred = GetPredictionForPlayer(GetOrigin(myHero), target, GetMoveSpeed(target), 99999, (math.floor(math.random() * 500) + 500), 875, 200, false, false)
   local QH = QPred.HitChance == 1 and 1 or 0
@@ -246,7 +248,7 @@ local function Combo()
       if IsBurning(target) == 1 then
         doW(target)
       end
-    	if IsBurning(target) == 1 and RRDY == 1 then
+    	if RRDY == 1 and Health < TotalDamage then
       	dooR(target)
       end
       if Brand.KS.I:Value() and Health > TotalDamageNoIgnite and DIST < 650 then
@@ -282,7 +284,7 @@ end
 --Kills
 local function Kills()
   for i = 1, #n do
-  	local DIST = GOS:GetDistance(n[i])
+  	local DIST = GetDistance(n[i])
     if Valid(n[i]) and DIST < 2000 then
       local armor = GetArmor(n[i])
 	    local hp = GetCurrentHP(n[i])
@@ -322,7 +324,7 @@ local function Kills()
 						local hpreg = GetHPRegen(n[j]) * (1 - (IsOrWillBeIgnited(n[j]) * .5))
 						local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[j])
 						local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(n[j])
-						if Health < (RDmg * RRDY + PDMG) * Mana(0,0,0,1) and Brand.KS.KSR:Value() and DIST < 750 and GOS:GetDistance(n[j]) > 750 and GOS:GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
+						if Health < (RDmg * RRDY + PDMG) * Mana(0,0,0,1) and Brand.KS.KSR:Value() and DIST < 750 and GetDistance(n[j]) > 750 and GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
 							dooR(n[i])
 						end
 					end
@@ -343,7 +345,7 @@ OnDraw(function(myHero)
 	  if dE ~= 0 then DrawCircle(GetOrigin(myHero), dE, 0, 0, 0xffff0000) end
 	  if dR ~= 0 then DrawCircle(GetOrigin(myHero), dR, 0, 0, 0xffff0000) end
 	  for i = 1, #n do
-  		local DIST = GOS:GetDistance(n[i])
+  		local DIST = GetDistance(n[i])
     	if Valid(n[i]) and DIST < 2000 then
 	      local drawPos = GetOrigin(n[i])
 	      local armor = GetArmor(n[i])
@@ -377,7 +379,7 @@ OnTick(function(myHero)
   GetSpellCD()
   Damage()
   Q, W, E, R, KR = Brand.Spells.CQ:Value(), Brand.Spells.CW:Value(), Brand.Spells.CE:Value(), Brand.Spells.CR:Value(), Brand.Spells.KR:Value()
-  n = GOS:GetEnemyHeroes()
+  n = GetEnemyHeroes()
   if Brand.Combo:Value() then
     Combo()
   end
