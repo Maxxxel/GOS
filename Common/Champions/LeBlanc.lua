@@ -1,6 +1,7 @@
+require('Inspired')
 if GetObjectName(myHero) ~= "LeBlanc" then return end
 require('MapPositionGOS')
-require('Inspired')
+
 
 --version = 0.6 
 --new loader
