@@ -3,17 +3,20 @@ if GetObjectName(myHero) ~= "Talon" then return end
 
 Talon=MenuConfig("Talon","Maxxxel Talon God")
 Talon:Key("Combo","Combo",string.byte(" "))
+Talon:Boolean("M", "Mouse", false)
 Talon:Menu("KS","Killfunctions")
 Talon.KS:Boolean("Ignite","Auto-Ignite",true)
 Talon.KS:Boolean("R", "Smart Ulti",true)
+Talon.KS:Boolean("AR", "AOE Ulti", true)
+Talon.KS:Slider("AOER", "AOE Ulti, Enemies >", 3, 0, 5, 1)
 Talon.KS:Boolean("Percent","Show % Kill",true)
 Talon:Menu("Harass", "Harass Menu")
 Talon.Harass:Key("DoIt","Harass",string.byte("X"))
 Talon.Harass:Boolean("Auto", "Auto Harass", false)
 Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.4
---New Menu
+--version = 1.5
+--New Menu Values, Better Combo
 ------------------------------------------
 
 ------------------------------------------
@@ -56,8 +59,10 @@ end
 --MISC
 ------------------------------------------
 local function MoveToMouse()
-	if LS ~= "E" or stopMove == true then
-		MoveToXYZ(GetMousePos())
+	if Talon.M:Value() == true then
+		if LS ~= "E" or stopMove == true then
+			MoveToXYZ(GetMousePos())
+  	end
   end
 end
 
@@ -214,24 +219,24 @@ local function Combo()
 		local MOVE = GetMoveSpeed(target)
 		local SHIELD = GetDmgShield(target)
 		local LIFE = HP * ((100 + ((ARMOR - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + HPREG * 6 + SHIELD
-		local myRange = GetRange(myHero) + GetHitBox(target) + GetHitBox(myHero) - math.min((GetMoveSpeed(target) - GetMoveSpeed(myHero)), 280) * IsMoving(target) * (GetWindUp(myHero) + GetLatency() * .001)
+		local myRange = GetRange(myHero) + GetHitBox(target) + GetHitBox(myHero) - (IsMoving(target) * 5) * IsMoving(target) * (GetWindUp(myHero) + GetLatency() * .001)
 		local maxDMG = xHYDRA + xIgnite + xAA * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target)))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(target))) + xE * (ERDY + Emulti(target)))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target)))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target))) * (2 -  R2RDY))
  		local maxDMGNoR = xHYDRA + xIgnite + (xAA * ((1 + (-1 * (ERDY + Emulti(target)))) + xE * (ERDY + Emulti(target)))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(target)))) + xE * (ERDY + Emulti(target))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target))))
-		if ERDY == 1 then E(target) end
+		if ERDY == 1 then HoldPosition() E(target) end
+		if not Talon.KS.R:Value() or LIFE < maxDMG and LIFE > maxDMGNoR or Talon.KS.AR:Value() and Talon.KS.AOER:Value() <= EnemiesAround(myHeroPos(), myRange) then
+			R1(target)
+		end
+		if DIST < 300 and (AAREADY ~= 1 or LS == "Q" or DIST > myRange) then CastOffensiveItems(target) end
 		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
 			AttackUnit(target)
-			CastOffensiveItems(target)
 		end
 		if DIST < myRange and QRDY == 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and doQ and AAREADY ~= 1 then
 			CastSpell(_Q)
 		end
-		if not Talon.KS.R:Value() or LIFE < maxDMG and LIFE > maxDMGNoR then
-			R1(target)
-		end
-		if WRDY == 1 and ((AAREADY ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange) then
+		if WRDY == 1 and ((AAREADY ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange - 10) then
 			W(target) 
 		end
-		if DIST > myRange + 50 then
+		if DIST > myRange + 100 then
 			MoveToMouse()
 		elseif DIST < myRange and AAREADY ~= 1 and QRDY == 0 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 then
 			MoveToMouse()
@@ -258,7 +263,7 @@ local function MISC()
 	buffer = not LS and GetTickCount() or LS and buffer
 	LS = GetTickCount() - buffer < 2800 and LS ~= "E" and LS or GetTickCount() - buffer < 50 and LS == "E" and LS or nil
 	stopMove = LS ~= "E" and false or stopMove
-	AAREADY = (GetTickCount() - lastAA) * .001 + 0.001 >= GetWindUp(myHero) and 1 or 0
+	AAREADY = (GetTickCount() - lastAA) * .001 + 0.01 >= GetWindUp(myHero) and 1 or 0
 	lastAA = AAREADY == 1 and 0 or 1
 	doQ = doQ and AAREADY == 1 and false or doQ
 end
@@ -276,12 +281,11 @@ OnProcessSpellComplete(function(Object,Spell)
 			if Spell.name:lower():find("attack") then
 				doQ = true
 				lastAA = GetTickCount()
-				CastEmote(EMOTE_DANCE)
-				MoveToXYZ(GetMousePos())
 	    elseif Spell.name:lower():find("noxiandiplomacy") then
 	    	doQ = false
 	    	QRDY = 0
 	    	LS = "Q"
+	    	lastAA = GetTickCount()
 	    end
 	  end
      if Spell.name:lower():find("rake") then 
