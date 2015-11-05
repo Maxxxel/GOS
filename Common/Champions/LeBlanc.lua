@@ -1,14 +1,13 @@
 require('Inspired')
-if GetObjectName(myHero) ~= "LeBlanc" then return end
+if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
-
 
 --version = 0.6 
 --new loader
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
-LeBlanc.Keys:Key("DoQ", "Q", string.byte("Q"))
+LeBlanc.Keys:KeyBinding("DoQ", "Q", string.byte("Q"))
 LeBlanc.Keys:Key("DoE", "E", string.byte("E"))
 LeBlanc.Keys:Key("Harass", "Harass", string.byte("X"))
 LeBlanc.Keys:Key("Combo", "Combo", string.byte(" "))
@@ -190,8 +189,9 @@ end
 local function Harass()
 	WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
 	if mapID==SUMMONERS_RIFT then
+		local ChampionPos = GetOrigin(myHero)
 		EPos = Vector(targetPos.x,0,targetPos.z)
-		HPos = Vector(myHeroPos.x,0,myHeroPos.z)
+		HPos = Vector(ChampionPos.x,0,ChampionPos.z)
 		WPos = HPos+(HPos-EPos)*(-650/GetDistance(HPos,EPos))
 		if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 			Wall = 1
@@ -225,10 +225,19 @@ local function CheckItemCD()
 		VoidStaff=1
 	end
 end
+--Round--
+local function Round(val, decimal)
+	if (decimal) then
+		return math.floor( (val * 10 ^ decimal) + 0.5) / (10 ^ decimal)
+	else
+		return math.floor(val + 0.5)
+	end
+end
 --Draw
 local function Draw()
 	if not IsDead(myHero) then
-		local myHeroWorld = WorldToScreen(1,myHeroPos.x,myHeroPos.y,myHeroPos.z)
+		local ChampionPos = GetOrigin(myHero)
+		local myHeroWorld = WorldToScreen(1,ChampionPos.x,ChampionPos.y,ChampionPos.z)
 		if (CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,n,n)==1) or CD(0,1,n,n,n,n,n,1)==1 then 
 			DrawCircle(GetOrigin(myHero),700,0,0,0xffff0000)
 		end
@@ -285,16 +294,40 @@ local function Draw()
 				break
 			end
 		end
+		if LeBlanc.KS.Percent:Value() then
+			if #n > 0 then
+				for  i = 1, #n do
+					local health = GetCurrentHP(n[i])*((100+(((GetMagicResist(n[i])*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[i])*6
+					local maxHealth = GetMaxHP(n[i])*((100+(((GetMagicResist(n[i])*VoidStaff)-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[i])*6 
+					local drawPos = GetOrigin(n[i])
+	    		local testPos = WorldToScreen(1, drawPos)
+					if Round(((health-SUM)/maxHealth*100),0)>0 then
+						DrawText("\n\n" .. Round(((health-SUM)/maxHealth*100),0) .. "%",15,testPos.x,testPos.y,0xffffff00)
+					elseif Round(((health-SUM)/maxHealth*100),0)<=0 then
+						DrawText("\n\n"..KSN[v].text.." KILL",15,testPos.x,testPos.y,0xffffff00)
+					end
+					for v=from,to do
+						if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e,KSN[v].f,KSN[v].g,KSN[v].h,KSN[v].i)==1 and Mana(KSN[v].a,KSN[v].c,KSN[v].g)==1 and health < KSN[v].Damage then
+							if KSN[v].Dist==1 and GetDistance(n[i])>700 and GetDistance(n[i])<=1300 - GetMoveSpeed(n[i]) * .3 and LeBlanc.KS.KSNotes:Value() then
+								if (KSN[v].Block==1 and Block==1) or (KSN[v].Wall==1 and Wall==1) then 
+									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
+								else 
+									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffff0000)
+								end
+							elseif KSN[v].Dist==0 and GetDistance(n[i])<700 and LeBlanc.KS.KSNotes:Value() then
+								if (KSN[v].Block==1 and Block==1) or (KSN[v].Wall==1 and Wall==1) then 
+									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
+								else 
+									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffff0000)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
 	end
 end      
---Round--
-local function Round(val, decimal)
-	if (decimal) then
-		return math.floor( (val * 10 ^ decimal) + 0.5) / (10 ^ decimal)
-	else
-		return math.floor(val + 0.5)
-	end
-end
 --Spell Sequence--
 local function SpellSequence()
 	if #n > 0 then
@@ -308,8 +341,9 @@ local function SpellSequence()
 					EPred = GetPredictionForPlayer(GetOrigin(myHero),n[i],GetMoveSpeed(n[i]),1550,150,950,55,true,true)
 					WPred = GetPredictionForPlayer(GetOrigin(myHero),n[i],GetMoveSpeed(n[i]),1450,250,600,250,false,true)
 					if mapID==SUMMONERS_RIFT then
+						local ChampionPos = GetOrigin(myHero)
 						EPos = Vector(drawPos.x,0,drawPos.z)
-						HPos = Vector(myHeroPos.x,0,myHeroPos.z)
+						HPos = Vector(ChampionPos.x,0,ChampionPos.z)
 						WPos = HPos+(HPos-EPos) * (-650 / GetDistance(HPos,EPos))
 						if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 							Wall = 1
@@ -326,107 +360,6 @@ local function SpellSequence()
 						Block=1
 					end
 					--ULTI CD
-				  KSN[1] = {a=1,b=0,c=0,d=n,e=0,f=n,g=0,h=0,i=n, Dist=0, Block=0, Wall=0, Damage= xQ,text ="Q"}
-				  KSN[2] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=n, Dist=0, Block=0, Wall=1, Damage= xQ*2+xW,text ="Q-W"}
-				  KSN[3] = {a=1,b=n,c=n,d=n,e=n,f=n,g=1,h=n,i=n, Dist=0, Block=1, Wall=0, Damage= xQ*2+xE*multi,text ="Q-E"}
-				  KSN[4] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=n, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xE*multi,text ="Q-W-E"}
-				  KSN[5] = {a=1,b=0,c=1,d=n,e=n,f=0,g=n,h=0,i=n, Dist=1, Block=0, Wall=1, Damage= xQ,text ="W-Q Long "}
-				  KSN[6] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=n, Dist=1, Block=1, Wall=1, Damage= xQ*2+xE*multi,text ="W-E-Q Long "}
-				  KSN[7] = {a=0,b=0,c=1,d=n,e=0,f=n,g=0,h=0,i=n, Dist=0, Block=0, Wall=1, Damage= xW,text ="W"}
-				  KSN[8] = {a=0,b=0,c=0,d=n,e=0,f=n,g=1,h=0,i=n, Dist=0, Block=1, Wall=0, Damage= xE*multi,text ="E"}
-				  KSN[9] = {a=n,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=n, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi,text ="W-E"}
-				  KSN[10] = {a=0,b=0,c=1,d=n,e=n,f=0,g=1,h=0,i=n, Dist=1, Block=1, Wall=1, Damage= xE*multi,text ="W-E Long "}
-	--ULTI READY, ULTI Q, NO E  
-				  KSN[11] = {a=0,b=1,c=0,d=n,e=0,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=0, Damage= xR,text ="Q(R)"}
-				  KSN[12] = {a=1,b=n,c=0,d=n,e=n,f=n,g=0,h=n,i=1, Dist=0, Block=0, Wall=0, Damage= xQ*2+xR,text ="Q-Q(R)"}
-					KSN[13] = {a=1,b=1,c=0,d=n,e=0,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=0, Damage= xQ+xR*2,text ="Q(R)-Q"}
-					KSN[14] = {a=n,b=1,c=1,d=n,e=0,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xR*2+xW,text ="Q(R)-W"}
-					KSN[15] = {a=0,b=1,c=1,d=n,e=0,f=0,g=n,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xR,text ="W-Q(R) Long "}
-				  KSN[16] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=1, Dist=1, Block=0, Wall=1, Damage= xQ*2+xR,text ="W-Q-Q(R) Long "}
-					KSN[17] = {a=1,b=1,c=1,d=n,e=0,f=n,g=n,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xR*2+xQ,text ="W-Q(R)-Q Long "}
-					KSN[18] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xR*2+xW,text ="Q-Q(R)-W"}
-					KSN[19] = {a=1,b=1,c=1,d=n,e=0,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xR*2+xW,text ="Q(R)-Q-W"}
-	--ULTI READY, ULTI Q, AND E  
-					KSN[20] = {a=1,b=n,c=n,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xR*2+xE*multi,text ="Q-Q(R)-E"}
-					KSN[21] = {a=n,b=1,c=n,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=0, Damage= xR*2+xE*multi,text ="Q(R)-E"}
-					KSN[22] = {a=n,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xR*2+xW+xE*multi,text ="Q(R)-W-E"}
-					KSN[23] = {a=1,b=1,c=n,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xR*2+xE*multi,text ="Q(R)-Q-E"}
-					KSN[24] = {a=1,b=1,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xR*2+xW+xE*multi,text ="Q-Q(R)-W-E"}
-					KSN[25] = {a=1,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xR*2+xW+xE*multi,text ="Q(R)-Q-W-E"}
-					KSN[26] = {a=0,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xR*2+xE*multi,text ="W-E-Q(R) Long "}
-					KSN[27] = {a=1,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*2+xQ*2,text ="W-Q(R)-Q-E Long "}
-					KSN[28] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*2+xQ*2,text ="W-Q-Q(R)-E Long "}
-	--ULTI READY, ULTI W, NO E 
-				  KSN[29] = {a=1,b=0,c=n,d=n,e=1,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xRW,text ="Q-W(R)"}
-				  KSN[30] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xW+xRW,text ="Q-W-W(R)"}
-					KSN[31] = {a=1,b=0,c=1,d=n,e=1,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xW+xRW,text ="Q-W(R)-W"}
-					KSN[32] = {a=1,b=0,c=1,d=n,e=n,f=n,g=0,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xQ*2+xRW,text ="Q-W-W(R) Long"}
-					KSN[33] = {a=0,b=0,c=0,d=n,e=1,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xRW,text ="W(R)"}
-					KSN[34] = {a=0,b=n,c=1,d=n,e=n,f=n,g=0,h=n,i=1, Dist=0, Block=0, Wall=1, Damage= xW+xRW,text ="W-W(R)"}
-					KSN[35] = {a=0,b=0,c=1,d=n,e=1,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xW+xRW,text ="W(R)-W"}
-					--KSN[36] = {a=1,b=0,c=1,d=n,e=n,f=n,g=0,h=0,i=1, Dist=2, Block=0, Wall=2, Damage= xQ,text ="Q-W-W(R) Very Long"}
-					KSN[37] = {a=0,b=0,c=1,d=n,e=n,f=n,g=0,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xRW,text ="W-W(R) Long "}
-	--ULTI READY, ULTI W, AND E				
-				  KSN[38] = {a=1,b=0,c=n,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xRW+xE*multi,text ="Q-W(R)-E"}				  
-					KSN[39] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xRW+xE*multi,text ="Q-W-W(R)-E"}
-					KSN[40] = {a=1,b=0,c=1,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xRW+xE*multi,text ="Q-W(R)-W-E"}					
-					KSN[41] = {a=1,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xQ*2+xRW+xE*multi,text ="Q-W-W(R)-E Long"}					
-					--KSN[42] = {a=1,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=2, Block=2, Wall=2, Damage= xQ*2+xE*multi,text ="Q-W-W(R)-E Very Long"}					
-					KSN[43] = {a=n,b=0,c=n,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xRW+xE*multi,text ="W(R)-E"}
-					KSN[44] = {a=n,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xRW+xE*multi,text ="W-W(R)-E"}
-					KSN[45] = {a=n,b=0,c=1,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xRW+xE*multi,text ="W(R)-W-E"}					
-					KSN[46] = {a=0,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xRW+xE*multi,text ="W-W(R)-E Long"}
-					--KSN[47] = {a=0,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=2, Block=2, Wall=2, Damage= xE*multi,text ="W-W(R)-E Very Long"}					
-	--ULTI READY, UTLI E, AND W, AND Q
-					KSN[48] = {a=1,b=0,c=1,d=n,e=0,f=n,g=n,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xR*multi,text ="Q-W-E(R)"}
-					KSN[49] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xE*multi+xR*multi,text ="Q-W-E-E(R)"}
-					KSN[50] = {a=1,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xE*multi+xR*multi,text ="Q-W-E-E(R)"}					
-					KSN[51] = {a=1,b=0,c=1,d=n,e=0,f=n,g=0,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xQ*2+xR*multi,text ="W-Q-E(R) Long "}					
-					KSN[52] = {a=1,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi+xQ*2,text ="W-Q-E(R)-E Long "}
-					KSN[53] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi+xQ*2,text ="W-Q-E-E(R) Long "}
-	--ULTI READY, ULTI E, AND W, NO Q
-					KSN[54] = {a=n,b=0,c=1,d=n,e=0,f=n,g=n,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi,text ="W-E(R)"}					
-					KSN[55] = {a=n,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi+xR*multi,text ="W-E-E(R)"}
-					KSN[56] = {a=n,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi+xR*multi,text ="W-E(R)-E"}					
-					KSN[57] = {a=0,b=0,c=1,d=n,e=0,f=0,g=0,h=1,i=1, Dist=1, Block=1, Wall=1, Damage= xR*multi,text ="W-E(R) Long "}
-					KSN[58] = {a=0,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi,text ="W-E-E(R) Long "}
-					KSN[59] = {a=0,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi,text ="W-E(R)-E Long "}
-	--ULTI READY, UTLI E, NO W	
-				  KSN[60] = {a=1,b=0,c=n,d=n,e=0,f=n,g=n,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xR*multi,text ="Q-E(R)"}								
-					KSN[61] = {a=1,b=n,c=n,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xE*multi+xR*multi,text ="Q-E-E(R)"}
-					KSN[62] = {a=1,b=0,c=n,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xE*multi+xR*multi,text ="Q-E(R)-E"}										
-					KSN[63] = {a=0,b=0,c=0,d=n,e=0,f=n,g=0,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xE*multi,text ="E(R)"}
-					KSN[64] = {a=0,b=n,c=0,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=0, Damage= xE*multi+xR*multi,text ="E-E(R)"}
-					KSN[65] = {a=0,b=0,c=0,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xE*multi+xR*multi,text ="E(R)-E"}				
-								
-					if CanUseSpell(myHero,_R)~=READY then
-						from=1
-						to=10
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_E)~=READY then
-						from=11
-						to=19
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_E)==READY then
-						from=20
-						to=28
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancSlideM' and CanUseSpell(myHero,_E)~=READY then
-						from=29
-						to=37
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancSlideM' and CanUseSpell(myHero,_E)==READY then
-						from=38
-						to=47
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_W)==READY and CanUseSpell(myHero,_Q)==READY then
-						from=48
-						to=53
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_W)==READY and CanUseSpell(myHero,_Q)~=READY then
-						from=54
-						to=59
-					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancSoulShackleM' then
-						from=60
-						to=65
-					else
-						from = 1
-						to = 1
-					end
 					for v=from,to do
 						if CD(KSN[v].a,KSN[v].b,KSN[v].c,KSN[v].d,KSN[v].e,KSN[v].f,KSN[v].g,KSN[v].h,KSN[v].i)==1 and Mana(KSN[v].a,KSN[v].c,KSN[v].g)==1 and health < KSN[v].Damage then
 							if KSN[v].Dist==1 and GetDistance(n[i])>700 and GetDistance(n[i])<=1300 - GetMoveSpeed(n[i]) * .3 and LeBlanc.KS.KSNotes:Value() then
@@ -526,15 +459,6 @@ local function SpellSequence()
 								KSN[65].Damage*CD(KSN[65].a,KSN[65].b,KSN[65].c,KSN[65].d,KSN[65].e,KSN[65].f,KSN[65].g,KSN[65].h,KSN[65].i)*Mana(KSN[65].a,KSN[65].c,KSN[65].g))						
 							end
 						end
-						if LeBlanc.KS.Percent:Value() then
-							if Round(((health-SUM)/maxHealth*100),0)>0 then
-								DrawText("\n\n" .. Round(((health-SUM)/maxHealth*100),0) .. "%",15,testPos.x,testPos.y,0xffffff00)
-								break
-							elseif Round(((health-SUM)/maxHealth*100),0)<=0 then
-								DrawText("\n\n"..KSN[v].text.." KILL",15,testPos.x,testPos.y,0xffffff00)
-								break
-							end
-						end
 					end
 				end
 			end
@@ -547,8 +471,9 @@ local function SpellSequence()
 			EPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1550,150,950,55,true,true)
 			WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
 			if mapID==SUMMONERS_RIFT then
+				local ChampionPos = GetOrigin(myHero)
 				EPos = Vector(targetPos.x,0,targetPos.z)
-				HPos = Vector(myHeroPos.x,0,myHeroPos.z)
+				HPos = Vector(ChampionPos.x,0,ChampionPos.z)
 				WPos = HPos+(HPos-EPos)*(-650/GetDistance(HPos,EPos))
 				if MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z))==true then 
 					WallT = 1
@@ -560,6 +485,7 @@ local function SpellSequence()
 				WallT=0
 			end
 			if GetDistance(target)<=700 then
+				IOW.attacksEnabled = false
 			 --killable
 			 --normal
 						if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or
@@ -635,6 +561,8 @@ local function SpellSequence()
 								CD(0,0,0,0,0,0,0,1,1)==1 and Mana(0,0,0)==1 or
 								CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1) and EPred.HitChance==1 then
 					ER(target)
+				else
+					IOW.attacksEnabled = true
 				end
 			elseif GetDistance(target)>700 and GetDistance(target)<1300 - GetMoveSpeed(target) * .3 then
 				if 			CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then WL(target) end	
@@ -674,15 +602,118 @@ OnProcessSpell(function(unit, spell)
 	end
 end)
 
-OnLoop(function(myHero)
+OnTick(function(myHero)
 	n = GetEnemyHeroes()
-	myHeroPos = GetOrigin(myHero)
 	target = GetCurrentTarget()
 	targetPos = GetOrigin(target)
 	multi = LeBlanc.KS.Mult:Value() and 2 or 1
 	DamageCalc()
 	SpellSequence()
 	CheckItemCD()
-	if LeBlanc.Keys.Harass:Value() and target then Harass() end
+	if LeBlanc.Keys.Harass:Value() and target then IOW.attacksEnabled = false Harass() else IOW.attacksEnabled = true end
+	
+	KSN[1] = {a=1,b=0,c=0,d=n,e=0,f=n,g=0,h=0,i=n, Dist=0, Block=0, Wall=0, Damage= xQ,text ="Q"}
+				  KSN[2] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=n, Dist=0, Block=0, Wall=1, Damage= xQ*2+xW,text ="Q-W"}
+				  KSN[3] = {a=1,b=n,c=n,d=n,e=n,f=n,g=1,h=n,i=n, Dist=0, Block=1, Wall=0, Damage= xQ*2+xE*multi,text ="Q-E"}
+				  KSN[4] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=n, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xE*multi,text ="Q-W-E"}
+				  KSN[5] = {a=1,b=0,c=1,d=n,e=n,f=0,g=n,h=0,i=n, Dist=1, Block=0, Wall=1, Damage= xQ,text ="W-Q Long "}
+				  KSN[6] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=n, Dist=1, Block=1, Wall=1, Damage= xQ*2+xE*multi,text ="W-E-Q Long "}
+				  KSN[7] = {a=0,b=0,c=1,d=n,e=0,f=n,g=0,h=0,i=n, Dist=0, Block=0, Wall=1, Damage= xW,text ="W"}
+				  KSN[8] = {a=0,b=0,c=0,d=n,e=0,f=n,g=1,h=0,i=n, Dist=0, Block=1, Wall=0, Damage= xE*multi,text ="E"}
+				  KSN[9] = {a=n,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=n, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi,text ="W-E"}
+				  KSN[10] = {a=0,b=0,c=1,d=n,e=n,f=0,g=1,h=0,i=n, Dist=1, Block=1, Wall=1, Damage= xE*multi,text ="W-E Long "}
+	--ULTI READY, ULTI Q, NO E  
+				  KSN[11] = {a=0,b=1,c=0,d=n,e=0,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=0, Damage= xR,text ="Q(R)"}
+				  KSN[12] = {a=1,b=n,c=0,d=n,e=n,f=n,g=0,h=n,i=1, Dist=0, Block=0, Wall=0, Damage= xQ*2+xR,text ="Q-Q(R)"}
+					KSN[13] = {a=1,b=1,c=0,d=n,e=0,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=0, Damage= xQ+xR*2,text ="Q(R)-Q"}
+					KSN[14] = {a=n,b=1,c=1,d=n,e=0,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xR*2+xW,text ="Q(R)-W"}
+					KSN[15] = {a=0,b=1,c=1,d=n,e=0,f=0,g=n,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xR,text ="W-Q(R) Long "}
+				  KSN[16] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=1, Dist=1, Block=0, Wall=1, Damage= xQ*2+xR,text ="W-Q-Q(R) Long "}
+					KSN[17] = {a=1,b=1,c=1,d=n,e=0,f=n,g=n,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xR*2+xQ,text ="W-Q(R)-Q Long "}
+					KSN[18] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xR*2+xW,text ="Q-Q(R)-W"}
+					KSN[19] = {a=1,b=1,c=1,d=n,e=0,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xR*2+xW,text ="Q(R)-Q-W"}
+	--ULTI READY, ULTI Q, AND E  
+					KSN[20] = {a=1,b=n,c=n,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xR*2+xE*multi,text ="Q-Q(R)-E"}
+					KSN[21] = {a=n,b=1,c=n,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=0, Damage= xR*2+xE*multi,text ="Q(R)-E"}
+					KSN[22] = {a=n,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xR*2+xW+xE*multi,text ="Q(R)-W-E"}
+					KSN[23] = {a=1,b=1,c=n,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xR*2+xE*multi,text ="Q(R)-Q-E"}
+					KSN[24] = {a=1,b=1,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xR*2+xW+xE*multi,text ="Q-Q(R)-W-E"}
+					KSN[25] = {a=1,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xR*2+xW+xE*multi,text ="Q(R)-Q-W-E"}
+					KSN[26] = {a=0,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xR*2+xE*multi,text ="W-E-Q(R) Long "}
+					KSN[27] = {a=1,b=1,c=1,d=n,e=0,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*2+xQ*2,text ="W-Q(R)-Q-E Long "}
+					KSN[28] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*2+xQ*2,text ="W-Q-Q(R)-E Long "}
+	--ULTI READY, ULTI W, NO E 
+				  KSN[29] = {a=1,b=0,c=n,d=n,e=1,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xRW,text ="Q-W(R)"}
+				  KSN[30] = {a=1,b=n,c=1,d=n,e=n,f=n,g=n,h=n,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xW+xRW,text ="Q-W-W(R)"}
+					KSN[31] = {a=1,b=0,c=1,d=n,e=1,f=n,g=n,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xQ*2+xW+xRW,text ="Q-W(R)-W"}
+					KSN[32] = {a=1,b=0,c=1,d=n,e=n,f=n,g=0,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xQ*2+xRW,text ="Q-W-W(R) Long"}
+					KSN[33] = {a=0,b=0,c=0,d=n,e=1,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xRW,text ="W(R)"}
+					KSN[34] = {a=0,b=n,c=1,d=n,e=n,f=n,g=0,h=n,i=1, Dist=0, Block=0, Wall=1, Damage= xW+xRW,text ="W-W(R)"}
+					KSN[35] = {a=0,b=0,c=1,d=n,e=1,f=n,g=0,h=0,i=1, Dist=0, Block=0, Wall=1, Damage= xW+xRW,text ="W(R)-W"}
+					--KSN[36] = {a=1,b=0,c=1,d=n,e=n,f=n,g=0,h=0,i=1, Dist=2, Block=0, Wall=2, Damage= xQ,text ="Q-W-W(R) Very Long"}
+					KSN[37] = {a=0,b=0,c=1,d=n,e=n,f=n,g=0,h=0,i=1, Dist=1, Block=0, Wall=1, Damage= xRW,text ="W-W(R) Long "}
+	--ULTI READY, ULTI W, AND E				
+				  KSN[38] = {a=1,b=0,c=n,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xRW+xE*multi,text ="Q-W(R)-E"}				  
+					KSN[39] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xRW+xE*multi,text ="Q-W-W(R)-E"}
+					KSN[40] = {a=1,b=0,c=1,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xRW+xE*multi,text ="Q-W(R)-W-E"}					
+					KSN[41] = {a=1,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xQ*2+xRW+xE*multi,text ="Q-W-W(R)-E Long"}					
+					--KSN[42] = {a=1,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=2, Block=2, Wall=2, Damage= xQ*2+xE*multi,text ="Q-W-W(R)-E Very Long"}					
+					KSN[43] = {a=n,b=0,c=n,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xRW+xE*multi,text ="W(R)-E"}
+					KSN[44] = {a=n,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xRW+xE*multi,text ="W-W(R)-E"}
+					KSN[45] = {a=n,b=0,c=1,d=n,e=1,f=n,g=1,h=0,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xRW+xE*multi,text ="W(R)-W-E"}					
+					KSN[46] = {a=0,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=1, Block=1, Wall=1, Damage= xRW+xE*multi,text ="W-W(R)-E Long"}
+					--KSN[47] = {a=0,b=0,c=1,d=n,e=n,f=n,g=1,h=0,i=1, Dist=2, Block=2, Wall=2, Damage= xE*multi,text ="W-W(R)-E Very Long"}					
+	--ULTI READY, UTLI E, AND W, AND Q
+					KSN[48] = {a=1,b=0,c=1,d=n,e=0,f=n,g=n,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xR*multi,text ="Q-W-E(R)"}
+					KSN[49] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xE*multi+xR*multi,text ="Q-W-E-E(R)"}
+					KSN[50] = {a=1,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xQ*2+xW+xE*multi+xR*multi,text ="Q-W-E-E(R)"}					
+					KSN[51] = {a=1,b=0,c=1,d=n,e=0,f=n,g=0,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xQ*2+xR*multi,text ="W-Q-E(R) Long "}					
+					KSN[52] = {a=1,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi+xQ*2,text ="W-Q-E(R)-E Long "}
+					KSN[53] = {a=1,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi+xQ*2,text ="W-Q-E-E(R) Long "}
+	--ULTI READY, ULTI E, AND W, NO Q
+					KSN[54] = {a=n,b=0,c=1,d=n,e=0,f=n,g=n,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi,text ="W-E(R)"}					
+					KSN[55] = {a=n,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi+xR*multi,text ="W-E-E(R)"}
+					KSN[56] = {a=n,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=1, Damage= xW+xE*multi+xR*multi,text ="W-E(R)-E"}					
+					KSN[57] = {a=0,b=0,c=1,d=n,e=0,f=0,g=0,h=1,i=1, Dist=1, Block=1, Wall=1, Damage= xR*multi,text ="W-E(R) Long "}
+					KSN[58] = {a=0,b=n,c=1,d=n,e=n,f=n,g=1,h=n,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi,text ="W-E-E(R) Long "}
+					KSN[59] = {a=0,b=0,c=1,d=n,e=0,f=n,g=1,h=1,i=1, Dist=1, Block=1, Wall=1, Damage= xE*multi+xR*multi,text ="W-E(R)-E Long "}
+	--ULTI READY, UTLI E, NO W	
+				  KSN[60] = {a=1,b=0,c=n,d=n,e=0,f=n,g=n,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xR*multi,text ="Q-E(R)"}								
+					KSN[61] = {a=1,b=n,c=n,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xE*multi+xR*multi,text ="Q-E-E(R)"}
+					KSN[62] = {a=1,b=0,c=n,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xQ*2+xE*multi+xR*multi,text ="Q-E(R)-E"}										
+					KSN[63] = {a=0,b=0,c=0,d=n,e=0,f=n,g=0,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xE*multi,text ="E(R)"}
+					KSN[64] = {a=0,b=n,c=0,d=n,e=n,f=n,g=1,h=n,i=1, Dist=0, Block=1, Wall=0, Damage= xE*multi+xR*multi,text ="E-E(R)"}
+					KSN[65] = {a=0,b=0,c=0,d=n,e=0,f=n,g=1,h=1,i=1, Dist=0, Block=1, Wall=0, Damage= xE*multi+xR*multi,text ="E(R)-E"}			
+					if CanUseSpell(myHero,_R)~=READY then
+						from=1
+						to=10
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_E)~=READY then
+						from=11
+						to=19
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_E)==READY then
+						from=20
+						to=28
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancSlideM' and CanUseSpell(myHero,_E)~=READY then
+						from=29
+						to=37
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancSlideM' and CanUseSpell(myHero,_E)==READY then
+						from=38
+						to=47
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_W)==READY and CanUseSpell(myHero,_Q)==READY then
+						from=48
+						to=53
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancChaosOrbM' and CanUseSpell(myHero,_W)==READY and CanUseSpell(myHero,_Q)~=READY then
+						from=54
+						to=59
+					elseif CanUseSpell(myHero,_R)==READY and GetCastName(myHero,_R) == 'LeblancSoulShackleM' then
+						from=60
+						to=65
+					else
+						from = 1
+						to = 1
+					end	
+end)
+
+OnDraw(function(myHero)
 	if LeBlanc.Misc.Draw:Value() then Draw() end
 end)
