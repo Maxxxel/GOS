@@ -15,7 +15,7 @@ Talon.Harass:Key("DoIt","Harass",string.byte("X"))
 Talon.Harass:Boolean("Auto", "Auto Harass", false)
 Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.5
+--version = 1.5.1
 --New Menu Values, Better Combo
 ------------------------------------------
 
@@ -211,7 +211,7 @@ end
 --
 local function Combo()
 	target = GetCurrentTarget()
-	if target and Valid(target) and GetDistance(target) <= 725 then
+	if target and Valid(target) and GetDistance(target) <= 700 then
 		local DIST = GetDistance(target)
 		local ARMOR = GetArmor(target)
 		local HPREG = GetHPRegen(target)
