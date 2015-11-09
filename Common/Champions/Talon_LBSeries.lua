@@ -236,7 +236,7 @@ local function Combo()
 		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
 			AttackUnit(target)
 		end
-		if WRDY == 1 and (((doQ or AAREADY ~= 1) and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange) then
+		if WRDY == 1 and (((doQ or AAREADY ~= 1 or LS == "Q") and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange - 25) then
 			W(target) 
 		end
 		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
