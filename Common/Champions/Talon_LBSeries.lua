@@ -15,8 +15,8 @@ Talon.Harass:Key("DoIt","Harass",string.byte("X"))
 Talon.Harass:Boolean("Auto", "Auto Harass", false)
 Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.5.1
---New Menu Values, Better Combo
+--version = 1.6
+--faster Combo
 ------------------------------------------
 
 ------------------------------------------
@@ -48,7 +48,7 @@ local function DamageFunc()
 	local bonus = GetBonusDmg(myHero)
 	xAA = base + bonus
 	xQ = xAA + 30 * GetCastLevel(myHero,_Q) + .3 * bonus
-	xQ2 = (10 * GetCastLevel(myHero,_Q) + bonus) - dmgOverTime
+	xQ2 = (9 * GetCastLevel(myHero,_Q) + bonus) - dmgOverTime
 	xW = 2 * (5 + 25 * GetCastLevel(myHero,_W) + .6 * bonus)
 	xE = 1 + GetCastLevel(myHero,_E) * .03
 	xR = 70 + GetCastLevel(myHero,_R) * 50 + .75 * bonus
@@ -135,7 +135,7 @@ end
 ------------------------------------------
 local function W(o)
 	if GetDistance(o) <= 700 - GetMoveSpeed(o) * IsMoving(o) * .1 then
-		local WSS = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 1200, 250, 700, 10, false, false)
+		local WSS = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 1200, 250, 700, (700 - GetDistance(o)) * .5, false, false)
 		if WSS.HitChance == 1 then
 			CastSkillShot(_W, WSS.PredPos)
 		end
@@ -211,7 +211,7 @@ end
 --
 local function Combo()
 	target = GetCurrentTarget()
-	if target and Valid(target) and GetDistance(target) <= 700 then
+	if target and Valid(target) and GetDistance(target) <= 750 then
 		local DIST = GetDistance(target)
 		local ARMOR = GetArmor(target)
 		local HPREG = GetHPRegen(target)
@@ -222,26 +222,33 @@ local function Combo()
 		local myRange = GetRange(myHero) + GetHitBox(target) + GetHitBox(myHero) - (IsMoving(target) * 5) * IsMoving(target) * (GetWindUp(myHero) + GetLatency() * .001)
 		local maxDMG = xHYDRA + xIgnite + xAA * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target)))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(target))) + xE * (ERDY + Emulti(target)))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target)))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target))) * (2 -  R2RDY))
  		local maxDMGNoR = xHYDRA + xIgnite + (xAA * ((1 + (-1 * (ERDY + Emulti(target)))) + xE * (ERDY + Emulti(target)))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(target)))) + xE * (ERDY + Emulti(target))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(target))) + xE * (ERDY + Emulti(target))))
-		if ERDY == 1 then HoldPosition() E(target) end
-		if not Talon.KS.R:Value() or LIFE < maxDMG and LIFE > maxDMGNoR or Talon.KS.AR:Value() and Talon.KS.AOER:Value() <= EnemiesAround(myHeroPos(), myRange) then
+		if ERDY == 1 and DIST < 700 then HoldPosition() E(target) end
+		if DIST < 650 and not Talon.KS.R:Value() or LIFE < maxDMG and LIFE > maxDMGNoR or Talon.KS.AR:Value() and Talon.KS.AOER:Value() <= EnemiesAround(myHeroPos(), myRange) then
 			R1(target)
 		end
 		if DIST < 300 and (AAREADY ~= 1 or LS == "Q" or DIST > myRange) then CastOffensiveItems(target) end
 		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
 			AttackUnit(target)
 		end
-		if DIST < myRange and QRDY == 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and doQ and AAREADY ~= 1 then
+		if DIST < myRange and QRDY == 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and (doQ or AAREADY ~= 1) and LS == "AA" then
 			CastSpell(_Q)
 		end
-		if WRDY == 1 and ((AAREADY ~= 1 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange - 10) then
+		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
+			AttackUnit(target)
+		end
+		if WRDY == 1 and (((doQ or AAREADY ~= 1) and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 and QRDY == 0) or DIST > myRange) then
 			W(target) 
 		end
-		if DIST > myRange + 100 then
+		if (AAREADY == 1 or GotBuff(myHero,"talonnoxiandiplomacybuff") ~= 0) and DIST < myRange then
+			AttackUnit(target)
+		end
+		if DIST > myRange + 50 then
 			MoveToMouse()
 		elseif DIST < myRange and AAREADY ~= 1 and QRDY == 0 and GotBuff(myHero,"talonnoxiandiplomacybuff") == 0 then
 			MoveToMouse()
 		end
 	else
+		doQ = false
 		MoveToMouse()
 	end
 end
@@ -280,6 +287,7 @@ OnProcessSpellComplete(function(Object,Spell)
 		if Talon.Combo:Value() then
 			if Spell.name:lower():find("attack") then
 				doQ = true
+				LS = "AA"
 				lastAA = GetTickCount()
 	    elseif Spell.name:lower():find("noxiandiplomacy") then
 	    	doQ = false
@@ -290,10 +298,11 @@ OnProcessSpellComplete(function(Object,Spell)
 	  end
      if Spell.name:lower():find("rake") then 
     	LS = "W"
-    	Wtime = Spell.animationTime * 125 + GetTickCount()
+    	Wtime = Spell.animationTime * 50 + GetTickCount()
     end
     if Spell.name:lower():find("cutthroat") then
     	LS = "E"
+    	doQ = false
     end
 		HydraCast = Spell.name == "ItemTiamatCleave" and 1 or HydraCast
 		HydraCastTime = Spell.name == "ItemTiamatCleave" and GetTickCount() or HydraCastTime
