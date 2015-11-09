@@ -183,7 +183,7 @@ local function SpellSequence()
 			local shield = GetDmgShield(n[i])
 		 	local maxHealth = mhp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
 		 	local health = hp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
-    	if GetDistance(n[i]) <= 2000 and Talon.KS.Percent and Valid(n[i]) then
+    	if GetDistance(n[i]) <= 2000 and Talon.KS.Percent:Value() and Valid(n[i]) then
 	      local maxDMG = xHYDRA + xIgnite + xAA * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))) * (2 -  R2RDY))
 	      local maxDMGNoR = xHYDRA + xIgnite + (xAA * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i])))) + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i]))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))))
     		local seconds = 0
@@ -194,14 +194,14 @@ local function SpellSequence()
     		if health < R2RDY * xR then
     			R2(n[i])
     		end
-    		if		 HRDY == 1 and IRDY == 1 and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
+    		if		 HRDY == 1 and IRDY == 1 and Talon.KS.Ignite:Value() and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
 					CastOffensiveItems(n[i])
 					CastTargetSpell(n[i], Ignite)
     		elseif HRDY == 1 and IRDY == 0 and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
     			CastOffensiveItems(n[i])
-    		elseif HRDY == 0 and IRDY == 1 and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
+    		elseif HRDY == 0 and IRDY == 1 and Talon.KS.Ignite:Value() and health < maxDMG and GetDistance(n[i]) <= 300 and Talon.Combo:Value() and target and n[i] == target then
     			CastTargetSpell(n[i], Ignite)
-    		elseif IRDY == 1 and health < xIgnite and GetDistance(n[i]) <= 600 then
+    		elseif IRDY == 1 and Talon.KS.Ignite:Value() and health < xIgnite and GetDistance(n[i]) <= 600 then
     			CastTargetSpell(n[i], Ignite)
     		end
 			end
@@ -325,7 +325,7 @@ OnDraw(function(myHero)
 			 	local health = hp * ((100 + ((armor - GetArmorPenFlat(myHero)) * GetArmorPenPercent(myHero))) * .01) + hpreg * 6 + shield
 			 	local maxDMG = xHYDRA + xIgnite + ((xQ * QRDY) * ((1 + (-1 * (ERDY * Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i])))) + xR * (R1RDY + R2RDY) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))) * (2 -  R2RDY))
 		    local maxDMGNoR = xHYDRA + xIgnite + ((xQ * QRDY) * ((1 + (-1 * (ERDY + Emulti(n[i])))) + xE * (ERDY + Emulti(n[i]))) + (xQ2 * QRDY)) + xW * (WRDY + Wmulti()) * ((1 + (-1 * (ERDY + Emulti(n[i]))) + xE * (ERDY + Emulti(n[i]))))
-	    	if Talon.KS.Percent then
+	    	if Talon.KS.Percent:Value() then
 	      	if Round(((health - maxDMG) / maxHealth * 100), 0) > 0 then
 						local drawing = WorldToScreen(1, GetOrigin(n[i]))
 						local rounded = Round(((health - maxDMG) / maxHealth * 100), 0)
