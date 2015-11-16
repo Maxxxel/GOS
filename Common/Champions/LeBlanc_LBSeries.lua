@@ -470,11 +470,11 @@ local function SpellSequence()
 					CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
 					CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
 					WR(target) 
-				elseif (CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+				elseif CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
 					E(target) 
 				elseif (CD(0,0,0,n,0,n,0,1,1)==1 or
 					CD(0,0,0,0,0,0,0,1,1)==1 or
-					CD(0,0,0,n,0,n,0,1,1)==1 then
+					CD(0,0,0,n,0,n,0,1,1)==1) then
 					ER(target)
 				else
 					IOW.attacksEnabled = true
