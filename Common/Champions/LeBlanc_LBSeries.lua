@@ -2,7 +2,7 @@ require('Inspired')
 if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
 
---version = 0.7
+--version = 0.7.1
 --reworked
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
@@ -420,9 +420,9 @@ local function SpellSequence()
 				IOW.attacksEnabled = false
 				--killable
 				--normal
-				if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or
-					CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or
-					CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or
+				if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
+					CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
+					CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
 					CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
 					CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
 					CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
@@ -434,32 +434,32 @@ local function SpellSequence()
 					CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
 					CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
 					Q(target)
-				elseif (CD(0,1,0,n,0,n,0,0,1)==1 and Mana(0,0,0)==1 or
+				elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
 					CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
 					CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
 					CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
 					CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
-					CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
+					CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
 					CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
 					CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
 					CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
 					CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
 					CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
 					QR(target)
-				elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or
+				elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
 					CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
 					CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
 					CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
 					CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
 					CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
 					CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
-					CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
+					CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
 					CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
 					CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
 					CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
 					CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
 					W(target) 
-				elseif (CD(0,0,0,n,1,n,0,0,1)==1 and Mana(0,0,0)==1 or
+				elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
 					CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
 					CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
 					CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
@@ -470,34 +470,20 @@ local function SpellSequence()
 					CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
 					CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
 					WR(target) 
-				elseif (CD(0,0,0,n,0,n,1,0,n)==1 and Mana(0,0,1)==1 or
-					CD(0,n,0,n,n,n,1,n,1)==1 and Mana(0,0,1)==1 or
-					CD(0,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 or
-					CD(n,0,n,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
-					CD(n,n,0,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 or
-					CD(n,0,0,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
-					CD(0,0,n,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
-					CD(0,n,0,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 or
-					CD(n,0,0,n,0,n,1,0,0)==1 and Mana(0,0,1)==1 or
-					CD(0,0,0,0,0,0,1,0,0)==1 and Mana(0,0,1)==1 or
-					CD(0,0,0,n,0,n,1,n,0)==1 and Mana(0,0,1)==1) and EPred.HitChance==1 then
+				elseif (CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
 					E(target) 
-				elseif (CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1 or											
-					CD(0,0,0,n,0,n,1,1,1)==1 and Mana(0,0,1)==1 or							
-					CD(1,0,n,n,0,n,n,1,1)==1 and Mana(1,0,0)==1 or								
-					CD(n,0,1,n,0,n,n,1,1)==1 and Mana(0,1,0)==1 or							
-					CD(1,0,1,n,0,n,n,1,1)==1 and Mana(1,1,0)==1 or
-					CD(1,0,n,n,0,n,1,1,1)==1 and Mana(1,0,1)==1 or								
-					CD(n,0,1,n,0,n,1,1,1)==1 and Mana(0,1,1)==1 or
-					CD(0,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
-					CD(0,0,0,0,0,0,0,1,1)==1 and Mana(0,0,0)==1 or
-					CD(0,0,0,n,0,n,0,1,1)==1 and Mana(0,0,0)==1) and EPred.HitChance==1 then
+				elseif (CD(0,0,0,n,0,n,0,1,1)==1 or
+					CD(0,0,0,0,0,0,0,1,1)==1 or
+					CD(0,0,0,n,0,n,0,1,1)==1 then
 					ER(target)
 				else
 					IOW.attacksEnabled = true
 				end
 			elseif GetDistance(target)>700 and GetDistance(target)<1300 - GetMoveSpeed(target) * .5 then
-				if 			CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then WL(target) end	
+				if 			CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then 
+					WL(target)
+					Q(target)
+				end	
 			end
 		end
 		if not LeBlanc.Misc.MR:Value() then
