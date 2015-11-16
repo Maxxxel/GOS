@@ -2,8 +2,8 @@ require('Inspired')
 if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
 
---version = 0.7.1
---reworked
+--version = 0.8
+--better combo
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
@@ -107,7 +107,7 @@ local function QR(o)
 	CastTargetSpell(o,_R)
 end
 local function W(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,650,250,false,true)
 	if WPred.HitChance == 1 then
 		CastSkillShot(_W,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
 	end
@@ -116,7 +116,7 @@ local function W2(o)
 	CastSpell(_W)
 end
 local function WR(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,600,250,false,true)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,650,250,false,true)
 	if WPred.HitChance == 1 then
 		CastSkillShot(_R,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
 	end
@@ -148,7 +148,7 @@ end
 local function Harass()
 	local Wall
 	if mapID == SUMMONERS_RIFT then
-		local WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
+		local WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,650,250,false,true)
 		local ChampionPos = GetOrigin(myHero)
 		local EPos = Vector(WPred.PredPos.x, 0, WPred.PredPos.z)
 		local HPos = Vector(ChampionPos.x, 0, ChampionPos.z)
@@ -307,15 +307,15 @@ local function Draw()
 		local myHeroWorld = WorldToScreen(1,ChampionPos.x,ChampionPos.y,ChampionPos.z)
 		--Q Range
 		if LeBlanc.Draw.DrawQ:Value() and (CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,0,0)==1) or CD(0,1,n,n,n,n,n,1)==1 then 
-			DrawCircle(GetOrigin(myHero),700,0,0,0xffff0000)
+			DrawCircle(GetOrigin(myHero),750,0,0,0xffff0000)
 		end
 		--W Range
 		if LeBlanc.Draw.DrawW:Value() and (CD(n,n,1,n,n,n,n,n,n)==1 and Mana(0,1,0)==1) or CD(n,n,0,n,1,n,n,1)==1 then 
-			DrawCircle(GetOrigin(myHero),600,0,0,0xffff0000)
+			DrawCircle(GetOrigin(myHero),650,0,0,0xffff0000)
 		end
 		--QW Range
 		if LeBlanc.Draw.DrawQW:Value() and (CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1) or CD(1,n,0,n,1,n,n,1)==1 and Mana(1,0,0)==1 then 
-			DrawCircle(GetOrigin(myHero),1300,0,0,0xffffff00)
+			DrawCircle(GetOrigin(myHero),1400,0,0,0xffffff00)
 		end
 		--E Range
 		if LeBlanc.Draw.DrawE:Value() and (CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1) or CD(n,n,n,n,n,0,1,1)==1 then 
@@ -338,13 +338,25 @@ local function Draw()
 						local maxHealth = GetMaxHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6 
 						local drawPos = GetOrigin(n[l])
     				local testPos = WorldToScreen(1, drawPos)
-						if Round(((health-max_val)/maxHealth*100),0)>0 then
-							DrawText("\n\n" .. Round(((health-max_val)/maxHealth*100),0) .. "%",15,testPos.x,testPos.y,0xffffff00)
-						elseif Round(((health-max_val)/maxHealth*100),0)<=0 then
-							if LeBlanc.Misc.Details:Value() then
-								DrawText("\n\n"..KSN[key].text.." KILL",15,testPos.x,testPos.y,0xffffff00)
-							else
-								DrawText("\n\n".." KILL",15,testPos.x,testPos.y,0xffffff00)
+    				if IsInDistance(n[l], 750) then
+							if Round(((health-max_val)/maxHealth*100),0)>0 then
+								DrawText("\n\n" .. Round(((health-max_val)/maxHealth*100),0) .. "%",15,testPos.x,testPos.y,0xffffff00)
+							elseif Round(((health-max_val)/maxHealth*100),0)<=0 then
+								if LeBlanc.Misc.Details:Value() then
+									DrawText("\n\n"..KSN[key].text.." KILL",15,testPos.x,testPos.y,0xffffff00)
+								else
+									DrawText("\n\n".." KILL",15,testPos.x,testPos.y,0xffffff00)
+								end
+							end
+						elseif GetDistance(n[l]) > 750 then
+							if Round(((health-(max_val - (W1RDY * xW)))/maxHealth*100),0)>0 then
+								DrawText("\n\n" .. Round(((health-(max_val - (W1RDY * xW)))/maxHealth*100),0) .. "%",15,testPos.x,testPos.y,0xffffff00)
+							elseif Round(((health-(max_val - (W1RDY * xW)))/maxHealth*100),0)<=0 then
+								if LeBlanc.Misc.Details:Value() then
+									DrawText("\n\n"..KSN[key].text.." KILL",15,testPos.x,testPos.y,0xffffff00)
+								else
+									DrawText("\n\n".." KILL",15,testPos.x,testPos.y,0xffffff00)
+								end
 							end
 						end
 					end
@@ -357,7 +369,7 @@ local function Draw()
 							local Wall
 							local Block
 							if mapID == SUMMONERS_RIFT then
-								local WPred = GetPredictionForPlayer(GetOrigin(myHero),n[l],GetMoveSpeed(n[l]),1450,250,600,250,false,true)
+								local WPred = GetPredictionForPlayer(GetOrigin(myHero),n[l],GetMoveSpeed(n[l]),1450,250,650,250,false,true)
 								local ChampionPos = GetOrigin(myHero)
 								local EPos = Vector(WPred.PredPos.x, 0, WPred.PredPos.z)
 								local HPos = Vector(ChampionPos.x, 0, ChampionPos.z)
@@ -372,13 +384,13 @@ local function Draw()
 							else
 								Block=1
 							end
-							if KSN[key].Dist==1 and GetDistance(n[l])>700 and GetDistance(n[l])<=1300 - GetMoveSpeed(n[l]) * .3 then
+							if KSN[key].Dist==1 and GetDistance(n[l])>750 and GetDistance(n[l])<=1400 - GetMoveSpeed(n[l]) * .3 then
 								if (KSN[key].Block==1 and Block==1) or (KSN[key].Wall==1 and Wall==1) then 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
 								else 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffff0000)
 								end
-							elseif KSN[key].Dist==0 and GetDistance(n[l])<700 then
+							elseif KSN[key].Dist==0 and GetDistance(n[l])<750 then
 								if (KSN[key].Block==1 and Block==1) or (KSN[key].Wall==1 and Wall==1) then 
 									DrawCircle(drawPos.x,drawPos.y,drawPos.z,100,0,0,0xffffff00)
 								else 
@@ -401,7 +413,7 @@ local function SpellSequence()
 			local targetPos = GetOrigin(target)
 			local targetHP = ( GetCurrentHP(target)*((100+(((GetMagicResist(target))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(target)*6)
 			local EPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1550,150,950,55,true,true)
-			local WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,600,250,false,true)
+			local WPred = GetPredictionForPlayer(GetOrigin(myHero),target,GetMoveSpeed(target),1450,250,650,250,false,true)
 			local WallT
 			if mapID==SUMMONERS_RIFT then
 				local ChampionPos = GetOrigin(myHero)
@@ -416,7 +428,7 @@ local function SpellSequence()
 			if CD(KSN[key].a,KSN[key].b,KSN[key].c,KSN[key].d,KSN[key].e,KSN[key].f,KSN[key].g,KSN[key].h,KSN[key].i)==1 and Mana(KSN[key].a,KSN[key].c,KSN[key].g)==1 and targetHP < KSN[key].Damage + xIgnite and targetHP > KSN[key].Damage and GetDistance(target) < 600 and IRDY == 1 then
 				CastTargetSpell(target, Ignite)
 			end
-			if GetDistance(target)<=700 then
+			if GetDistance(target)<=750 then
 				IOW.attacksEnabled = false
 				--killable
 				--normal
@@ -479,7 +491,7 @@ local function SpellSequence()
 				else
 					IOW.attacksEnabled = true
 				end
-			elseif GetDistance(target)>700 and GetDistance(target)<1300 - GetMoveSpeed(target) * .5 then
+			elseif GetDistance(target)>750 and GetDistance(target)<1400 - GetMoveSpeed(target) * .5 then
 				if 			CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then 
 					WL(target)
 					Q(target)
@@ -495,7 +507,7 @@ local function SpellSequence()
 		end
 	end
 	if Valid(target) and not IsDead(myHero) then
-		if LeBlanc.Keys.DoQ:Value() and Valid(target) and GetDistance(target)<=700 then
+		if LeBlanc.Keys.DoQ:Value() and Valid(target) and GetDistance(target)<=750 then
 			if 			CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,n,n)==1 then Q(target)
 			elseif 	CD(n,1,n,n,n,n,n,n,1)==1 and Mana(n,n,n)==1 then QR(target)
 			end
