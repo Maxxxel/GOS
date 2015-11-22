@@ -2,17 +2,19 @@ require('Inspired')
 if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
 
---version = 0.8
---better combo
+--version = 0.9
+--added DmgOverHP, Priority
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
-LeBlanc.Keys:KeyBinding("DoQ", "Q", string.byte("Q"))
+LeBlanc.Keys:Key("DoQ", "Q", string.byte("Q"))
 LeBlanc.Keys:Key("DoE", "E", string.byte("E"))
 LeBlanc.Keys:Key("Harass", "Harass", string.byte("X"))
 LeBlanc.Keys:Key("Combo", "Combo", string.byte(" "))
+LeBlanc.Keys:DropDown("Priority", "Priority", 1, {"QWE", "QEW", "WEQ", "WQE", "EQW", "EWQ"})
 
 LeBlanc:Menu("KS","Kill Functions")
+LeBlanc.KS:Boolean("DmgOverHP", "Draw DMG over HPBar", false)
 LeBlanc.KS:Boolean("Multi", "Calc 2 E proc", false)
 LeBlanc.KS:Boolean("KSNotes", "KS Notes", true)
 LeBlanc.KS:Boolean("Percent", "Percent Notes", true)
@@ -131,9 +133,9 @@ local function E(o)
 	end
 end
 local function ER(o)
-	local EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,150,950,55,true,true)
-	if EPred.Hithance == 1 then
-		CastSkillShot(_R,EPred.PredPos.x,EPred.PredPos.y,EPred.PredPos.z)
+	local ERPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,150,950,55,true,true)
+	if ERPred.HitChance == 1 then
+		CastSkillShot(_R,ERPred.PredPos.x,ERPred.PredPos.y,ERPred.PredPos.z)
 	end
 end
 local function WL(o)
@@ -333,12 +335,15 @@ local function Draw()
 			for  l = 1, #n do
 				if not IsDead(n[l]) and IsVisible(n[l]) and IsInDistance(n[l], 3000) then
 					local x, y = 1, 35
+					local health = GetCurrentHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6
+					local maxHealth = GetMaxHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6 
+					local drawPos = GetOrigin(n[l])
+  				local testPos = WorldToScreen(1, drawPos)
+  				if LeBlanc.KS.DmgOverHP:Value() then
+						DrawDmgOverHpBar(n[l], GetCurrentHP(n[l]), 0, max_val, 0xffff0000)
+					end
 					if LeBlanc.KS.Percent:Value() then
-						local health = GetCurrentHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6
-						local maxHealth = GetMaxHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6 
-						local drawPos = GetOrigin(n[l])
-    				local testPos = WorldToScreen(1, drawPos)
-    				if IsInDistance(n[l], 750) then
+	  				if IsInDistance(n[l], 750) then
 							if Round(((health-max_val)/maxHealth*100),0)>0 then
 								DrawText("\n\n" .. Round(((health-max_val)/maxHealth*100),0) .. "%",15,testPos.x,testPos.y,0xffffff00)
 							elseif Round(((health-max_val)/maxHealth*100),0)<=0 then
@@ -361,10 +366,6 @@ local function Draw()
 						end
 					end
 					if LeBlanc.KS.KSNotes:Value() then
-						local health = GetCurrentHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6
-						local maxHealth = GetMaxHP(n[l])*((100+(((GetMagicResist(n[l]))-GetMagicPenFlat(myHero))*GetMagicPenPercent(myHero)))/100)+GetHPRegen(n[l])*6 
-						local drawPos = GetOrigin(n[l])
-    				local testPos = WorldToScreen(1, drawPos)
 						if CD(KSN[key].a,KSN[key].b,KSN[key].c,KSN[key].d,KSN[key].e,KSN[key].f,KSN[key].g,KSN[key].h,KSN[key].i)==1 and Mana(KSN[key].a,KSN[key].c,KSN[key].g)==1 and health < KSN[key].Damage + xIgnite then
 							local Wall
 							local Block
@@ -428,70 +429,334 @@ local function SpellSequence()
 			if CD(KSN[key].a,KSN[key].b,KSN[key].c,KSN[key].d,KSN[key].e,KSN[key].f,KSN[key].g,KSN[key].h,KSN[key].i)==1 and Mana(KSN[key].a,KSN[key].c,KSN[key].g)==1 and targetHP < KSN[key].Damage + xIgnite and targetHP > KSN[key].Damage and GetDistance(target) < 600 and IRDY == 1 then
 				CastTargetSpell(target, Ignite)
 			end
-			if GetDistance(target)<=750 then
+			local myRange = LeBlanc.Keys.Priority:Value() == 1 and 750 or LeBlanc.Keys.Priority:Value() == 2 and 750 or LeBlanc.Keys.Priority:Value() == 3 and 650 or LeBlanc.Keys.Priority:Value() == 4 and 650 or LeBlanc.Keys.Priority:Value() == 5 and 950 or LeBlanc.Keys.Priority:Value() == 6 and 950
+			if GetDistance(target) <= myRange then
 				IOW.attacksEnabled = false
-				--killable
-				--normal
-				if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
-					CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
-					CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
-					CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
-					CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
-					CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
-					CD(1,0,n,n,0,n,1,0,n)==1 and Mana(1,0,1)==1 or
-					CD(1,0,1,n,0,n,n,0,n)==1 and Mana(1,1,0)==1 or
-					CD(1,n,1,n,n,n,n,n,1)==1 and Mana(1,1,0)==1 or
-					CD(1,n,n,n,n,n,1,n,1)==1 and Mana(1,0,1)==1 or
-					CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
-					CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
-					CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
-					Q(target)
-				elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
-					CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
-					CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
-					CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
-					CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
-					CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
-					CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
-					CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
-					CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
-					CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
-					CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
-					QR(target)
-				elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
-					CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
-					CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
-					CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
-					CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
-					CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
-					CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
-					CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
-					CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
-					CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
-					CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
-					CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
-					W(target) 
-				elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
-					CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
-					CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
-					CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
-					CD(1,0,n,n,1,n,1,0,1)==1 and Mana(1,0,1)==1 or
-					CD(1,0,1,n,1,n,n,0,1)==1 and Mana(1,1,0)==1 or
-					CD(n,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
-					CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
-					CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
-					CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
-					WR(target) 
-				elseif CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
-					E(target) 
-				elseif (CD(0,0,0,n,0,n,0,1,1)==1 or
-					CD(0,0,0,0,0,0,0,1,1)==1 or
-					CD(0,0,0,n,0,n,0,1,1)==1) then
-					ER(target)
-				else
-					IOW.attacksEnabled = true
+				--{"QWE", "QEW", "WEQ", "WQE", "EQW", "EWQ"}
+				if LeBlanc.Keys.Priority:Value() == 1 then
+					if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
+						CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
+						CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
+						CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
+						CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
+						CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
+						CD(1,0,n,n,0,n,1,0,n)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,n,0,n)==1 and Mana(1,1,0)==1 or
+						CD(1,n,1,n,n,n,n,n,1)==1 and Mana(1,1,0)==1 or
+						CD(1,n,n,n,n,n,1,n,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
+						CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
+						Q(target)
+					elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
+						CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
+						CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
+						CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
+						QR(target)
+					elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
+						CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
+						CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
+						CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
+						W(target) 
+					elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
+						CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
+						CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,n,n,1,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,1,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(n,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
+						WR(target) 
+					elseif CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+						E(target) 
+					elseif (CD(0,0,0,n,0,n,0,1,1)==1 or
+						CD(0,0,0,0,0,0,0,1,1)==1 or
+						CD(0,0,0,n,0,n,0,1,1)==1) then
+						ER(target)
+					else
+						IOW.attacksEnabled = true
+					end
+				elseif LeBlanc.Keys.Priority:Value() == 2 then
+					if (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
+						CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
+						CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
+						CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
+						CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
+						CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
+						CD(1,0,n,n,0,n,1,0,n)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,n,0,n)==1 and Mana(1,1,0)==1 or
+						CD(1,n,1,n,n,n,n,n,1)==1 and Mana(1,1,0)==1 or
+						CD(1,n,n,n,n,n,1,n,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
+						CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
+						Q(target)
+					elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
+						CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
+						CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
+						CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
+						QR(target)
+					elseif CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+						E(target) 
+					elseif CD(n,n,n,n,n,n,n,1,1)==1 then
+						ER(target)
+					elseif Mana(0,1,0)==1 and WallT==0 then
+						if (CD(0,0,1,n,0,n,n,0,0)==1 or
+							CD(0,n,1,n,n,n,n,n,1)==1 or
+							CD(n,0,1,n,0,n,n,0,0)==1 or
+							CD(n,n,1,n,n,n,n,n,0)==1 or
+							CD(0,n,1,n,n,n,n,n,0)==1 or
+							CD(n,0,1,n,0,n,n,0,0)==1 or
+							CD(0,0,1,n,0,n,n,0,0)==1 or
+							CD(n,n,1,n,n,n,n,n,1)==1 or
+							CD(0,0,1,n,0,n,n,0,0)==1 or
+							CD(0,n,1,n,n,n,n,n,1)==1 or
+							CD(0,1,1,n,0,n,n,0,1)==1) then
+								W(target) 
+						end
+					elseif CD(n,n,n,n,1,n,n,n,1)==1 and WallT==0 then
+						WR(target) 
+					else
+						IOW.attacksEnabled = true
+					end
+				elseif LeBlanc.Keys.Priority:Value() == 3 then
+					if (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
+						CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
+						CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
+						CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
+						W(target) 
+					elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
+						CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
+						CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,n,n,1,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,1,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(n,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
+						WR(target) 
+					elseif CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+						E(target) 
+					elseif CD(n,n,n,n,n,n,n,1,1)==1  then
+						ER(target)
+					elseif CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,0,0)==1 then
+						Q(target)
+					elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
+						CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
+						CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
+						CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
+						QR(target)
+					else
+						IOW.attacksEnabled = true
+					end
+				elseif LeBlanc.Keys.Priority:Value() == 4 then
+					if (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
+						CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
+						CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
+						CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
+						W(target) 
+					elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
+						CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
+						CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,n,n,1,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,1,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(n,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
+						WR(target) 
+					elseif (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
+						CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
+						CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
+						CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
+						CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
+						CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
+						CD(1,0,n,n,0,n,1,0,n)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,n,0,n)==1 and Mana(1,1,0)==1 or
+						CD(1,n,1,n,n,n,n,n,1)==1 and Mana(1,1,0)==1 or
+						CD(1,n,n,n,n,n,1,n,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
+						CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
+						Q(target)
+					elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
+						CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
+						CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
+						CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
+						QR(target)
+					elseif CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+						E(target) 
+					elseif CD(n,n,n,n,n,n,n,1,1)==1  then
+						ER(target)
+					else
+						IOW.attacksEnabled = true
+					end
+				elseif LeBlanc.Keys.Priority:Value() == 5 then
+					if CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+						E(target) 
+					elseif CD(n,n,n,n,n,n,n,1,1)==1 or
+								CD(1,0,1,0,0,0,0,1,1)==1 then
+						ER(target)
+					elseif (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
+						CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,0,0)== 1 or
+						CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
+						CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
+						CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
+						CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
+						CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
+						CD(1,0,n,n,0,n,1,0,n)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,n,0,n)==1 and Mana(1,1,0)==1 or
+						CD(1,n,1,n,n,n,n,n,1)==1 and Mana(1,1,0)==1 or
+						CD(1,n,n,n,n,n,1,n,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
+						CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
+						Q(target)
+					elseif CD(n,1,n,n,n,n,n,n,1)==1 then
+						QR(target)
+					elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
+						CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
+						CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
+						CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
+						W(target) 
+					elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
+						CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
+						CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,n,n,1,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,1,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(n,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
+						WR(target) 
+					else
+						IOW.attacksEnabled = true
+					end
+				elseif LeBlanc.Keys.Priority:Value() == 6 then
+					if CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1 then
+						E(target) 
+					elseif CD(n,n,n,n,n,n,n,1,1)==1 then
+						ER(target)
+					elseif (CD(0,0,1,n,0,n,0,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(0,n,1,n,n,n,0,n,1)==1 and Mana(0,1,0)==1 or
+						CD(0,n,1,n,n,n,n,n,0)==1 and Mana(0,1,0)==1 or
+						CD(n,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or
+						CD(n,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,0)==1 and Mana(0,1,1)==1 or
+						CD(n,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,n,0,0)==1 and Mana(0,1,0)==1 or --ok
+						CD(n,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,1,n,0,n,1,0,0)==1 and Mana(0,1,1)==1 or
+						CD(0,n,1,n,n,n,1,n,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1) and WallT==0 then
+						W(target) 
+					elseif (CD(0,0,0,n,1,n,0,0,1)==1 or
+						CD(0,0,1,n,1,n,0,0,1)==1 and Mana(0,1,0)==1 or
+						CD(1,0,n,n,1,n,n,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,0,n,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,n,n,1,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,1,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(n,0,0,n,1,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,0,1,n,1,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,0,0,n,1,n,1,n,1)==1 and Mana(0,0,1)==1 or
+						CD(1,0,1,n,1,n,1,0,1)==1 and Mana(1,1,1)==1) and WallT==0 then
+						WR(target) 
+					elseif (CD(1,0,0,n,0,n,0,0,n)==1 and Mana(1,0,0)==1 or --Q
+						CD(1,n,0,n,n,n,0,n,1)==1 and Mana(1,0,0)==1 or --Q-Q(R)
+						CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 or --Q-Q(R)-W
+						CD(1,0,n,n,0,n,n,0,n)==1 and Mana(1,0,0)==1 or
+						CD(1,n,n,n,n,n,1,n,n)==1 and Mana(1,0,1)==1 or
+						CD(1,n,1,n,n,n,1,n,n)==1 and Mana(1,1,1)==1 or
+						CD(1,0,n,n,0,n,1,0,n)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,n,0,n)==1 and Mana(1,1,0)==1 or
+						CD(1,n,1,n,n,n,n,n,1)==1 and Mana(1,1,0)==1 or
+						CD(1,n,n,n,n,n,1,n,1)==1 and Mana(1,0,1)==1 or
+						CD(1,0,1,n,0,n,1,0,n)==1 and Mana(1,1,1)==1 or
+						CD(1,n,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,0,1,n,0,n,1,1,1)==1 and Mana(1,1,1)==1) then
+						Q(target)
+					elseif (CD(0,1,0,n,0,n,0,0,1)==1 or --ok
+						CD(1,1,0,n,0,n,0,0,1)==1 and Mana(1,0,0)==1 or
+						CD(n,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or
+						CD(n,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(n,1,1,n,0,n,1,0,1)==1 and Mana(0,1,1)==1 or
+						CD(0,1,1,n,0,n,n,0,1)==1 and Mana(0,1,0)==1 or --ok
+						CD(1,1,1,n,0,n,n,0,1)==1 and Mana(1,1,0)==1 or
+						CD(0,1,n,n,0,n,1,0,1)==1 and Mana(0,0,1)==1 or
+						CD(1,1,n,n,0,n,1,0,1)==1 and Mana(1,0,1)==1 or
+						CD(1,1,1,n,n,n,1,n,1)==1 and Mana(1,1,1)==1 or
+						CD(1,1,1,n,0,n,1,0,1)==1 and Mana(1,1,1)==1) then
+						QR(target)
+					else
+						IOW.attacksEnabled = true
+					end
 				end
-			elseif GetDistance(target)>750 and GetDistance(target)<1400 - GetMoveSpeed(target) * .5 then
+			elseif GetDistance(target)>myRange and GetDistance(target)<1400 - GetMoveSpeed(target) * .5 then
 				if 			CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1 and WallT==0 then 
 					WL(target)
 					Q(target)
