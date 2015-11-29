@@ -1,6 +1,6 @@
 require('Inspired')
 if GetObjectName(myHero) ~= "Brand" then return end
---Version 1.0 // new Menu
+--Version 1.2 // some ulti fixes
 
 Brand = MenuConfig("Brand", "Brand")
 Brand:KeyBinding("Combo", "Combo", 32)
@@ -8,6 +8,8 @@ Brand:KeyBinding("Combo", "Combo", 32)
 Brand:Menu("Spells", "Spells")
 Brand.Spells:Info("InfoSpells", "En-/Disable Spells to use in Combo")
 Brand.Spells:Boolean("CQ", "Q", true)
+Brand.Spells:Boolean("CQS", "try Always stun in closes ranges", true)
+Brand.Spells:Boolean("AS", "Auto-Stun in very close range", true)
 Brand.Spells:Boolean("CW", "W", true)
 Brand.Spells:Boolean("CE", "E", true)
 Brand.Spells:Boolean("CR", "R", true)
@@ -45,7 +47,7 @@ local target, Q, W, E, R, KR
 local dQ, dW, dE, dR = 0, 0, 0, 0
 local QDmg, WDmg, EDmg, RDmg, AP, xIgnite, TotalDamage = 0, 0, 0, 0, 0, 0, 0
 local QRDY, WRDY, ERDY, RRDY, IRDY = 0, 0, 0, 0, 0
-local myRange, DIST, VoidStaff = 0, 0, 0
+local myRange, DIST = 0, 0
 --Items CD
 local function GetItemCD()
   IRDY = Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
@@ -75,18 +77,30 @@ local function Mana(mq,mw,me,mr)
   local Rmana = 100
   return Qmana * mq + Wmana * mw + Emana * me + Rmana * mr < GetCurrentMana(myHero) and 1 or 0
 end
+--Burns?!
+local function IsBurning(o)
+  return GotBuff(o, "brandablaze") ~= 0 and 1 or 0
+end
 --Spells
 local function doQ(o)
   if Q and GetDistance(o) < 1050 then
-    local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
+    local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 75, true, false)
     if QPred.HitChance == 1 then
-      CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
+    	if Brand.Spells.CQS:Value() then
+    		if IsBurning(o) == 1 then
+      		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
+      	elseif WRDY + ERDY == 0 or GetDistance(o) > 875 and GetDistance(o) < 1050 then
+      		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
+      	end
+      else
+      	CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
+      end
     end
   end
 end
 local function doW(o)
   if W and GetDistance(o) < 875 then
-    local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
+    local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 150) + 325), 875, 185, false, false)
 		if WPred.HitChance == 1 then
       CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
     end
@@ -103,38 +117,38 @@ local function dooR(o)
   end
 end
 local function doEW(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325) + 125, 875, 185, false, false)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 150) + 325) + 125, 875, 185, false, false)
 	if WPred.HitChance == 1 and GetDistance(o) < 650 then
 		CastTargetSpell(o, _E)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 	end
 end
 local function doQE(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 75, true, false)
 	if QPred.HitChance == 1 and GetDistance(o) < 650 then
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastTargetSpell(o, _E)
 	end
 end
 local function doWQ(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325), 875, 185, false, false)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 75, true, false)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 150) + 325), 875, 185, false, false)
 	if WPred.HitChance == 1 and QPred.HitChance == 1 and GetDistance(o) < 875 then
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 	end
 end
 local function doQW(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325) + 125, 875, 185, false, false)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250, 1050, 75, true, false)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 150) + 325) + 125, 875, 185, false, false)
 	if WPred.HitChance == 1 and QPred.HitChance == 1 and GetDistance(o) < 875 then
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
 		CastSkillShot(_W, WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)
 	end
 end
 local function doEQW(o)
-	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 70, true, true)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 300) + 325) + 250, 875, 185, false, false)
+	local QPred = GetPredictionForPlayer(GetOrigin(myHero), o ,GetMoveSpeed(o) ,(math.floor(math.random() * 400) + 1600), 250 + 125, 1050, 75, true, false)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero), o, GetMoveSpeed(o), 99999, (math.floor(math.random() * 150) + 325) + 250, 875, 185, false, false)
 	if WPred.HitChance == 1 and QPred.HitChance == 1 and GetDistance(o) < 650 then
 		CastTargetSpell(o, _E)
 		CastSkillShot(_Q, QPred.PredPos.x, QPred.PredPos.y, QPred.PredPos.z)
@@ -182,10 +196,6 @@ local function CountEnemyObjectsInRange(Object, range)
   local b = CountEnemyMinionInRange(Object, range)
   return a + b
 end
---Burns?!
-local function IsBurning(o)
-  return GotBuff(o, "brandablaze") ~= 0 and 1 or 0
-end
 --Bouncing fire :)
 local function GetRBounce(o)
 	local Speed = o and GetMoveSpeed(o) or 0
@@ -224,9 +234,9 @@ local function Combo()
     local care = GetBuffData(target, "brandablaze")
     local burntime = care.ExpireTime - GetTickCount() > 0 and (care.ExpireTime - GetTickCount()) * .001 or 4
     local PDMG = ((maxHealth * .02 * burntime) - (hpreg * .2 * burntime)) * IsBurning(target)
-    local TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
+    local TotalDamage = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (IsBurning(target) + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
     local TotalDamageNoR = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
-    local TotalDamageNoIgnite = (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (1 + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
+    local TotalDamageNoIgnite = (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + RDmg * RRDY * (IsBurning(target) + GetRBounce(target)) + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
     local TotalDamageNoRNoIgnite = (QDmg * QRDY + WDmg * WRDY + WDmg * WRDY * IsBurning(target) * 1.25 + EDmg * ERDY + PDMG) * Mana(QRDY, WRDY, ERDY, RRDY)
     if Health < TotalDamageNoR then
       if ERDY == 1 then doE(target) end
@@ -250,7 +260,7 @@ local function Combo()
       if IsBurning(target) == 1 then
         doW(target)
       end
-    	if RRDY == 1 and Health < TotalDamage then
+    	if RRDY == 1 and Health < TotalDamage and Health > TotalDamageNoR then
       	dooR(target)
       end
       if Brand.KS.I:Value() and Health > TotalDamageNoIgnite and DIST < 650 then
@@ -280,6 +290,22 @@ local function Combo()
           end
         end
       end
+    end
+  end
+end
+--Stun
+local function AS()
+	for i = 1, #n do
+  	local DIST = GetDistance(n[i])
+    if Valid(n[i]) and DIST < 300 then
+    	if (IsBurning(n[i]) == 0 and WRDY + ERDY >= 1) or (IsBurning(n[i]) == 1 and QRDY == 1) then
+    		if IsBurning(n[i]) == 0 and Mana(0,1,0,0) == 1 or Mana(0,0,1,0) == 1 or Mana(0,1,1,0) == 1 then
+    			if IsBurning(n[i]) == 0 then doE(n[i]) end
+    			if ERDY == 0 and IsBurning(n[i]) == 0 then doW(n[i]) end
+    		elseif IsBurning(n[i]) == 1 and Mana(1,0,0,0) == 1 then
+    			doQ(n[i])
+    		end
+    	end
     end
   end
 end
@@ -326,7 +352,7 @@ local function Kills()
 						local hpreg = GetHPRegen(n[j]) * (1 - (IsOrWillBeIgnited(n[j]) * .5))
 						local Health = hp * ((100 + ((armor - GetMagicPenFlat(myHero)) * GetMagicPenPercent(myHero))) * .01) + hpreg * 6 + GetMagicShield(n[j])
 						local PDMG = (maxHealth * .08 - hpreg * .8) * IsBurning(n[j])
-						if Health < (RDmg * RRDY + PDMG) * Mana(0,0,0,1) and Brand.KS.KSR:Value() and DIST < 750 and GetDistance(n[j]) > 750 and GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
+						if Health < (RDmg * RRDY + PDMG) and GetCurrentMana(myHero) >= 100 and Brand.KS.KSR:Value() and DIST < 750 and GetDistance(n[j]) > 750 and GetDistance(n[i], n[j]) <= 400 - (GetMoveSpeed(n[j]) + GetMoveSpeed(n[i]))* .5 * .25 then
 							dooR(n[i])
 						end
 					end
@@ -384,6 +410,9 @@ OnTick(function(myHero)
   n = GetEnemyHeroes()
   if Brand.Combo:Value() then
     Combo()
+  end
+  if Brand.Spells.AS:Value() then
+  	AS()
   end
   Kills()
 end)
