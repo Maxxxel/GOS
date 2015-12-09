@@ -1,6 +1,6 @@
 require('Inspired')
 if GetObjectName(myHero) ~= "Brand" then return end
---Version 1.2 // some ulti fixes
+--Version 1.2.1 // mana cost update
 
 Brand = MenuConfig("Brand", "Brand")
 Brand:KeyBinding("Combo", "Combo", 32)
@@ -72,7 +72,7 @@ end
 --Mana ready
 local function Mana(mq,mw,me,mr)
   local Qmana = 50
-  local Wmana = 5 * GetCastLevel(myHero, _W) + 65
+  local Wmana = 10 * GetCastLevel(myHero, _W) + 60
   local Emana = 5 * GetCastLevel(myHero, _E) + 65
   local Rmana = 100
   return Qmana * mq + Wmana * mw + Emana * me + Rmana * mr < GetCurrentMana(myHero) and 1 or 0
