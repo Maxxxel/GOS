@@ -6,6 +6,7 @@
 -- v04 - 5/23/2013 5:50:41 PM  - added MapPosition:inMyBase(unit) and MapPosition:inMyJungle(unit)
 -- v05 - 5/23/2013 7:42:07 PM  - uses spatial map for inBush, Common dir now required, inWall/inBush also accept units
 -- v06 - 11/28/2014 12:20:00 PM - updated Bushes and Walls for S5 (Maxxxel)
+-- v07 - 12/10/2015 19:13:00 PM - added all maps (Maxxxel)
 --
 -- requires MapPosition.lua and 2DGeometry.lua
 --
@@ -14,6 +15,7 @@
 -- see MapPosition.lua for documentation
 
 require 'MapPosition'
+local mapID = GetMapID()
 
 local function file_exists(name)
     local f = io.open(name, "r") if f ~= nil then io.close(f) return true else return false end
@@ -35,8 +37,23 @@ if package.path:find([[;.\?]], 1, true) == nil then
     package.path = package.path..[[;.\?.lua]]
 end
 
-local walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_1.lua")
-local bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_1.lua")
+local walls_cached
+local bushes_cached
+
+if mapID == HOWLING_ABYSS then
+	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_2.lua")
+	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_2.lua")
+elseif mapID == CRYSTAL_SCAR then
+	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_3.lua")
+	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_3.lua")
+elseif mapID == TWISTED_TREELINE then
+	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_4.lua")
+	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_4.lua")
+else
+	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_1.lua")
+	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_1.lua")
+end
+
 
 local bushQuads = { 
 -- this data slightly inaccurate in places
@@ -113,12 +130,34 @@ local bushQuads = {
 		{x1=8984,x2=9417,x3=9432,x4=8968,z1=11347,z2=11340,z3=11634,z4=11410 },
 }
 
-local bushes={}
+local bushQuadsHA = {
+}
 
-for i=1,#bushQuads do
-    local b = bushQuads[i]
+local bushQuadsCS = {
+}
+
+local bushQuadsTT = {
+}
+
+local bushes = {}
+local bushesformap
+
+if mapID == HOWLING_ABYSS then
+	bushesformap = bushQuadsHA
+elseif mapID == CRYSTAL_SCAR then
+	bushesformap = bushQuadsCS
+elseif mapID == TWISTED_TREELINE then
+	bushesformap = bushQuadsTT
+else
+	bushesformap = bushQuads
+end
+
+if bushesformap then
+	for i=1,#bushesformap do
+    local b = bushesformap[i]
     local poly = Polygon(Point(b.x1,b.z1), Point(b.x2,b.z2), Point(b.x3,b.z3), Point(b.x4,b.z4))
     table.insert(bushes, poly)
+	end
 end
 
 -- adding 'inMyBase' & 'inMyJungle'
@@ -170,7 +209,15 @@ if bushes_cached then
 else
     PrintChat('*** MapPositionGOS: generating bush cache')
 end
-MapPosition.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_1")
+if mapID == HOWLING_ABYSS then
+	MapPosition.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_2")
+elseif mapID == CRYSTAL_SCAR then
+	MapPosition.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_3")
+elseif mapID == TWISTED_TREELINE then
+	MapPosition.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_4")
+else
+	MapPosition.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_1")
+end
 
 function MapPosition:inBush(o)  
     local point    
