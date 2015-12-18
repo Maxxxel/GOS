@@ -3,8 +3,8 @@ if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
 require('Collision')
 
---version = 1.1
---some improvements
+--version = 1.2
+--some more improvements
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
@@ -16,18 +16,17 @@ LeBlanc.Keys:Boolean("Long", "Long Range Kills", true)
 LeBlanc.Keys:DropDown("Priority", "Priority", 1, {"QWE", "QEW", "WEQ", "WQE", "EQW", "EWQ"})
 
 LeBlanc:Menu("KS","Kill Functions")
-LeBlanc.KS:Boolean("DmgOverHP", "Draw DMG over HPBar", false)
+--LeBlanc.KS:Boolean("DmgOverHP", "Draw DMG over HPBar", false)
 LeBlanc.KS:Boolean("Multi", "Calc 2 E proc", false)
-LeBlanc.KS:Boolean("KSNotes", "KS Notes", true)
-LeBlanc.KS:Boolean("Percent", "Percent Notes", true)
+--LeBlanc.KS:Boolean("KSNotes", "KS Notes", true)
+--LeBlanc.KS:Boolean("Percent", "Percent Notes", true)
 LeBlanc.KS:Boolean("Ignite","Auto-Ignite",true)
-LeBlanc.KS:Info("INFO", "If u disable a  value, reload Script")
 
 LeBlanc:Menu("Misc","Misc")
 LeBlanc.Misc:Boolean("MR", "Manual Return", true)
-LeBlanc.Misc:Boolean("Details", "Detailed Kill notes", false)
-LeBlanc.Misc:Info("INFO", "Detailed notes always show")
-LeBlanc.Misc:Info("INFO", "max Damage possible.")
+--LeBlanc.Misc:Boolean("Details", "Detailed Kill notes", false)
+--LeBlanc.Misc:Info("INFO", "Detailed notes always show")
+--LeBlanc.Misc:Info("INFO", "max Damage possible.")
 
 LeBlanc:Menu("Draw", "Draw")
 LeBlanc.Draw:Boolean("DrawON", "Draw Stuff", true)
@@ -40,7 +39,6 @@ LeBlanc.Draw:Boolean("Spells", "Spell Combos", true)
 ------------------------------------------
 --Variables
 ------------------------------------------
-local mapID = GetMapID()
 local ls
 local target
 local myHero = GetMyHero()
@@ -79,23 +77,6 @@ end
 ------------------------------------------
 --MISC
 ------------------------------------------
-local function GetDistanceXYZ(x,z,x2,z2)
-	if (x and z and x2 and z2)~=nil then
-		a=x2-x
-		b=z2-z
-		if (a and b)~=nil then
-			a2=a*a
-			b2=b*b
-			if (a2 and b2)~=nil then
-				return math.sqrt(a2+b2)
-			else
-				return 99999
-			end
-		else
-			return 99999
-		end
-	end	
-end
 local function Valid(unit)
 	return unit and not IsDead(unit) and IsTargetable(unit) and not IsImmune(unit, myHero) and IsVisible(unit) and true or false
 end
@@ -112,7 +93,10 @@ local function QR(o)
 	CastTargetSpell(o,_R)
 end
 local function W(o)
-	CastSkillShot(_W, GetOrigin(o))
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,700,50,false,true)
+	if WPred.HitChance == 1 and not MapPosition:inWall(Point(WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)) then
+		CastSkillShot(_W,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
+	end
 end
 local function W2()
 	CastSpell(_W)
@@ -139,27 +123,22 @@ local function ER(o)
 	end
 end
 local function WL(o)
-	--print("SHORT")
 	local WPred = GetOrigin(o)
 	local ChampionPos = GetOrigin(myHero)
 	local EPos = Vector(WPred.x, 0, WPred.z)
 	local HPos = Vector(ChampionPos.x, 0, ChampionPos.z)
-	local WPos = HPos + (HPos - EPos) * ( -650 / GetDistance(HPos, EPos))
-	DrawCircle(WPos, 100,0,0,0xffff0000)
+	local WPos = HPos + (HPos - EPos) * (-650 / GetDistance(HPos, EPos))
 	if not MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z)) then
 		CastSkillShot(_W, WPred)
 	end
 end
 local function WvL(o)
-	--print("LONG")
 	local WPred = GetOrigin(o)
 	local ChampionPos = GetOrigin(myHero)
 	local EPos = Vector(WPred.x, 0, WPred.z)
 	local HPos = Vector(ChampionPos.x, 0, ChampionPos.z)
 	local WPos = HPos + (HPos - EPos) * ( -650 / GetDistance(HPos, EPos))
 	local WPos2 = HPos + (HPos - EPos) * ( -1300 / GetDistance(HPos, EPos))
-	DrawCircle(WPos, 100,0,0,0xffff0000)
-	DrawCircle(WPos2, 100,0,0,0xffff0000)
 	if not MapPosition:inWall(Point(WPos.x,WPos.y,WPos.z)) and not MapPosition:inWall(Point(WPos2.x,WPos2.y,WPos2.z)) then
 		CastSkillShot(_W, WPred)
 		--print("Time "..GetTickCount())
@@ -290,15 +269,15 @@ local function ComboToText(Combo)
 	local Result = ""
 	for i = 1, #Combo do
 		local spell = Combo[i]
-		if spell == _Q then
+		if spell == "doQ" then
 			Result = Result.."Q->"
-		elseif spell == _W then
+		elseif spell == "doW" then
 			Result = Result.."W->"
-		elseif spell == _E then
+		elseif spell == "doE" then
 			Result = Result.."E->"
-		elseif spell == _R then
+		elseif spell == "doR" then
 			Result = Result.."R->"
-		elseif spell == _IGNITE then
+		elseif spell == "IGNITE" then
 			Result = Result.."IGNITE->"
 		end
 	end
@@ -394,6 +373,39 @@ local function CCCheck(enemy)
 		return false
 	end
 end
+local function Check(spell)
+	if spell == "Q" then
+		if Q1RDY == 1 and Mana(1,0,0) == 1 then
+			return "doQ"
+		else
+			return 0
+		end
+	elseif spell == "W" then
+		if W1RDY == 1 and Mana(0,1,0) == 1 then
+			return "doW"
+		else
+			return 0
+		end
+	elseif spell == "E" then
+		if E1RDY == 1 and Mana(0,0,1) == 1 then
+			return "doE"
+		else
+			return 0
+		end
+	elseif spell == "R" then
+		if RRDY == 1 then
+			return "doR"
+		else
+			return 0
+		end
+	elseif spell == "IGNITE" then
+		if IRDY == 1 then
+			return "IGNITE"
+		else
+			return 0
+		end
+	end
+end
 local function GetBestCombo(enemy)
 	local distance = GetDistance(enemy)
 	local resultB = AnalyzeSituation(enemy)
@@ -402,11 +414,9 @@ local function GetBestCombo(enemy)
 	if resultB == Position[1] then --Out of range
 		bestCombo = {}
 	elseif resultB == Position[2] and LeBlanc.Keys.Long:Value() then --2W range
-		checkcombo = {"doQ", "doE", "IGNITE"} --set highest Damage
+		checkcombo = {Check("Q"), Check("E"), Check("IGNITE")} --set highest Damage
 		if KillCheck(enemy, checkCombo) then --check if enemy can be killed with Combo
-			--print("killable with "..checkcombo)
-			bestcombo = {"doW", "doR" ,"doQ", "doE", "IGNITE"}
-			----print("Kill Long")
+			bestcombo = {"doW", "doR" ,Check("Q"), Check("E"), Check("IGNITE")}
 ------------------------------DISABLED BECAUSE USELESS ATM (except u want LeBlanc to use Spells to poke enemy long range)------------------------------
 		--[[
 		else
@@ -425,21 +435,23 @@ local function GetBestCombo(enemy)
 			end
 		--]]
 		end
-	elseif resultB == Position[3] then --1W range
+	elseif resultB == Position[3] and LeBlanc.Keys.Long:Value() then --1W range
 		if W1RDY == 1 then
-			checkcombo = {"doQ", "doR", "doE", "IGNITE"}
+			checkcombo = {Check("Q"), Check("R"), Check("E"), Check("IGNITE")}
 		elseif W1RDY == 0 and W3RDY == 1 then
-			checkcombo = {"doQ", "doE", "IGNITE"}
+			checkcombo = {Check("Q"), Check("E"), Check("IGNITE")}
 		end
 		if KillCheck(enemy, checkcombo) then
 			--print("killable with "..checkcombo)
 			if W1RDY == 1 then
-				bestcombo = {"doW", "doQ", "doR", "doE", "IGNITE"}
+				bestcombo = {"doW", Check("Q"), Check("R"), Check("E"), Check("IGNITE")}
 				----print("Kill short 1")
 			elseif W1RDY == 0 and W3RDY == 1 then
-				bestcombo = {"doR", "doQ", "doE", "IGNITE"}
+				bestcombo = {"doR", Check("Q"), Check("E"), Check("IGNITE")}
 				----print("Kill short 2")
 			end
+------------------------------DISABLED BECAUSE USELESS ATM (except u want LeBlanc to use Spells to poke enemy long range)------------------------------
+		--[[
 		else
 			if CCCheck(enemy) then
 				if E1RDY == 1 then
@@ -471,12 +483,13 @@ local function GetBestCombo(enemy)
 					end
 				end
 			end
+		--]]
 		end
 	elseif resultB == Position[4] then --full combo range
 		if multi == 2 then 
-			checkcombo = {"doE", "doQ", "doR", "doW", "IGNITE"} 
+			checkcombo = {Check("E"), Check("Q"), Check("R"), Check("W"), Check("IGNITE")} 
 		else
-			checkcombo = {"doQ", "doR", "doW", "doE", "IGNITE"}
+			checkcombo = {Check("Q"), Check("R"), Check("W"), Check("E"), Check("IGNITE")}
 		end
 		if KillCheck(enemy, checkcombo) then
 			bestcombo = checkcombo
@@ -484,30 +497,30 @@ local function GetBestCombo(enemy)
 		else
 			if CCCheck(enemy) then --check if you need to E the enemy
 				if E1RDY == 1 then
-					bestcombo = {"doE", "doQ", "doR", "doW"}
+					bestcombo = {"doE", Check("Q"), Check("R"), Check("W")}
 					----print("CC 1")
 				elseif E1RDY == 0 and E2RDY == 1 then
-					bestcombo = {"doR", "doQ", "doW"}
+					bestcombo = {"doR", Check("Q"), Check("W")}
 					----print("CC 2")
 				end
 			else
 				if LeBlanc.Keys.Priority:Value() == 1 then --Cast Q before all
-					bestcombo = {"doQ" ,"doR", "doW", "doE"}
+					bestcombo = {Check("Q") ,Check("R"), Check("W"), Check("E")}
 					----print("QRWE")
 				elseif LeBlanc.Keys.Priority:Value() == 2 then
-					bestcombo = {"doQ", "doR", "doE", "doW"}
+					bestcombo = {Check("Q"), Check("R"), Check("E"), Check("W")}
 					----print("QREW")
 				elseif LeBlanc.Keys.Priority:Value() == 3 then
-					bestcombo = {"doW" ,"doR", "doE", "doQ"}
+					bestcombo = {Check("W") ,Check("R"), Check("E"), Check("Q")}
 					----print("WREQ")
 				elseif LeBlanc.Keys.Priority:Value() == 4 then
-					bestcombo = {"doW" ,"doR", "doQ", "doE"}
+					bestcombo = {Check("W") ,Check("R"), Check("Q"), Check("E")}
 					----print("WRQE")
 				elseif LeBlanc.Keys.Priority:Value() == 5 then
-					bestcombo = {"doE" ,"doR", "doQ", "doW"}
+					bestcombo = {Check("E") ,Check("R"), Check("Q"), Check("W")}
 					----print("ERQW")
 				elseif LeBlanc.Keys.Priority:Value() == 6 then
-					bestcombo = {"doE" ,"doR", "doW", "doQ"}
+					bestcombo = {Check("E") ,Check("R"), Check("W"), Check("Q")}
 					----print("ERWQ")
 				end
 			end
@@ -520,28 +533,23 @@ end
 local function CastSkill(Skill, enemy)
 	if Skill == "doQ" then
 		if GetDistanceSqr(GetOrigin(enemy)) > 562500 or Q1RDY == 0 then
-			----print("Out of Q range")
 			return false
 		end
-			----print("Doing Q")
 		Q(enemy)
 		return true
 	elseif Skill == "doW" then
 		local resultB = AnalyzeSituation(enemy)
 		if (resultB == Position[1]) or W1RDY == 0 then
-			----print("Out of 2W range")
 			return false
 		elseif resultB == Position[2] then
 			WvL(enemy)
 			return true
 		elseif resultB == Position[3] then
-			----print("Doing 2W")
 			WL(enemy)
 			return true
 		else
-			local WPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1450,250,650, 125,false,true)
-			if WPred.HitChance == 1 and not MapPosition:inWall(Point(WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)) then
-				----print("Doing W")
+			local Dist = GetDistance(enemy)
+			if Dist < 710 - GetMoveSpeed(enemy) * .125 then 
 				W(enemy)
 				return true
 			else
@@ -556,12 +564,12 @@ local function CastSkill(Skill, enemy)
 		local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,150,950,55,true,false)
 		local CollisionE = Collision(950, 1550, 150, 55)
 		local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
-		--print
-		if EPred.PredPos and EPred.HitChance == 1 and not CollisionCheck then
+		if EPred.HitChance == 1 or not CollisionCheck then
 			----print("Doing E")
 			CastSkillShot(_E, EPred.PredPos)
 			return true
 		else
+			print("BLOCK")
 			return false
 		end
 	elseif Skill == "doR" then
@@ -585,9 +593,8 @@ local function CastSkill(Skill, enemy)
 				WvL(enemy)
 				return true
 			else
-				local WPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1450,250,650, 125,false,true)
-				if WPred.HitChance == 1 and not MapPosition:inWall(Point(WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)) then
-					----print("Doing WR")
+				local Dist = GetDistance(enemy)
+				if Dist < 710 - GetMoveSpeed(enemy) * .125 then 
 					WR(enemy)
 					return true
 				else
@@ -595,26 +602,24 @@ local function CastSkill(Skill, enemy)
 				end
 			end
 		elseif ls == "E" or E2RDY == 1 then
-			if Distance <= 902500 then
+			if Distance > 902500 then
+				return false
+			else
 				local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,150,950,55,true,true)
 				local CollisionE = Collision(950, 1550, 150, 55)
 				local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
-				--print
-				if EPred.PredPos and EPred.HitChance == 1 and not CollisionCheck then
-					----print("Doing ER")
+				if EPred.HitChance == 1 and not CollisionCheck then
 					CastSkillShot(_E, EPred.PredPos)
 					return true
 				else
-					----print("ER blocked")
+					print("ER blocked")
 					return false
 				end
-			else
-				----print("Out of ER range")
-				return false
 			end
 		end
 	elseif Skill == "IGNITE" then
 		if IRDY == 1 then
+			print("IGNITED")
 			CastTargetSpell(enemy, Ignite)
 			return true
 		else
@@ -632,16 +637,14 @@ end
 ------------------------------------------
 local function Combo()
 	if target and Valid(target) and not IsDead(myHero) and IsInDistance(target, 2050) then
-		local BestCombo = GetBestCombo(target)
-		----print(BestCombo)
-		ExecuteCombo(BestCombo, target)
-	elseif IsDead(target) and not LeBlanc.Misc.MR:Value() then
-		if W4RDY == 1 then
-			WR2()
-		elseif W2RDY == 1 and W4RDY ~= 1 then
-			W2()
+		local BestCombo
+		BestCombo = GetBestCombo(target)
+		print(BestCombo)
+		if BestCombo then
+			ExecuteCombo(BestCombo, target)
 		end
-	elseif LeBlanc.Misc.MR:Value() then
+	end
+	if IsDead(target) and not LeBlanc.Misc.MR:Value() then
 		if W4RDY == 1 then
 			WR2()
 		elseif W2RDY == 1 and W4RDY ~= 1 then
