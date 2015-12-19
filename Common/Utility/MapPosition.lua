@@ -1,5 +1,5 @@
 --[[
-  Map Position 1.3 by Husky and Manciuszz (edited by Maxxxel for Season 5 & 6)
+  Map Position 1.3.1 by Husky and Manciuszz (edited by Maxxxel for Season 5 & 6)
 	========================================================================
 
 	Enables you to easily query the semantic position of a unit in the map.
@@ -327,7 +327,7 @@ wallsTT =
 	Polygon(Point(986,7883),Point(1036,8113),Point(1286,8283),Point(1536,8233),Point(1623,8131),Point(1686,8033),Point(1936,7283),Point(1686,6535),Point(1630,6349),Point(1436,6235),Point(1040,6380),Point(993,6737),Point(1333,6839),Point(1500,6975),Point(1584,7274),Point(1481,7631),Point(1340,7727),Point(1186,7799)),
 	Polygon(Point(4986,7035),Point(5280,7186),Point(5044,6682),Point(4910,6651)),
 	Polygon(Point(5356,6342),Point(5685,6494),Point(5736,6885),Point(5486,6635)),
-	Polygon(Point(3298,5029),Point(3006,5157),Point(2739,5389),Point(2680,5784),Point(2883,6536),Point(3279,6838),Point(3433,7030),Point(3486,70839),Point(3408,7655),Point(3088,7879),Point(2859,8018),Point(2658,8979),Point(2838,9335),Point(3232,9529),Point(3434,9041),Point(3829,8688),Point(4136,8423),Point(4514,7704),Point(4530,7186),Point(4424,6533),Point(3816,5833),Point(3536,5535),Point(3406,5297)),
+	Polygon(Point(3298,5029),Point(3006,5157),Point(2739,5389),Point(2680,5784),Point(2883,6536),Point(3279,6838),Point(3433,7030),Point(3486,7083),Point(3408,7655),Point(3088,7879),Point(2859,8018),Point(2658,8979),Point(2838,9335),Point(3232,9529),Point(3434,9041),Point(3829,8688),Point(4136,8423),Point(4514,7704),Point(4530,7186),Point(4424,6533),Point(3816,5833),Point(3536,5535),Point(3406,5297)),
 	Polygon(Point(4363,9602),Point(4539,9688),Point(4439,9892),Point(4245,9788)),
 	Polygon(Point(5812,8732),Point(6026,8773),Point(5989,8985),Point(5762,8949)),
 	Polygon(Point(9650,8723),Point(9703,8934),Point(9460,8948),Point(9429,8740)),
