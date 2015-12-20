@@ -710,6 +710,7 @@ end)
 ------------------------------------------
 OnTick(function(myHero)
 	SetVariables()
+	CD()
 	DamageCalc()
 	if LeBlanc.Keys.Combo:Value() then
 		Combo()
