@@ -3,8 +3,8 @@ if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
 require('Collision')
 
---version = 1.3
---some much more improvements
+--version = 1.4
+--more performance
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
@@ -106,13 +106,13 @@ local function WR2()
 	CastSpell(_R)
 end
 local function E(o)
-	local EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,250,950,55,true,true)
+	local EPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,250,920,55,true,true)
 	if EPred.HitChance == 1 then
 		CastSkillShot(_E,EPred.PredPos.x,EPred.PredPos.y,EPred.PredPos.z)
 	end
 end
 local function ER(o)
-	local ERPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,250,950,55,true,true)
+	local ERPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1550,250,920,55,true,true)
 	if ERPred.HitChance == 1 then
 		CastSkillShot(_R,ERPred.PredPos.x,ERPred.PredPos.y,ERPred.PredPos.z)
 	end
@@ -186,34 +186,33 @@ local function AutoIgnite()
 	end
 end
 ------------------------------------------
---Got E ?
+--Got E ? (TY Deftsu)
 ------------------------------------------
-local function GotE(unit)
-	local value = 0
-	for i = 0,63 do
-		if GetBuffCount(unit,i) > 0 then
-			currbufname = GetBuffName(unit,i);
-			if currbufname:lower():find("leblancsoulshackle") then
-				value = 1 
-			end
-		end
+local GotQ = {}
+local GotE = {}
+
+OnUpdateBuff(function(unit,buff)
+	if GetTeam(unit) ~= GetTeam(myHero) and buff.Name:lower():find("leblancsoulshackle") then
+		GotE[GetNetworkID(unit)] = buff.Count
+	elseif GetTeam(unit) ~= GetTeam(myHero) and buff.Name:lower():find("leblancchaosorb") then
+		GotQ[GetNetworkID(unit)] = buff.Count
 	end
-	return value
+end)
+OnRemoveBuff(function(unit,buff)
+	if GetTeam(unit) ~= GetTeam(myHero) and buff.Name:lower():find("leblancsoulshackle") then
+		GotE[GetNetworkID(unit)] = 0
+	elseif GetTeam(unit) ~= GetTeam(myHero) and buff.Name:lower():find("leblancchaosorb") then
+		GotQ[GetNetworkID(unit)] = 0
+	end
+end)
+function HaveQ(unit)
+   return (GotQ[GetNetworkID(unit)] or 0) > 0
 end
-local function GotQ(unit)
-	local value = 0
-	for i = 0,63 do
-		if GetBuffCount(unit,i) > 0 then
-			currbufname = GetBuffName(unit,i);
-			if currbufname:lower():find("leblancchaosorb") then
-				value = 1 
-			end
-		end
-	end
-	return value
+function HaveE(unit)
+   return (GotE[GetNetworkID(unit)] or 0) > 0
 end
 local function ECanHit(unit)
-	local EPred = GetPredictionForPlayer(GetOrigin(myHero),unit,GetMoveSpeed(unit),1550,250,950,55,true,true)
+	local EPred = GetPredictionForPlayer(GetOrigin(myHero),unit,GetMoveSpeed(unit),1550,250,920,55,true,true)
 	local CollisionE = Collision(950, 1550, 250, 55)
 	local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
 	if EPred.PredPos and EPred.HitChance == 1 then
@@ -226,6 +225,9 @@ local function ECanHit(unit)
 		return false
 	end
 end
+------------------------------------------
+--CC Check
+------------------------------------------
 local function CCCheck(enemy)
 	if (E1RDY == 1 and Mana(0,0,1) == 1) or E2RDY == 1 then --we can CC
 		local eHP = GetCurrentHP(enemy)
@@ -264,8 +266,8 @@ local function DamageCalc()
 			local myMana = GetCurrentMana(myHero)
 			local eHP 	= GetCurrentHP(enemy)
 			local emHP = GetMaxHP(enemy)
-			local EExtra = multi == 1 and GotE(enemy) == 1 and xE or multi == 1 and GotE(enemy) == 0 and ECanHit(enemy) and CCCheck(enemy) and xE or 0
-			local zQp 	= (W1RDY + E1RDY + RRDY + GotE(enemy)) ~= 0 and (Q1RDY == 1 or GotQ(enemy)) and xQ or 0
+			local EExtra = multi == 1 and HaveE(enemy) and xE or multi == 1 and HaveE(enemy) and ECanHit(enemy) and CCCheck(enemy) and xE or 0
+			local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and xQ or 0
 			local zQ 	= (Q1RDY == 1 and CalcDamage(myHero, enemy, 0, xQ)) or 0
     		local zW 	= (W1RDY == 1 and CalcDamage(myHero, enemy, 0, xW)) or 0
 			local zE 	= (E1RDY == 1 and CalcDamage(myHero, enemy, 0, xE)) or 0
@@ -302,7 +304,7 @@ local function Draw()
 			DrawCircle(GetOrigin(myHero),2050,0,0,0xffffff00)
 		end
 		if LeBlanc.Draw.DrawE:Value() and (CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1) or CD(n,n,n,n,n,0,1,1)==1 then 
-			DrawCircle(GetOrigin(myHero),950,0,0,0xffffff00)
+			DrawCircle(GetOrigin(myHero),920,0,0,0xffffff00)
 		end
 		if LeBlanc.KS.KSNotes:Value() then
 			for i = 1, #nmy do
@@ -331,8 +333,8 @@ local function Draw()
 				local myMana = GetCurrentMana(myHero)
 				local eHP 	= GetCurrentHP(enemy)
 				local emHP = GetMaxHP(enemy)
-				local EExtra = multi == 1 and GotE(enemy) == 1 and xE or multi == 1 and GotE(enemy) == 0 and ECanHit(enemy) and CCCheck(enemy) and xE or 0
-				local zQp 	= (W1RDY + E1RDY + RRDY + GotE(enemy)) ~= 0 and (Q1RDY == 1 or GotQ(enemy)) and xQ or 0
+				local EExtra = multi == 1 and HaveE(enemy) and xE or multi == 1 and HaveE(enemy) and ECanHit(enemy) and CCCheck(enemy) and xE or 0
+				local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and xQ or 0
 				local zQ 	= (Q1RDY == 1 and CalcDamage(myHero, enemy, 0, xQ)) or 0
 	    		local zW 	= (W1RDY == 1 and CalcDamage(myHero, enemy, 0, xW)) or 0
 				local zE 	= (E1RDY == 1 and CalcDamage(myHero, enemy, 0, xE)) or 0
@@ -359,32 +361,14 @@ end
 ------------------------------------------
 --Combo Stuff
 ------------------------------------------
-local function ComboToText(Combo)
-	local Result = ""
-	for i = 1, #Combo do
-		local spell = Combo[i]
-		if spell == "doQ" then
-			Result = Result.."Q->"
-		elseif spell == "doW" then
-			Result = Result.."W->"
-		elseif spell == "doE" then
-			Result = Result.."E->"
-		elseif spell == "doR" then
-			Result = Result.."R->"
-		elseif spell == "IGNITE" then
-			Result = Result.."IGNITE->"
-		end
-	end
-	return Result
-end
 local function AnalyzeSituation(enemy)
 	local B
 	local Dist = GetDistance(enemy)
 	if		(Dist < 950 and E1RDY == 1 and ECanHit(enemy)) or (Dist < 725) then --normalrange
 		B = Position[4] 
-	elseif 	Dist < 1475 and Dist > 725 and ((W1RDY == 1 and Mana(0,1,0) == 1) or W3RDY == 1) then --wrange
+	elseif 	Dist < (1475 - GetMoveSpeed(enemy) * .25) and Dist > 725 and ((W1RDY == 1 and Mana(0,1,0) == 1) or W3RDY == 1) then --wrange
 		B = Position[3]
-	elseif 	Dist > 1475 and Dist < 2050 and W1RDY == 1 and Mana(0,1,0) == 1 and RRDY == 1 then --2wrange
+	elseif 	Dist > 1475 and Dist < (2050 - GetMoveSpeed(enemy) * .25) and W1RDY == 1 and Mana(0,1,0) == 1 and RRDY == 1 then --2wrange
 		B = Position[2]
 	else
 		B = Position[1]
@@ -393,8 +377,8 @@ local function AnalyzeSituation(enemy)
 end
 local function GetDamage(Skill, enemy)
 	if enemy then
-		local EExtra = multi == 1 and GotE(enemy) == 1 and xE or multi == 1 and GotE(enemy) == 0 and ECanHit(enemy) and CCCheck(enemy) and xE or 0
-		local zQp 	= (W1RDY + E1RDY + RRDY + GotE(enemy)) ~= 0 and (Q1RDY == 1 or GotQ(enemy)) and xQ or 0
+		local EExtra = multi == 1 and HaveE(enemy) and xE or multi == 1 and HaveE(enemy) and ECanHit(enemy) and CCCheck(enemy) and xE or 0
+		local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and xQ or 0
 		local TotalMagicDamage = 0 + EExtra + zQp
 		local TrueDamage = 0
 		if Q1RDY == 1 and (Skill == "doQ") then
@@ -603,7 +587,7 @@ local function CastSkill(Skill, enemy)
 		if GetDistanceSqr(GetOrigin(enemy)) > 902500 or E1RDY == 0 then
 			return false
 		end
-		local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,950,55,true,true)
+		local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,920,55,true,true)
 		local CollisionE = Collision(950, 1550, 250, 55)
 		local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
 		if EPred.HitChance == 1 or not CollisionCheck then
@@ -641,7 +625,7 @@ local function CastSkill(Skill, enemy)
 			if Distance > 902500 then
 				return false
 			else
-				local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,950,55,true,true)
+				local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,920,55,true,true)
 				local CollisionE = Collision(950, 1550, 250, 55)
 				local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
 				if EPred.HitChance == 1 and not CollisionCheck then
@@ -678,6 +662,7 @@ local function Combo()
 		if BestCombo then
 			ExecuteCombo(BestCombo, target)
 		end
+		IOW.attacksEnabled = true
 	end
 	if not LeBlanc.Misc.MR:Value() then
 		if (not ComboTarget or IsDead(ComboTarget)) or (Q1RDY + W1RDY + E1RDY + RRDY + IRDY == 0 and ComboTarget and GetCurrentHP(myHero) < GetCurrentHP(ComboTarget)) or (EnemiesAround(GetOrigin(myHero), 700) > 1 and GetCurrentHP(myHero) / GetMaxHP(myHero) * 100 < 25) then
