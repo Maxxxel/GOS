@@ -3,8 +3,8 @@ if GetObjectName(myHero) ~= "Leblanc" then return end
 require('MapPositionGOS')
 require('Collision')
 
---version = 1.5
---more performance, better Combo
+--version = 1.6
+--fixed E bug
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
@@ -250,7 +250,7 @@ local function ECanHit(unit, position)
 		else
 			return false
 		end
-	else
+	elseif position == "nW" then
 		local EPred = GetPredictionForPlayer(GetOrigin(myHero),unit,GetMoveSpeed(unit),1550,250,920,55,true,true)
 		local CollisionE = Collision(950, 1550, 250, 55)
 		local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
@@ -277,7 +277,7 @@ local function CCCheck(enemy)
 		if mHP < eHP and mHP < 150 then --if your low on HP CC him
 			return true
 		else
-			if mMS > eMS * 0.75 and GetDistance(enemy) + (eMS * 0.75 - mMS) * 2 < 950 and GetDistance(enemy) + (eMS * 0.75 - mMS) * 2 < 750 and Q1RDY == 1 then --if enemy will be slower than you after E and u can cast A Q also do it. Else leave it.
+			if mMS > eMS * 0.75 and GetDistance(enemy) + (eMS * 0.75 - mMS) * 2 < 950 and GetDistance(enemy) + (eMS * 0.75 - mMS) * 2 < 750 and Q1RDY == 1 and not HaveE(enemy) then --if enemy will be slower than you after E and u can cast A Q also do it. Else leave it.
 				return true
 			else
 				return false
@@ -523,32 +523,36 @@ local function GetBestCombo(enemy)
 		end
 	elseif resultB == Position[4] then --full combo range
 		if multi == 2 then
-			checkcombo = {Check("E"), Check("Q"), Check("R"), Check("W"), Check("IGNITE")} 
+			checkcombo = {Check("E", enemy, "nW"), Check("Q"), Check("R"), Check("W"), Check("IGNITE")} 
 		else
-			checkcombo = {Check("Q"), Check("R"), Check("W"), Check("E"), Check("IGNITE")}
+			checkcombo = {Check("Q"), Check("R"), Check("W"), Check("E", enemy, "nW"), Check("IGNITE")}
 		end
 		if KillCheck(enemy, checkcombo) then
 			bestcombo = checkcombo
 		else
 			if CCCheck(enemy) then --check if you need to E the enemy
 				if E1RDY == 1 then
-					bestcombo = {"doE", Check("Q"), Check("R"), Check("W")}
-				elseif E1RDY == 0 and E2RDY == 1 then
-					bestcombo = {"doR", Check("Q"), Check("W")}
+					bestcombo = {Check("E", enemy, "nW"), Check("Q"), Check("R"), Check("W")}
+				else
+					DelayAction(function()
+						if E1RDY == 0 and E2RDY == 1 and not HaveE(enemy) then
+							bestcombo = {"doR", Check("Q"), Check("W")}
+						end
+					end, 500)
 				end
 			else
 				if LeBlanc.Keys.Priority:Value() == 1 then --Cast Q before all
-					bestcombo = {Check("Q") ,Check("R"), Check("W"), Check("E")}
+					bestcombo = {Check("Q") ,Check("R"), Check("W"), Check("E", enemy, "nW")}
 				elseif LeBlanc.Keys.Priority:Value() == 2 then
-					bestcombo = {Check("Q"), Check("R"), Check("E"), Check("W")}
+					bestcombo = {Check("Q"), Check("R"), Check("E", enemy, "nW"), Check("W")}
 				elseif LeBlanc.Keys.Priority:Value() == 3 then
-					bestcombo = {Check("W") ,Check("R"), Check("E"), Check("Q")}
+					bestcombo = {Check("W") ,Check("R"), Check("E", enemy, "nW"), Check("Q")}
 				elseif LeBlanc.Keys.Priority:Value() == 4 then
-					bestcombo = {Check("W") ,Check("R"), Check("Q"), Check("E")}
+					bestcombo = {Check("W") ,Check("R"), Check("Q"), Check("E", enemy, "nW")}
 				elseif LeBlanc.Keys.Priority:Value() == 5 then
-					bestcombo = {Check("E") ,Check("R"), Check("Q"), Check("W")}
+					bestcombo = {Check("E", enemy, "nW") ,Check("R"), Check("Q"), Check("W")}
 				elseif LeBlanc.Keys.Priority:Value() == 6 then
-					bestcombo = {Check("E") ,Check("R"), Check("W"), Check("Q")}
+					bestcombo = {Check("E", enemy, "nW") ,Check("R"), Check("W"), Check("Q")}
 				end
 			end
 		end
