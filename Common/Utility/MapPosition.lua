@@ -367,7 +367,7 @@ wallsTT =
 -- Code ------------------------------------------------------------------------
 
 function fileExists(path)
-	local f = io.open(path, "r") if f ~= nil then f:close return true else return false end
+	local f = io.open(path, "r") if f ~= nil then f:close() return true else return false end
 end
 
 function los(x0, y0, x1, y1, callback)
