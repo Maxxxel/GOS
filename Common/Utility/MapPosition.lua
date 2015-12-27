@@ -1,5 +1,5 @@
 --[[
-  Map Position 1.3.1 by Husky and Manciuszz (edited by Maxxxel for Season 5 & 6)
+  Map Position 1.3.2 by Husky and Manciuszz (edited by Maxxxel for Season 5 & 6)
 	========================================================================
 
 	Enables you to easily query the semantic position of a unit in the map.
