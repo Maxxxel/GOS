@@ -444,7 +444,6 @@ local function Combo()
 						CastTargetSpell(target, Ignite)
 					end
 				else
-					print(IsBurning(target))
 					if IsBurning(target) then
 						if QRDY == 1 then
 							if Brand.Spells.QStunOnly:Value() then
