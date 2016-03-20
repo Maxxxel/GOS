@@ -1,11 +1,11 @@
---version 0.1
---updated for new loader
+--version 0.2
+--fixed type Error
 require('Inspired')
 
 class "Point" --{
 --initiating
   function Point:__init(x,y,z)
-    local pos= type~="number" and GetOrigin(x) or nil
+    local pos = type(x) ~= "number" and GetOrigin(x) or nil
     self.x = pos and pos.x or x 
     self.y = pos and pos.y or y
     self.z = pos and pos.z or z or 0
@@ -280,8 +280,8 @@ DEACTIVATED
 	--]]
 --collision with minion
 	function Collision:__GetMinionCollision(start,endu,mode)
-		local Pos1 = type~="number" and GetOrigin(start) or nil
-		local Pos2 = type~="number" and GetOrigin(endu)  or nil
+		local Pos1 = type(start)~="number" and GetOrigin(start) or nil
+		local Pos2 = type(endu)~="number" and GetOrigin(endu)  or nil
 		local heroes = {}
 		local mCollision = {}
 		if not mode then mode = ENEMY end
@@ -300,7 +300,7 @@ DEACTIVATED
 				if GetTeam(enemy) ~= GetTeam(myHero) then
 					table.insert(heroes, enemy)
 				end
-      end
+      		end
 		end
 		local distance = 0
 		local Track
@@ -326,7 +326,7 @@ DEACTIVATED
 			if hero and not IsDead(hero) and IsVisible(hero) and Track then
 				local hPos = GetOrigin(hero)
 				local hP = Point(hPos.x,hPos.z)
-				if (GetDistance(start,hero) < distance) or type(start)~="userdata" and start:__distance(hP) < distance then
+				if (GetDistance(start,hero) < distance) or type(start)~="Object" and start:__distance(hP) < distance then
 					if hP:__distance(Track)<=self.width+GetHitBox(hero) then
 						table.insert(mCollision,hero)
 					end
