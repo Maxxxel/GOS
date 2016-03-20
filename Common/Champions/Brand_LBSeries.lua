@@ -2,8 +2,8 @@ require('Inspired')
 if GetObjectName(myHero) ~= "Brand" then return end
 require('Collision')
 
---Version 1.3
---rewrite of whole Code
+--Version 1.4
+--fixed DelayAction, OnDrawDmgOverHPBar, QStunOnly
 
 -------------------------------------------------------------------------------
 -----------------------------	   MENU		-----------------------------------
@@ -444,7 +444,8 @@ local function Combo()
 						CastTargetSpell(target, Ignite)
 					end
 				else
-					if (IsBurning(target) and 1 or 0) == 1 then
+					print(IsBurning(target))
+					if IsBurning(target) then
 						if QRDY == 1 then
 							if Brand.Spells.QStunOnly:Value() then
 								doQ(target)
@@ -464,7 +465,7 @@ local function Combo()
 						if WRDY == 1 then doW(target) end
 						if QRDY == 1 then
 							if Brand.Spells.QStunOnly:Value() then
-								if (IsBurning(target) and 1 or 0) == 1 then
+								if IsBurning(target) then
 									doQ(target)
 								end
 							else
@@ -605,7 +606,7 @@ OnDraw(function(myHero)
 	      			local atotDmg = 0
 					local ahp = GetCurrentHP(Enemy)
 					if ahp > xIgnite * IRDY + CalcDamage(myHero, Enemy, 0, (QDmg * QRDY + WDmg * WRDY * (IsBurning(Enemy) and 1 or 1.25) + EDmg * ERDY + RDmg * RRDY * (GetRBounce(Enemy) + PDMG)) * Mana(QRDY, WRDY, ERDY, RRDY)) then
-						atotDmg = xIgnite * IRDY + (QDmg * QRDY + WDmg * WRDY * (IsBurning(Enemy) and 1 or 1.25) + EDmg * ERDY + RDmg * RRDY * (GetRBounce(Enemy) + PDMG)) * Mana(QRDY, WRDY, ERDY, RRDY)
+						atotDmg = xIgnite * IRDY + CalcDamage(myHero, Enemy, 0, (QDmg * QRDY + WDmg * WRDY * (IsBurning(Enemy) and 1 or 1.25) + EDmg * ERDY + RDmg * RRDY * (GetRBounce(Enemy) + PDMG)) * Mana(QRDY, WRDY, ERDY, RRDY))
 					else
 						atotDmg = ahp
 					end
@@ -621,19 +622,21 @@ end)
 
 OnUpdateBuff(function(unit,buff)
 	if GetTeam(unit) ~= GetTeam(myHero) and buff.Name:lower():find("brandablaze") then
+		local ID = GetNetworkID(unit)
 		DelayAction(function()
-			GotBlazed[GetNetworkID(unit)] = buff.Count
-			BlazeEndTime[GetNetworkID(unit)] = GetTickCount() + 4000
-		end, 30)
+			GotBlazed[ID] = buff.Count
+			BlazeEndTime[ID] = GetTickCount() + 4000
+		end, .3)
 	end
 end)
 
 OnRemoveBuff(function(unit,buff)
 	if GetTeam(unit) ~= GetTeam(myHero) and buff.Name:lower():find("brandablaze") then
+		local ID = GetNetworkID(unit)
 		DelayAction(function()
-			GotBlazed[GetNetworkID(unit)] = 0
-			BlazeEndTime[GetNetworkID(unit)] = 0
-		end, 30)
+			GotBlazed[ID] = 0
+			BlazeEndTime[ID] = 0
+		end, .3)
 	end
 end)
 
