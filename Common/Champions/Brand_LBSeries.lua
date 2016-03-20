@@ -2,8 +2,8 @@ require('Inspired')
 if GetObjectName(myHero) ~= "Brand" then return end
 require('Collision')
 
---Version 1.4
---fixed DelayAction, OnDrawDmgOverHPBar, QStunOnly
+--Version 1.4.1
+--fixed DelayAction, OnDrawDmgOverHPBar, QStunOnly, minions in range
 
 -------------------------------------------------------------------------------
 -----------------------------	   MENU		-----------------------------------
@@ -84,32 +84,25 @@ end
 
 local function CountEnemyHeroInRange(object, range)
 	object = object or myHero
-	local enemyInRange = 0
-	for i = 1, #Enemies do
+	local eEnemies = {}
+	for i = 0, #Enemies do
 		local enemy = Enemies[i]
 		if enemy and enemy ~= object and not IsDead(enemy) and GetDistance(object, enemy) <= range then
-			enemyInRange = enemyInRange + 1
+			table.insert(eEnemies, enemy)
 		end
 	end
-	return enemyInRange
+	return #eEnemies
 end
 
 local function CountEnemyMinionInRange(object, range)
-	local minion = nil
-	local minionInRange = 0
-	for k,v in pairs(minionManager.objects) do
-		local objTeam = GetTeam(v)
-		if not minion and v and objTeam == GetTeam(object) then 
-			minion = v 
-		end
-		if minion and v and objTeam == GetTeam(object) and GetDistanceSqr(GetOrigin(minion),GetOrigin(object)) > GetDistanceSqr(GetOrigin(v),GetOrigin(object)) then
-			minion = v
-		end
-		if minion and v and objTeam == GetTeam(object) and GetDistance(GetOrigin(minion),GetOrigin(object)) <= range then
-			minionInRange = minionInRange + 1
+	object = object or myHero
+	local eMinions = {}
+	for aMinion = 0, #minionManager.objects do
+		if minionManager.objects[aMinion] and not IsDead(minionManager.objects[aMinion]) and  GetTeam(minionManager.objects[aMinion]) ~= GetTeam(myHero) and GetDistance(minionManager.objects[aMinion], object) < range then --all living Minions that are not friendly into a list
+			table.insert(eMinions, minionManager.objects[aMinion])
 		end
 	end
-	return minionInRange
+	return #eMinions
 end
 
 local function CountEnemyObjectsInRange(Object, range)
@@ -252,7 +245,7 @@ end
 
 local function GetRBounce(o)
 	local Speed = o and GetMoveSpeed(o) or 0
-	local NumEnemies = (math.min(CountEnemyObjectsInRange(o, 400 - Speed * .25), 4) - 1) --example: around the target is no unit RBounce returns: 1, 2 units: 2
+	local NumEnemies = (math.min(CountEnemyObjectsInRange(o, 400 - Speed * .25), 99)) --example: around the target is no unit RBounce returns: 1, 2 units: 2
 	if IsBurning(o) or IsBurning(o, "R") then --it focuses on heroes, so we need to look if enemy heroes are there
 		local NumHeroes = CountEnemyHeroInRange(o, 400 - Speed * .25)
 		if NumHeroes > 0 then --so there are enemy heroes we need to take into account
