@@ -1,5 +1,6 @@
 --Credits all to Yonderboi
---Version 0.1
+--Version 0.2
+--fixed YDistance
 --ported and modified for GOS
 
 local active_objects = {}
@@ -28,6 +29,12 @@ local function HandleCompletedCalc(stream, charname, distance, time, speed)
         stream:write(s)
         stream:write('\n')
     end
+end
+
+function GetYDistance(p1, p2)
+  p1 = GetOrigin(p1) or p1
+  p2 = GetOrigin(p2) or p2 or myHeroPos()
+  return math.sqrt((p1.x - p2.x) ^ 2 + (p1.y - p2.y) ^ 2 + (p1.z - p2.z) ^ 2)
 end
 
 local function HandleCompletedObject(id, t)
