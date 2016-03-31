@@ -1,4 +1,3 @@
-require('Inspired')
 if GetObjectName(myHero) ~= "Talon" then return end
 
 Talon=MenuConfig("Talon","Maxxxel Talon God")
@@ -15,8 +14,8 @@ Talon.Harass:Key("DoIt","Harass",string.byte("X"))
 Talon.Harass:Boolean("Auto", "Auto Harass", false)
 Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
---version = 1.6.1
---AA fix in Combo
+--version = 1.7
+--Ignite Fix
 ------------------------------------------
 
 ------------------------------------------
@@ -24,6 +23,9 @@ Talon.Harass:Slider("Mana", "Minimum Mana %", 40, 0, 100, 1)
 ------------------------------------------
 local xHydra, HRDY, QRDY, WRDY, ERDY, R1RDY, R2RDY, HydraCast, HydraCastTime, xAA, xQ, xQ2, xW, xE, xR, IRDY, xIgnite, Wtime, dmgOverTime, Check, lastAA, AAREADY = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 local target, LS
+local summonerNameOne = GetCastName(myHero,SUMMONER_1)
+local summonerNameTwo = GetCastName(myHero,SUMMONER_2)
+local Ignite = (summonerNameOne:lower():find("summonerdot") and SUMMONER_1 or (summonerNameTwo:lower():find("summonerdot") and SUMMONER_2 or nil))
 local myHero = GetMyHero()
 local stopMove, doQ = false, false
 ------------------------------------------
