@@ -1,11 +1,10 @@
 if GetObjectName(GetMyHero()) ~= "Leblanc" then return end
 
-require('Inspired')
 require('MapPositionGOS')
 require('Collision')
 require('DamageLib')
 
---version = 1.8
+--version = 1.8.1 --hotfix little
 --fixed Combo, removed some stuff
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
@@ -478,7 +477,7 @@ local function GetBestCombo(enemy)
 	local bestcombo = {}
 	local checkcombo = {}
 	if resultB == Position[1] then --Out of range
-		bestcombo = nil
+		bestcombo = 0
 	elseif resultB == Position[2] and LeBlanc.Keys.Long:Value() then --2W range
 		checkcombo = {Check("Q"), Check("E", enemy, "dW"), Check("IGNITE")} --set highest Damage
 		if KillCheck(enemy, checkCombo) then --check if enemy can be killed with Combo
@@ -505,7 +504,7 @@ local function GetBestCombo(enemy)
 				bestcombo = checkcombo
 			else
 				doNormal = true
-				bestcombo = nil
+				bestcombo = 0
 			end
 		elseif not doNormal and multi == 1 then
 			checkcombo = {Check("Q"), Check("R"), Check("W"), Check("E", enemy, "nW"), Check("IGNITE")}
@@ -514,7 +513,7 @@ local function GetBestCombo(enemy)
 				bestcombo = checkcombo
 			else
 				doNormal = true
-				bestcombo = nil
+				bestcombo = 0
 			end
 		end
 		if doNormal or not bestcombo then
@@ -579,7 +578,7 @@ local function GetBestCombo(enemy)
 			end
 		end
 	else
-		bestcombo = nil
+		bestcombo = 0
 	end
 	return bestcombo
 end
