@@ -3,9 +3,10 @@ if GetObjectName(GetMyHero()) ~= "Leblanc" then return end
 require('Inspired')
 require('MapPositionGOS')
 require('Collision')
+require('DamageLib')
 
---version = 1.7
---fixed Ignite and W
+--version = 1.8
+--fixed Combo, removed some stuff
 
 LeBlanc = MenuConfig("LeBlanc", "LeBlanc")
 LeBlanc:Menu("Keys","Keys")
@@ -15,6 +16,7 @@ LeBlanc.Keys:Key("Harass", "Harass", string.byte("X"))
 LeBlanc.Keys:Key("Combo", "Combo", string.byte(" "))
 LeBlanc.Keys:Boolean("Long", "Long Range Kills", true)
 LeBlanc.Keys:DropDown("Priority", "Priority", 1, {"QWE", "QEW", "WEQ", "WQE", "EQW", "EWQ"})
+LeBlanc.Keys:DropDown("RPriority", "Ulti Priority", 1, {"Q", "W", "E"})
 
 LeBlanc:Menu("KS","Kill Functions")
 LeBlanc.KS:Boolean("DmgOverHP", "Draw DMG over HPBar", false)
@@ -25,6 +27,7 @@ LeBlanc.KS:Boolean("Ignite","Auto-Ignite",true)
 
 LeBlanc:Menu("Misc","Misc")
 LeBlanc.Misc:Boolean("MR", "Manual Return", true)
+LeBlanc.Misc:Boolean("doCC", "CC Check in Combo", false)
 
 LeBlanc:Menu("Draw", "Draw")
 LeBlanc.Draw:Boolean("DrawON", "Draw Stuff", true)
@@ -32,6 +35,9 @@ LeBlanc.Draw:Boolean("DrawQ", "Draw Q", true)
 LeBlanc.Draw:Boolean("DrawW", "Draw W", true)
 LeBlanc.Draw:Boolean("DrawE", "Draw E", true)
 LeBlanc.Draw:Boolean("DrawQW", "Draw QW", true)
+LeBlanc.Draw:Boolean("DrawRQ", "Draw R(Q)", true)
+LeBlanc.Draw:Boolean("DrawRW", "Draw R(W)", true)
+LeBlanc.Draw:Boolean("DrawRE", "Draw R(E)", true)
 
 ------------------------------------------
 --Variables
@@ -40,13 +46,12 @@ local ls
 local target
 local myHero = GetMyHero()
 local multi = 1
-local xQ,xW,xE,xR,xRW,xRE
+local Q1RDY, Q2RDY, W1RDY, W2RDY, W3RDY, W4RDY, E1RDY, E2RDY, RRDY = 0, 0, 0, 0, 0, 0, 0, 0, 0
 local summonerNameOne = GetCastName(myHero,SUMMONER_1)
 local summonerNameTwo = GetCastName(myHero,SUMMONER_2)
 local Ignite = (summonerNameOne:lower():find("summonerdot") and SUMMONER_1 or (summonerNameTwo:lower():find("summonerdot") and SUMMONER_2 or nil))
-local xIgnite,IRDY = 0, 0
+local IRDY = 0
 local nmy = {}
-local KillText = {}
 local Position = {"Out of Range", "in double W range", "in W range", "in Combo range"}
 local colorText
 ------------------------------------------
@@ -71,6 +76,7 @@ local function CD(a,b,c,d,e,f,g,h,i)
 	E1RDY = GetCastName(myHero,_E) == 'LeblancSoulShackle' 	and GetCastLevel(myHero,_E) >= 1 	and CanUseSpell(myHero, _E)	== READY and 1 or 0 
 	E2RDY = GetCastName(myHero,_R) == 'LeblancSoulShackleM' and GetCastLevel(myHero,_R) >= 1 	and CanUseSpell(myHero, _R)	== READY and 1 or 0 
 	RRDY  = GetCastLevel(myHero,_R) >= 1 and CanUseSpell(myHero, _R) == READY and 1 or 0
+	IRDY  = Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
 	return (Q1RDY == a or a == n) and (Q2RDY == b or b == n) and (W1RDY == c or c == n) and (W2RDY == d or d == n) and (W3RDY == e or e == n) and (W4RDY == f or f == n) and (E1RDY == g or g == n) and (E2RDY == h or h == n) and (RRDY == i or i == n) and 1 or 0
 end
 ------------------------------------------
@@ -92,7 +98,7 @@ local function QR(o)
 	CastTargetSpell(o,_R)
 end
 local function W(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,700,50,false,true)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1300,250,600,250,false,true)
 	if WPred.HitChance == 1 and not MapPosition:inWall(Point(WPred.PredPos.x, WPred.PredPos.y, WPred.PredPos.z)) then
 		CastSkillShot(_W,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
 	end
@@ -101,7 +107,7 @@ local function W2()
 	CastSpell(_W)
 end
 local function WR(o)
-	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1450,250,700,200,false,true)
+	local WPred = GetPredictionForPlayer(GetOrigin(myHero),o,GetMoveSpeed(o),1300,250,600,250,false,true)
 	if WPred.HitChance == 1 then
 		CastSkillShot(_R,WPred.PredPos.x,WPred.PredPos.y,WPred.PredPos.z)
 	end
@@ -144,7 +150,7 @@ local function WvL(o)
 			if W3RDY == 1 then 
 				CastSkillShot(_R,WPred)
 			end
-		end, 500)
+		end, .5)
 	end
 end
 ------------------------------------------
@@ -173,7 +179,11 @@ local function AutoIgnite()
 	for i = 1, #nmy do
 		local Target = nmy[i]
 		if Valid(Target) then
-			local HP = GetCurrentHP(Target)
+			local AP = GetBonusAP(myHero)
+			local xQ = 	(GetCastLevel(myHero,_Q) * 25 + 30 + .4 * AP) * Q1RDY
+			local xW = (GetCastLevel(myHero,_W) * 40 + 45 + .6 * AP) * W1RDY
+			local HP = GetCurrentHP(Target) + GetDmgShield(Target)
+			local xIgnite = (50 + GetLevel(myHero) * 20) * IRDY
 			if HP <= xIgnite and GetDistance(Target) <= 600 then
 				if Q1RDY == 1 and HP <= xQ then
 					Q(Target)
@@ -274,8 +284,8 @@ end
 --CC Check
 ------------------------------------------
 local function CCCheck(enemy)
-	if (E1RDY == 1 and Mana(0,0,1) == 1) or E2RDY == 1 then --we can CC
-		local eHP = GetCurrentHP(enemy)
+	if LeBlanc.Misc.doCC:Value() and ((E1RDY == 1 and Mana(0,0,1) == 1) or E2RDY == 1) then --we can CC
+		local eHP = GetCurrentHP(enemy) + GetMagicShield(enemy) + GetDmgShield(enemy)
 		local mHP = GetCurrentHP(myHero)
 		local eMS = GetMoveSpeed(enemy)
 		local mMS = GetMoveSpeed(myHero)
@@ -293,76 +303,23 @@ local function CCCheck(enemy)
 	end
 end
 ------------------------------------------
---Damage Calc
-------------------------------------------
-local function DamageCalc()
-	local AP = GetBonusAP(myHero)
-	xQ = 	GetCastLevel(myHero,_Q) * 25 + 30 + .4 * AP
-	xW = 	GetCastLevel(myHero,_W) * 40 + 45 + .6 * AP
-	xE = 	multi == 1 and (GetCastLevel(myHero,_E) * 25 + 15 + .5 * AP) or multi == 2 and (GetCastLevel(myHero,_E) * 25 + 15 + .5 * AP) * 2
-	xR = 	GetCastLevel(myHero,_R) * 100 + .65 	 * AP
-	xRE = multi == 1 and (GetCastLevel(myHero,_R) * 100 + .65 	 * AP) or multi == 2 and (GetCastLevel(myHero,_R) * 100 + .65 	 * AP) * 2
-	xRW = GetCastLevel(myHero,_R) * 150 + .975 	 * AP
-	IRDY = LeBlanc.KS.Ignite:Value() and Ignite and CanUseSpell(myHero, Ignite) == 0 and 1 or 0
-	xIgnite = (50 + GetLevel(myHero) * 20) * IRDY
-	for i = 1, #nmy do
-		local enemy = nmy[i]
-		if Valid(enemy) then
-			local myMana = GetCurrentMana(myHero)
-			local eHP 	= GetCurrentHP(enemy)
-			local emHP = GetMaxHP(enemy)
-			local EExtra = multi == 1 and HaveE(enemy) and xE or multi == 1 and HaveE(enemy) and ECanHit(enemy) and CCCheck(enemy) and xE or 0
-			local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and xQ or 0
-			local zQ 	= (Q1RDY == 1 and CalcDamage(myHero, enemy, 0, xQ)) or 0
-    		local zW 	= (W1RDY == 1 and CalcDamage(myHero, enemy, 0, xW)) or 0
-			local zE 	= (E1RDY == 1 and CalcDamage(myHero, enemy, 0, xE)) or 0
-			local zR 	= (RRDY == 1  and CalcDamage(myHero, enemy, 0, xR)) or 0
-			local zRW 	= (RRDY == 1  and CalcDamage(myHero, enemy, 0, xRW)) or 0
-			local zRE 	= (RRDY == 1  and CalcDamage(myHero, enemy, 0, xRE)) or 0
-      		if eHP > (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra) then
-				KillText[i] = "Harras Him!"
-				colorText = ARGB(255,0,0,255)
-			elseif eHP <= (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra) then
-				if Mana(1,1,1) == 1 and eHP > (zQ + zW + zE + zQp + EExtra) then
-					KillText[i] = "Killable"
-					colorText = ARGB(255,255,0,0)
-				end
-			else
-				KillText[i] = "No Mana or Spells on CD"
-			end
-		end
-	end
-end
-------------------------------------------
 --Draw Stuff
 ------------------------------------------
 local function Draw()
 	if not IsDead(myHero) then
-		if LeBlanc.Draw.DrawQ:Value() and (CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,0,0)==1) or CD(0,1,n,n,n,n,n,1)==1 then 
+		if (LeBlanc.Draw.DrawQ:Value() and CD(1,n,n,n,n,n,n,n,n)==1 and Mana(1,0,0)==1) or (LeBlanc.Draw.DrawRQ:Value() and CD(0,1,n,n,n,n,n,1)==1) then 
 			DrawCircle(GetOrigin(myHero),750,0,0,0xffff0000)
 		end
-		if LeBlanc.Draw.DrawW:Value() and (CD(n,n,1,n,n,n,n,n,n)==1 and Mana(0,1,0)==1) or CD(n,n,0,n,1,n,n,1)==1 then 
+		if (LeBlanc.Draw.DrawW:Value() and CD(n,n,1,n,n,n,n,n,n)==1 and Mana(0,1,0)==1) or (LeBlanc.Draw.DrawRW:Value() and CD(n,n,0,n,1,n,n,1)==1) then 
 			DrawCircle(GetOrigin(myHero),650,0,0,0xffff0000)
 		end
 		if LeBlanc.Draw.DrawQW:Value() and (CD(1,n,1,n,n,n,n,n,n)==1 and Mana(1,1,0)==1) or CD(1,n,0,n,1,n,n,1)==1 and Mana(1,0,0)==1 then 
 			DrawCircle(GetOrigin(myHero),1400,0,0,0xffffff00)
 			DrawCircle(GetOrigin(myHero),2050,0,0,0xffffff00)
 		end
-		if LeBlanc.Draw.DrawE:Value() and (CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1) or CD(n,n,n,n,n,0,1,1)==1 then 
+		if (LeBlanc.Draw.DrawE:Value() and CD(n,n,n,n,n,n,1,n,n)==1 and Mana(0,0,1)==1) or (LeBlanc.Draw.DrawRE:Value() and CD(n,n,n,n,n,0,1,1)==1) then 
 			DrawCircle(GetOrigin(myHero),920,0,0,0xffffff00)
 		end
-		if LeBlanc.KS.KSNotes:Value() then
-			for i = 1, #nmy do
-	        	local Unit = nmy[i]
-	        	if Valid(Unit) then
-	        		local drawPos = GetOrigin(Unit)
-	  				local testPos = WorldToScreen(1, drawPos)
-	        		if KillText[i] then 
-	        			DrawText(KillText[i], 15, testPos.x, testPos.y, 0xffff0000) 
-	        		end
-				end
-			end
-    	end
     	local AP = GetBonusAP(myHero)
 		local xQ = 	GetCastLevel(myHero,_Q) * 25 + 30 + .4 * AP
 		local xW = 	GetCastLevel(myHero,_W) * 40 + 45 + .6 * AP
@@ -376,7 +333,7 @@ local function Draw()
 			local enemy = nmy[i]
 			if Valid(enemy) then
 				local myMana = GetCurrentMana(myHero)
-				local eHP 	= GetCurrentHP(enemy)
+				local eHP 	= GetCurrentHP(enemy) + GetMagicShield(enemy) + GetDmgShield(enemy)
 				local emHP = GetMaxHP(enemy)
 				local EExtra = multi == 1 and HaveE(enemy) and xE or multi == 1 and ECanHit(enemy) and CCCheck(enemy) and xE or 0
 				local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and xQ or 0
@@ -386,6 +343,13 @@ local function Draw()
 				local zR 	= (RRDY == 1  and CalcDamage(myHero, enemy, 0, xR)) or 0
 				local zRW 	= (RRDY == 1  and CalcDamage(myHero, enemy, 0, xRW)) or 0
 				local zRE 	= (RRDY == 1  and CalcDamage(myHero, enemy, 0, xRE)) or 0
+				if LeBlanc.KS.KSNotes:Value() and not LeBlanc.KS.Percent:Value() then
+		        	if GetCurrentHP(enemy) < (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra) then
+		        		local drawPos = GetOrigin(enemy)
+		  				local testPos = WorldToScreen(1, drawPos)
+		        		DrawText("Killable", 15, testPos.x, testPos.y, 0xffff0000) 
+					end
+		    	end
 				if LeBlanc.KS.DmgOverHP:Value() then
 					if eHP > (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra) then
 						totDmg = (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra)
@@ -397,7 +361,7 @@ local function Draw()
 				if LeBlanc.KS.Percent:Value() then
 					local drawing = WorldToScreen(1, GetOrigin(enemy))
 					local rounded = Round(((eHP - (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra)) / emHP * 100), 0) > 0 and Round(((eHP - (zQ + (zQp*2) + zW + zR + zE + xIgnite + EExtra)) / emHP * 100), 0).."%" or "Kill"
-					DrawText("\n\n" .. rounded, 15, drawing.x, drawing.y, 0xffff0000) 
+					DrawText(rounded, 15, drawing.x, drawing.y, 0xffff0000) 
 				end
 			end
 		end
@@ -422,35 +386,41 @@ local function AnalyzeSituation(enemy)
 end
 local function GetDamage(Skill, enemy)
 	if enemy then
-		local EExtra = multi == 1 and HaveE(enemy) and xE or multi == 1 and ECanHit(enemy) and CCCheck(enemy) and xE or 0
-		local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and xQ or 0
-		local TotalMagicDamage = 0 + EExtra + zQp
+		local Damages = 0
+
+		local zQp 	= (W1RDY + E1RDY + RRDY ~= 0 or HaveE(enemy)) and (Q1RDY == 1 or HaveQ(enemy)) and 1 or 0
+		local EValue = multi == 1 and (HaveE(enemy) or ECanHit(enemy)) and 1 or multi == 2 and (HaveE(enemy) or ECanHit(enemy)) and 3 or 1
+		local RValue = RRDY == 1 and (Skill == "doR") and (Q2RDY == 1 or Q1RDY == 1) and 1 or RRDY == 1 and (Skill == "doR") and (W3RDY == 1 or W1RDY == 1) and 2 or RRDY == 1 and (Skill == "doR") and (E2RDY == 1 or E1RDY == 1) or 1
+
+		local xQ = 	(getdmg("Q", enemy, myHero, 1)) * Q1RDY
+		local xQ2 = (getdmg("Q", enemy, myHero, 1)) * zQp
+		local xW = 	(getdmg("W", enemy, myHero)) * W1RDY
+		local xE = 	(getdmg("E", enemy, myHero, EValue)) * E1RDY
+		local xR =	(getdmg("R", enemy, myHero, RValue)) * RRDY
+		--local xL = 	(getdmg("LUDENS", enemy, myHero))
+		local xI = 	(getdmg("IGNITE", enemy, myHero)) * IRDY
+
+		local TotalPhysicalDamage = 0
+		local TotalMagicDamage = 0 --+ xL
 		local TrueDamage = 0
-		if Q1RDY == 1 and (Skill == "doQ") then
-			TotalMagicDamage = TotalMagicDamage + xQ
-		end
-		if W1RDY == 1 and (Skill == "doW") then
+
+		if 	   (Skill == "doQ") then
+			TotalMagicDamage = TotalMagicDamage + xQ + xQ2
+		elseif (Skill == "doW") then
 			TotalMagicDamage = TotalMagicDamage + xW
-		end
-		if E1RDY == 1 and (Skill == "doE") then
+		elseif (Skill == "doE") then
 			TotalMagicDamage = TotalMagicDamage + xE
-		end
-		if 		RRDY == 1 and (Skill == "doR") and (Q2RDY == 1 or Q1RDY == 1) then
+		elseif (Skill == "doR") then
 			TotalMagicDamage = TotalMagicDamage + xR
-		else
-			if 	RRDY == 1 and (Skill == "doR") and (W3RDY == 1 or W1RDY == 1) then
-				TotalMagicDamage = TotalMagicDamage + xRW
-			else
-				if 	RRDY == 1 and (Skill == "doR") and (E2RDY == 1 or E1RDY == 1) then
-					TotalMagicDamage = TotalMagicDamage + xRE
-				end
-			end
+		elseif (Skill == "IGNITE") then
+			TrueDamage = TrueDamage + xI
 		end
-		TrueDamage = CalcDamage(myHero, enemy, 0, TotalMagicDamage)
-		if IRDY == 1 and Skill == "IGNITE" then
-			TrueDamage = TrueDamage + xIgnite
-		end
-		return TrueDamage
+		
+		Damages = TotalMagicDamage + TotalPhysicalDamage + TrueDamage
+
+		return Damages
+	else
+		return 0
 	end
 end
 local function ComboGetDamage(Skills, enemy)
@@ -463,7 +433,7 @@ local function ComboGetDamage(Skills, enemy)
 	return TotalDamage
 end
 local function KillCheck(enemy, Combo)
-	local health = GetCurrentHP(enemy)
+	local health = GetCurrentHP(enemy) + GetMagicShield(enemy) + GetDmgShield(enemy)
 	local ComboDamage
 	ComboDamage = ComboGetDamage(Combo, enemy)
 	return ComboDamage > health and true or false
@@ -502,6 +472,7 @@ local function Check(spell, unit, position)
 	end
 end
 local function GetBestCombo(enemy)
+	local doNormal = false
 	local distance = GetDistance(enemy)
 	local resultB = AnalyzeSituation(enemy)
 	local bestcombo = {}
@@ -527,37 +498,83 @@ local function GetBestCombo(enemy)
 			end
 		end
 	elseif resultB == Position[4] then --full combo range
-		if multi == 2 then
+		if not doNormal and multi == 2 then
 			checkcombo = {Check("E", enemy, "nW"), Check("Q"), Check("R"), Check("W"), Check("IGNITE")} 
-		else
+			if KillCheck(enemy, checkcombo) then
+				doNormal = false
+				bestcombo = checkcombo
+			else
+				doNormal = true
+				bestcombo = nil
+			end
+		elseif not doNormal and multi == 1 then
 			checkcombo = {Check("Q"), Check("R"), Check("W"), Check("E", enemy, "nW"), Check("IGNITE")}
+			if KillCheck(enemy, checkcombo) then
+				doNormal = false
+				bestcombo = checkcombo
+			else
+				doNormal = true
+				bestcombo = nil
+			end
 		end
-		if KillCheck(enemy, checkcombo) then
-			bestcombo = checkcombo
-		else
+		if doNormal or not bestcombo then
 			if CCCheck(enemy) then --check if you need to E the enemy
-				if E1RDY == 1 then
+				if E1RDY == 1 and (Check("E", enemy, "nW")) ~= 0 then
 					bestcombo = {Check("E", enemy, "nW"), Check("Q"), Check("R"), Check("W")}
-				else
+				elseif E1RDY == 0 and E2RDY == 1 and not HaveE(enemy) then
 					DelayAction(function()
-						if E1RDY == 0 and E2RDY == 1 and not HaveE(enemy) then
-							bestcombo = {"doR", Check("Q"), Check("W")}
-						end
-					end, 500)
+						bestcombo = {"doR", Check("Q"), Check("W")}
+					end, .5)
 				end
 			else
 				if LeBlanc.Keys.Priority:Value() == 1 then --Cast Q before all
-					bestcombo = {Check("Q") ,Check("R"), Check("W"), Check("E", enemy, "nW")}
+					if LeBlanc.Keys.RPriority:Value() == 1 then
+						bestcombo = {Check("Q") ,Check("R"), Check("W"), Check("E", enemy, "nW")}
+					elseif LeBlanc.Keys.RPriority:Value() == 2 then
+						bestcombo = {Check("Q"), Check("W"), Check("R"), Check("E", enemy, "nW")}
+					elseif LeBlanc.Keys.RPriority:Value() == 3 then
+						bestcombo = {Check("Q"), Check("W"), Check("E", enemy, "nW"), Check("R")}
+					end
 				elseif LeBlanc.Keys.Priority:Value() == 2 then
-					bestcombo = {Check("Q"), Check("R"), Check("E", enemy, "nW"), Check("W")}
+					if LeBlanc.Keys.RPriority:Value() == 1 then
+						bestcombo = {Check("Q"), Check("R"), Check("E", enemy, "nW"), Check("W")}
+					elseif LeBlanc.Keys.RPriority:Value() == 2 then
+						bestcombo = {Check("Q"), Check("E", enemy, "nW"), Check("W"), Check("R")}
+					elseif LeBlanc.Keys.RPriority:Value() == 3 then
+						bestcombo = {Check("Q"), Check("E", enemy, "nW"), Check("R"), Check("W")}
+					end
 				elseif LeBlanc.Keys.Priority:Value() == 3 then
-					bestcombo = {Check("W") ,Check("R"), Check("E", enemy, "nW"), Check("Q")}
+					if LeBlanc.Keys.RPriority:Value() == 1 then
+						bestcombo = {Check("W"), Check("E", enemy, "nW"), Check("Q"), Check("R")}
+					elseif LeBlanc.Keys.RPriority:Value() == 2 then
+						bestcombo = {Check("W") ,Check("R"), Check("E", enemy, "nW"), Check("Q")}
+					elseif LeBlanc.Keys.RPriority:Value() == 3 then
+						bestcombo = {Check("W"), Check("E", enemy, "nW"), Check("R"), Check("Q")}
+					end
 				elseif LeBlanc.Keys.Priority:Value() == 4 then
-					bestcombo = {Check("W") ,Check("R"), Check("Q"), Check("E", enemy, "nW")}
+					if LeBlanc.Keys.RPriority:Value() == 1 then
+						bestcombo = {Check("W"), Check("Q"), Check("R"), Check("E", enemy, "nW")}
+					elseif LeBlanc.Keys.RPriority:Value() == 2 then
+						bestcombo = {Check("W"), Check("R"), Check("Q"), Check("E", enemy, "nW")}
+					elseif LeBlanc.Keys.RPriority:Value() == 3 then
+						bestcombo = {Check("W"), Check("Q"), Check("E", enemy, "nW"), Check("R")}
+					end
 				elseif LeBlanc.Keys.Priority:Value() == 5 then
-					bestcombo = {Check("E", enemy, "nW") ,Check("R"), Check("Q"), Check("W")}
+					if LeBlanc.Keys.RPriority:Value() == 1 then
+						bestcombo = {Check("E", enemy, "nW"), Check("Q"), Check("R"), Check("W")}
+					elseif LeBlanc.Keys.RPriority:Value() == 2 then
+						bestcombo = {Check("E", enemy, "nW"), Check("Q"), Check("W"), Check("R")}
+					elseif LeBlanc.Keys.RPriority:Value() == 3 then
+						bestcombo = {Check("E", enemy, "nW") ,Check("R"), Check("Q"), Check("W")}
+					end
 				elseif LeBlanc.Keys.Priority:Value() == 6 then
-					bestcombo = {Check("E", enemy, "nW") ,Check("R"), Check("W"), Check("Q")}
+					if LeBlanc.Keys.RPriority:Value() == 1 then
+						bestcombo = {Check("E", enemy, "nW"), Check("W"), Check("Q"), Check("R")}
+					elseif LeBlanc.Keys.RPriority:Value() == 2 then
+						bestcombo = {Check("E", enemy, "nW"), Check("W"), Check("R"), Check("Q")}
+					elseif LeBlanc.Keys.RPriority:Value() == 3 then
+						bestcombo = {Check("E", enemy, "nW") ,Check("R"), Check("W"), Check("Q")}
+					end
 				end
 			end
 		end
@@ -567,90 +584,92 @@ local function GetBestCombo(enemy)
 	return bestcombo
 end
 local function CastSkill(Skill, enemy)
-	if Skill == "doQ" then
-		if GetDistanceSqr(GetOrigin(enemy)) > 562500 or Q1RDY == 0 then
-			return false
-		end
-		Q(enemy)
-		return true
-	elseif Skill == "doW" then
-		local resultB = AnalyzeSituation(enemy)
-		if (resultB == Position[1]) or W1RDY == 0 then
-			return false
-		elseif resultB == Position[2] then
-			WvL(enemy)
-			return true
-		elseif resultB == Position[3] then
-			WL(enemy)
-			return true
-		else
-			local Dist = GetDistance(enemy)
-			if Dist < 710 - GetMoveSpeed(enemy) * .125 then 
-				W(enemy)
-				return true
-			else
+	if type(Skill) ~= 0 then
+		if Skill == "doQ" then
+			if GetDistanceSqr(GetOrigin(enemy)) > 562500 or Q1RDY == 0 then
 				return false
 			end
-		end
-	elseif Skill == "doE"  then
-		if GetDistanceSqr(GetOrigin(enemy)) > 902500 or E1RDY == 0 then
-			return false
-		end
-		local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,920,55,true,true)
-		local CollisionE = Collision(950, 1550, 250, 55)
-		local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
-		if EPred.HitChance == 1 or not CollisionCheck then
-			E(enemy)
+			Q(enemy)
 			return true
-		else
-			return false
-		end
-	elseif Skill == "doR" then
-		local Distance = GetDistanceSqr(GetOrigin(enemy))
-		if ls == "Q" or Q2RDY == 1 then
-			if Distance <= 562500 then
-				CastTargetSpell(enemy, _R)
-				return true
-			else
-				return false
-			end
-		elseif ls == "W" or W3RDY == 1 then
+		elseif Skill == "doW" then
 			local resultB = AnalyzeSituation(enemy)
-			if resultB == Position[1] then
+			if (resultB == Position[1]) or W1RDY == 0 then
 				return false
-			elseif resultB == (Position[2] or Position[3]) then
+			elseif resultB == Position[2] then
 				WvL(enemy)
+				return true
+			elseif resultB == Position[3] then
+				WL(enemy)
 				return true
 			else
 				local Dist = GetDistance(enemy)
-				if Dist < 710 - GetMoveSpeed(enemy) * .125 then 
-					WR(enemy)
+				if Dist < 850 - GetMoveSpeed(enemy) * .125 then 
+					W(enemy)
 					return true
 				else
 					return false
 				end
 			end
-		elseif ls == "E" or E2RDY == 1 then
-			if Distance > 902500 then
+		elseif Skill == "doE"  then
+			if GetDistanceSqr(GetOrigin(enemy)) > 902500 or E1RDY == 0 then
 				return false
+			end
+			local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,920,55,true,true)
+			local CollisionE = Collision(950, 1550, 250, 55)
+			local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
+			if EPred.HitChance == 1 or not CollisionCheck then
+				E(enemy)
+				return true
 			else
-				local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,920,55,true,true)
-				local CollisionE = Collision(950, 1550, 250, 55)
-				local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
-				if EPred.HitChance == 1 and not CollisionCheck then
-					ER(enemy)
+				return false
+			end
+		elseif Skill == "doR" then
+			local Distance = GetDistanceSqr(GetOrigin(enemy))
+			if ls == "Q" or Q2RDY == 1 then
+				if Distance <= 562500 then
+					CastTargetSpell(enemy, _R)
 					return true
 				else
 					return false
 				end
+			elseif ls == "W" or W3RDY == 1 then
+				local resultB = AnalyzeSituation(enemy)
+				if resultB == Position[1] then
+					return false
+				elseif resultB == (Position[2] or Position[3]) then
+					WvL(enemy)
+					return true
+				else
+					local Dist = GetDistance(enemy)
+					if Dist < 850 - GetMoveSpeed(enemy) * .125 then 
+						WR(enemy)
+						return true
+					else
+						return false
+					end
+				end
+			elseif ls == "E" or E2RDY == 1 then
+				if Distance > 902500 then
+					return false
+				else
+					local EPred = GetPredictionForPlayer(GetOrigin(myHero),enemy,GetMoveSpeed(enemy),1550,250,920,55,true,true)
+					local CollisionE = Collision(950, 1550, 250, 55)
+					local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(EPred.PredPos.x, EPred.PredPos.z),ENEMY)
+					if EPred.HitChance == 1 and not CollisionCheck then
+						ER(enemy)
+						return true
+					else
+						return false
+					end
+				end
 			end
-		end
-	elseif Skill == "IGNITE" then
-		if IRDY == 1 then
-			CastTargetSpell(enemy, Ignite)
-			return true
-		else
-			return false
+		elseif Skill == "IGNITE" then
+			if IRDY == 1 then
+				CastTargetSpell(enemy, Ignite)
+				return true
+			else
+				return false
+			end
 		end
 	end
 end
@@ -674,7 +693,7 @@ local function Combo()
 		IOW.attacksEnabled = true
 	end
 	if not LeBlanc.Misc.MR:Value() then
-		if not ComboTarget or IsDead(ComboTarget) or Q1RDY + W1RDY + E1RDY + RRDY + IRDY == 0 or (GetDistance(ComboTarget) > 700 and W1RDY + W3RDY == 0) or (EnemiesAround(GetOrigin(myHero), 700) > 1 and GetCurrentHP(myHero) / GetMaxHP(myHero) * 100 < 25) or EnemiesAround(GetOrigin(myHero), 400) > 2 then
+		if not ComboTarget or IsDead(ComboTarget) or Q1RDY + W1RDY + E1RDY + RRDY + IRDY == 0 or (EnemiesAround(GetOrigin(myHero), 850) > 1 and GetCurrentHP(myHero) / GetMaxHP(myHero) * 100 < 25) or EnemiesAround(GetOrigin(myHero), 400) > 2 then
 			if W4RDY == 1 then
 				WR2()
 			elseif W2RDY == 1 and W4RDY ~= 1 then
@@ -705,7 +724,6 @@ end)
 OnTick(function(myHero)
 	SetVariables()
 	CD()
-	DamageCalc()
 	if LeBlanc.Keys.Combo:Value() then
 		Combo()
 	elseif LeBlanc.Keys.Harass:Value() and target and GetDistance(target) < 750 then 
