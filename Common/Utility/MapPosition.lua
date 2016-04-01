@@ -443,7 +443,7 @@ class "SpatialHashMap" -- {
 	end
 
 	function SpatialHashMap:loadObjects(spatialObjects)
-		if self.cacheId and fileExists(SCRIPT_PATH .. "MapPosition_" .. self.cacheId .. ".lua") then
+		if self.cacheId and fileExists(COMMON_PATH .. "MapPosition_" .. self.cacheId .. ".lua") then
 			_G.s = spatialObjects require ("MapPosition_" .. self.cacheId)
 
 			self.hashTables = _G.h return
@@ -507,7 +507,7 @@ class "SpatialHashMap" -- {
 			res = res .. cols .. "}"
 		end
 		res = res .. "}"
-		local file, error = assert(io.open(SCRIPT_PATH .. "MapPosition_" .. self.cacheId .. ".lua", "w+")) 
+		local file, error = assert(io.open(COMMON_PATH .. "MapPosition_" .. self.cacheId .. ".lua", "w+")) 
 		if error then 
 			return error 
 		end 
