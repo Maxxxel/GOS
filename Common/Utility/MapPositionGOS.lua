@@ -7,6 +7,7 @@
 -- v05 - 5/23/2013 7:42:07 PM  - uses spatial map for inBush, Common dir now required, inWall/inBush also accept units
 -- v06 - 11/28/2014 12:20:00 PM - updated Bushes and Walls for S5 (Maxxxel)
 -- v07 - 12/10/2015 19:13:00 PM - added all maps (Maxxxel)
+-- v08 - 04/01/2016 13:51 - changed SCRIPTPATH
 --
 -- requires MapPosition.lua and 2DGeometry.lua
 --
@@ -30,28 +31,21 @@ end
 class = bclass
 class = lclass
 
-if SCRIPT_PATH == nil then SCRIPT_PATH = '' end
-SCRIPT_PATH = SCRIPT_PATH .. "//Common//"
-if package.path:find([[;.\?]], 1, true) == nil then
-    package.path = package.path..[[;.\?]]
-    package.path = package.path..[[;.\?.lua]]
-end
-
 local walls_cached
 local bushes_cached
 
 if mapID == HOWLING_ABYSS then
-	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_2.lua")
-	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_2.lua")
+	walls_cached = file_exists(COMMON_PATH .. "MapPosition_walls_1_2.lua")
+	bushes_cached = file_exists(COMMON_PATH .. "MapPosition_bushes_2.lua")
 elseif mapID == CRYSTAL_SCAR then
-	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_3.lua")
-	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_3.lua")
+	walls_cached = file_exists(COMMON_PATH .. "MapPosition_walls_1_3.lua")
+	bushes_cached = file_exists(COMMON_PATH .. "MapPosition_bushes_3.lua")
 elseif mapID == TWISTED_TREELINE then
-	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_4.lua")
-	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_4.lua")
+	walls_cached = file_exists(COMMON_PATH .. "MapPosition_walls_1_4.lua")
+	bushes_cached = file_exists(COMMON_PATH .. "MapPosition_bushes_4.lua")
 else
-	walls_cached = file_exists(SCRIPT_PATH .. "MapPosition_walls_1_1.lua")
-	bushes_cached = file_exists(SCRIPT_PATH .. "MapPosition_bushes_1.lua")
+	walls_cached = file_exists(COMMON_PATH .. "MapPosition_walls_1_1.lua")
+	bushes_cached = file_exists(COMMON_PATH .. "MapPosition_bushes_1.lua")
 end
 
 
