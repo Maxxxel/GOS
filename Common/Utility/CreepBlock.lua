@@ -1,7 +1,6 @@
 --version 0.1
 --updated for new loader
 
-require('Inspired')
 require('MapPositionGOS')
 
 function CreepBlock(x,y,z,width)
