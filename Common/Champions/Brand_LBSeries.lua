@@ -1,4 +1,3 @@
-require('Inspired')
 if GetObjectName(myHero) ~= "Brand" then return end
 require('Collision')
 
