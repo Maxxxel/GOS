@@ -1,6 +1,5 @@
 --version 0.1
 --fixed for new Loader
-require('Inspired')
 
 local myHero = GetMyHero()
 local lastattackposition={true,true,true}
