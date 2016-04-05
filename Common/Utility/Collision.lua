@@ -1,6 +1,5 @@
 --version 0.2
 --fixed type Error
-require('Inspired')
 
 class "Point" --{
 --initiating
