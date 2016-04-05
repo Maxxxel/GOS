@@ -1,4 +1,3 @@
-require('Inspired')
 if GetObjectName(myHero) ~= "Syndra" then return end
 --Version 0.1 // fresh started
 
