@@ -1,7 +1,6 @@
 --version 0.1
 --updated to new loader
 --Credits to Huntera LB
-require('Inspired')
 
 local showCircle = {}
 local myHero = GetMyHero()
