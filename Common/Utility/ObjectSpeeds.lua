@@ -11,11 +11,11 @@ local dirty = false
 
 --set all objects u want to check
 local included = {
-    '_mis.troy', -- only missiles
+    '_mis.troy' -- only missiles
 }
 --force exlude some expressions
 local excluded = {
-    
+    'cm_ba_mis.troy'
 }
 
 local function Sample(o)
@@ -31,17 +31,17 @@ local function HandleCompletedCalc(stream, charname, distance, time, speed)
     end
 end
 
-function GetYDistance(p1, p2)
-  p1 = GetOrigin(p1) or p1
-  p2 = GetOrigin(p2) or p2 or myHeroPos()
-  return math.sqrt((p1.x - p2.x) ^ 2 + (p1.y - p2.y) ^ 2 + (p1.z - p2.z) ^ 2)
+local function GetYDistance(p1, p2)
+    p1 = GetOrigin(p1) or p1
+    p2 = GetOrigin(p2) or p2 or myHeroPos()
+    return math.sqrt((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y) + (p1.z - p2.z)*(p1.z - p2.z))
 end
 
 local function HandleCompletedObject(id, t)
     local n = #t.samples
     local first = t.samples[1]
     local last = t.samples[n]
-    local distance = GetYDistance(first, last)
+    local distance = math.sqrt((first.x - last.x)*(first.x - last.x) + (first.y - last.y)*(first.y - last.y) + (first.z - last.z)*(first.z - last.z))--GetYDistance(first, last)
     local time = last.time-first.time
     local speed = distance/time    
     if speed > 0 and speed < 20000 then
@@ -111,6 +111,8 @@ OnCreateObj(function(obj)
         if GetObjectType(obj):lower():find("generalparticleemitter") and IsSensibleString(GetObjectBaseName(obj)) and IsFilteredString(GetObjectBaseName(obj)) then
             if active_objects[GetObjectBaseName(obj)] == nil then
                 local include = false
+                local exclude = false
+                if GetObjectBaseName(obj):find("Syndra") then print(GetObjectBaseName(obj)) end
                 for i,v in ipairs(included) do
                     if GetObjectBaseName(obj):lower():find(v) then
                         include = true
