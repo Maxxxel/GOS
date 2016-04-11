@@ -83,10 +83,21 @@
 		- added caching for instant loading
 	1.2 - updated regions and walls for S5 (Maxxxel)
 	1.3 - added walls for ARAM
+	1.3 - added missing bushes
 	
 --]]
 
 -- Dependencies ----------------------------------------------------------------
+local Version = 1.33
+function AutoUpdate(data)
+    if tonumber(data) > tonumber(Version) then
+        PrintChat("New version found! " .. data)
+        PrintChat("Downloading update, please wait...")
+        DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPosition.lua", COMMON_PATH .. "MapPosition.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
+    end
+end
+
+GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPosition.version", AutoUpdate)
 
 require "2DGeometry"
 local mapID = GetMapID()
