@@ -24,7 +24,7 @@ function AutoUpdate(data)
     end
 end
 
-GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.lua", AutoUpdate)
+GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.version", AutoUpdate)
 
 require 'MapPosition'
 local mapID = GetMapID()
