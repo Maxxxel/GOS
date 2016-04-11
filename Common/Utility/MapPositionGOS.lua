@@ -220,7 +220,7 @@ function MapPosition:inBush(o)
     else
         point = o
     end
-    for bushId, bush in pairs(self.bushSpatialHashMap:__getSpatialObjects(point)) do
+    for bushId, bush in pairs(self.bushSpatialHashMap:getSpatialObjects(point)) do
         if bush:__contains(point) then
             return true
         end
