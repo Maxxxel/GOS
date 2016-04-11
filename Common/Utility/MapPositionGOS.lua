@@ -133,6 +133,11 @@ local bushQuads = {
 		{x1=8254,x2=8274,x3=7873,x4=7618,z1=11684,z2=11856,z3=11933,z4=11730 },
 --Bush #34 top.mid after base, if inaccurate modify the values
 		{x1=8984,x2=9417,x3=9432,x4=8968,z1=11347,z2=11340,z3=11634,z4=11410 },
+--Bushes #35 and 36, after second towers top(lila) and botlane(blue)
+		{x1=7586,x2=7654,x3=7998,x4=8022,z1=744,z2=880,z3=898,z4=758},
+		{x1=6924,x2=6976,x3=7282,x4=7372,z1=14106,z2=14022,z3=14048,z4=14106},
+--Bushes #37 top lane red left
+		{x1=6358,x2=6242,x3=6118,x4=6224,z1=10084,z2=10078,z3=10472,z4=10556}
 }
 
 local bushQuadsHA = {
