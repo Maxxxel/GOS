@@ -1,14 +1,23 @@
 --[[
     2D Geometry 1.3 by Husky
-    version 0.1 port by Maxxxel
+    version 0.2 port by Maxxxel
 --]]
 
 -- Code ------------------------------------------------------------------------
+local Version = 0.2
+function AutoUpdate(data)
+    if tonumber(data) > tonumber(Version) then
+        PrintChat("New version found! " .. data)
+        PrintChat("Downloading update, please wait...")
+        DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.lua", COMMON_PATH .. "2DGeometry.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
+    end
+end
 
+GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.version", AutoUpdate)
 class "Point" --{
 --initiating
   function Point:__init(x,y,z)
-    local pos= type~="number" and GetOrigin(x) or nil
+    local pos= type(x)~="number" and GetOrigin(x) or nil
     self.x = pos and pos.x or x 
     self.y = pos and pos.y or y
     self.z = pos and pos.z or z or 0
@@ -103,6 +112,8 @@ end
     if Object:__type()=="Point" then
       return (self:__substract(Object)):__lenght()
     elseif Object:__type()=="Line" then
+      return Object:__distance(self)
+    elseif Object:__type()=="LineSegment" then
       return Object:__distance(self)
     elseif Object:__type()=="Circle" then
       --missing
@@ -331,8 +342,8 @@ class "LineSegment" -- {
             return math.min(self.points[1]:__distance(spatialObject), self.points[2]:__distance(spatialObject))
         else
             local minDistance = nil
-            for i, point in ipairs(spatialObject:__getPoints()) do
-                distance = point:__distance(self)
+            for i, point in ipairs(self:__getPoints()) do
+                distance = point:__distance(spatialObject)
                 if minDistance == nil or distance <= minDistance then
                     minDistance = distance
                 end
@@ -548,8 +559,8 @@ class "Polygon" -- {
 
     function Polygon:__distance(spatialObject)
         local minDistance = nil
-        for i, lineSegment in ipairs(self:__getLineSegment()) do
-            distance = point:__distance(self)
+        for i, lineSegment in ipairs(self:__getLineSegments()) do
+            distance = lineSegment:__distance(spatialObject)
             if minDistance == nil or distance <= minDistance then
                 minDistance = distance
             end
