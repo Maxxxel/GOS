@@ -8,12 +8,23 @@
 -- v06 - 11/28/2014 12:20:00 PM - updated Bushes and Walls for S5 (Maxxxel)
 -- v07 - 12/10/2015 19:13:00 PM - added all maps (Maxxxel)
 -- v08 - 04/01/2016 13:51 - changed SCRIPTPATH
+-- v09 - 04/11/2016		- fixed bushes error, added auto update
 --
 -- requires MapPosition.lua and 2DGeometry.lua
 --
 -- the script will generate cache files on the first run, this takes ~3 seconds on jit
 --
 -- see MapPosition.lua for documentation
+local Version = 0.9
+function AutoUpdate(data)
+    if tonumber(data) > tonumber(Version) then
+        PrintChat("New version found! " .. data)
+        PrintChat("Downloading update, please wait...")
+        DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.lua", COMMON_PATH .. "MapPositionGOS.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
+    end
+end
+
+GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.lua", AutoUpdate)
 
 require 'MapPosition'
 local mapID = GetMapID()
@@ -133,7 +144,7 @@ local bushQuadsCS = {
 local bushQuadsTT = {
 }
 
-local bushes = {}
+bushes = {}
 local bushesformap
 
 if mapID == HOWLING_ABYSS then
