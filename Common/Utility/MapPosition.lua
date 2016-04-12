@@ -83,7 +83,7 @@
 		- added caching for instant loading
 	1.2 - updated regions and walls for S5 (Maxxxel)
 	1.3 - added walls for ARAM
-	1.3 - added missing bushes
+	1.33 - added missing bushes
 	
 --]]
 
