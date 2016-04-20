@@ -4,7 +4,7 @@
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version = 0.2
+local Version = 0.3
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
@@ -63,10 +63,10 @@ class "Point" --{
   function Point:__multiply(v)
     if type(v)=="number" then
       return Point(self.x*v,self.y*v,self.z*v)
-     elseif v:__type()=="Point" then
+     elseif v:__type()=="Point" or type(v)=="table" then
   		return Point(self.x*v.x,self.y*v.y,self.z*v.z)
     else
-      PrintChat("Error on Point:__multiply, value is unexpected")
+      PrintChat("Error on Point:__multiply, value is unexpected"..type(v))
     end
   end
 --divide by value or point
@@ -119,6 +119,49 @@ end
       --missing
     end
   end
+
+    function Point:__ClosestPointInSegmentTo(Object)
+      if Object:__type() == "LineSegment" then
+        xDelta = Object.points[2].x - Object.points[1].x;
+        yDelta = Object.points[2].y - Object.points[1].y;
+
+        if ((xDelta == 0) and (yDelta == 0)) then
+          print("Segment start equals segment end");
+        end
+
+        u = ((self.x - Object.points[1].x) * xDelta + (self.y - Object.points[1].y) * yDelta) / (xDelta * xDelta + yDelta * yDelta);
+
+        closestPoint = nil
+        if (u < 0) then
+          closestPoint = Point(Object.points[1].x, Object.points[1].y);
+        elseif (u > 1) then
+          closestPoint = Point(Object.points[2].x, Object.points[2].y);
+        else
+          closestPoint = Point(math.ceil(Object.points[1].x + u * xDelta),  math.ceil(Object.points[1].y + u * yDelta));
+        end
+
+        return closestPoint;
+      end
+    end
+
+    function Point:__GetClosestBorderPointTo(Object)
+      bestDistance = 999999
+      bestSegment = nil
+      bestPoint = nil
+      if Object:__type() == "Polygon" then
+        for i, s in ipairs(Object:__getLineSegments()) do
+          closestInS = self:__ClosestPointInSegmentTo(s)
+          d = self:__distance(closestInS)
+          if (d < bestDistance) then
+            bestDistance = d
+            bestSegment = s
+            s:__draw()
+            bestPoint = closestInS
+          end
+        end
+      end
+      return bestPoint, bestSegment
+    end
 --}
 
 class "Line" --{
@@ -139,8 +182,8 @@ class "Line" --{
 		return self.points
 	end
 --Line Segment
-  function Line:__getLineSegment()
-		return {}
+  function Line:__getLineSegments()
+		return {self}
   end
 --does the line contains an object
 	function Line:__contains(Object)
@@ -192,8 +235,6 @@ class "Line" --{
 
 class "Circle" -- {
     function Circle:__init(point, radius)
-        uniqueId = uniqueId + 1
-        self.uniqueId = uniqueId
 
         self.point = point
         self.radius = radius
@@ -242,8 +283,8 @@ class "Circle" -- {
     end
 
     function Circle:__intersectionPoints(spatialObject)
-        local result = {}
-
+      local result = {}
+      if spatialObject:__type() == "Circle" then
         dx = self.point.x - spatialObject.point.x
         dy = self.point.y - spatialObject.point.y
         dist = math.sqrt(dx * dx + dy * dy)
@@ -272,8 +313,8 @@ class "Circle" -- {
                 table.insert(result, Point(intersectionx2, intersectiony2))
             end
         end
-
-        return result
+      end
+      return result
     end
 
     function Circle:__tostring()
@@ -353,25 +394,44 @@ class "LineSegment" -- {
         end
     end
 
-    function LineSegment:__intersects(spatialObject)
-        return #self:__intersectionPoints(spatialObject) >= 1
-    end
+    --function LineSegment:__intersects(spatialObject)
+    --    return #self:__intersectionPoints(spatialObject) >= 1
+    --end
 
-    function LineSegment:__intersectionPoints(spatialObject)
-        if spatialObject:__type()  == "LineSegment" then
-            d = (spatialObject.points[2].y - spatialObject.points[1].y) * (self.points[2].x - self.points[1].x) - (spatialObject.points[2].x - spatialObject.points[1].x) * (self.points[2].y - self.points[1].y)
-
-            if d ~= 0 then
-                ua = ((spatialObject.points[2].x - spatialObject.points[1].x) * (self.points[1].y - spatialObject.points[1].y) - (spatialObject.points[2].y - spatialObject.points[1].y) * (self.points[1].x - spatialObject.points[1].x)) / d
-                ub = ((self.points[2].x - self.points[1].x) * (self.points[1].y - spatialObject.points[1].y) - (self.points[2].y - self.points[1].y) * (self.points[1].x - spatialObject.points[1].x)) / d
-
-                if ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1 then
-                    return {Point (self.points[1].x + (ua * (self.points[2].x - self.points[1].x)), self.points[1].y + (ua * (self.points[2].y - self.points[1].y)))}
-                end
-            end
-        end
-
-        return {}
+    function LineSegment:__intersects(spatialObject, a, b)
+      -- parameter conversion
+      local L1 = {X1=self.points[1].x,Y1=self.points[1].y,X2=self.points[2].x,Y2=self.points[2].y}
+      local L2 = {X1=spatialObject.points[1].x,Y1=spatialObject.points[1].y,X2=spatialObject.points[2].x,Y2=spatialObject.points[2].y}
+      
+      -- Denominator for ua and ub are the same, so store this calculation
+      local d = (L2.Y2 - L2.Y1) * (L1.X2 - L1.X1) - (L2.X2 - L2.X1) * (L1.Y2 - L1.Y1)
+      
+      -- Make sure there is not a division by zero - this also indicates that the lines are parallel.
+      -- If n_a and n_b were both equal to zero the lines would be on top of each
+      -- other (coincidental).  This check is not done because it is not
+      -- necessary for this implementation (the parallel check accounts for this).
+      if (d == 0) then
+        return false
+      end
+      
+      -- n_a and n_b are calculated as seperate values for readability
+      local n_a = (L2.X2 - L2.X1) * (L1.Y1 - L2.Y1) - (L2.Y2 - L2.Y1) * (L1.X1 - L2.X1)
+      local n_b = (L1.X2 - L1.X1) * (L1.Y1 - L2.Y1) - (L1.Y2 - L1.Y1) * (L1.X1 - L2.X1)
+      
+      -- Calculate the intermediate fractional point that the lines potentially intersect.
+      local ua = n_a / d
+      local ub = n_b / d
+      
+      -- The fractional point will be between 0 and 1 inclusive if the lines
+      -- intersect.  If the fractional calculation is larger than 1 or smaller
+      -- than 0 the lines would need to be longer to intersect.
+      if (ua >= 0 and ua <= 1 and ub >= 0 and ub <= 1) then
+        local x = L1.X1 + (ua * (L1.X2 - L1.X1))
+        local y = L1.Y1 + (ua * (L1.Y2 - L1.Y1))
+        return true, {x=x, y=y}
+      end
+      
+      return false
     end
 
     function LineSegment:__draw(color, width)
@@ -557,6 +617,24 @@ class "Polygon" -- {
         return false
     end
 
+    function Polygon:__intersectionPoints(spatialObject, sort)
+      local points = {}
+      for i, lineSegment1 in ipairs(self:__getLineSegments()) do
+        local success, pt = lineSegment1:__intersects(spatialObject)
+        
+        if (success) then
+          pt.lineIndex = i
+          points[ #points+1 ] = pt
+        end
+      end
+  
+  if (sort) then
+    table.sort( points, function(a,b) return math.lengthOf(e,a) > math.lengthOf(e,b) end )
+  end
+  
+  return points
+end
+
     function Polygon:__distance(spatialObject)
         local minDistance = nil
         for i, lineSegment in ipairs(self:__getLineSegments()) do
@@ -574,9 +652,9 @@ class "Polygon" -- {
 
         for i, point in ipairs(self.points) do
             if i == 1 then
-                result = result .. point:__tostring()
+                result = result .. point:__toString()
             else
-                result = result .. ", " .. point:__tostring()
+                result = result .. ", " .. point:__toString()
             end
         end
 
