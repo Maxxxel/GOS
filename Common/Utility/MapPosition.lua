@@ -88,7 +88,7 @@
 --]]
 
 -- Dependencies ----------------------------------------------------------------
-local Version = 1.34
+local Version = 1.35
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
