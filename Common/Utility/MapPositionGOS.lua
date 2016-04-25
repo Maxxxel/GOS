@@ -15,7 +15,7 @@
 -- the script will generate cache files on the first run, this takes ~3 seconds on jit
 --
 -- see MapPosition.lua for documentation
-local Version = 0.9
+local Version = 0.91
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
@@ -28,9 +28,10 @@ GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/U
 
 require 'MapPosition'
 local mapID = GetMapID()
+local open, insert = io.open, table.insert
 
 local function file_exists(path)
-    local f = io.open(path, "r") if f ~= nil then f:close() return true else return false end
+    local f = open(path, "r") if f ~= nil then f:close() return true else return false end
 end
 
 local lclass = class
@@ -166,7 +167,7 @@ if bushesformap then
 	for i=1,#bushesformap do
     local b = bushesformap[i]
     local poly = Polygon(Point(b.x1,b.z1), Point(b.x2,b.z2), Point(b.x3,b.z3), Point(b.x4,b.z4))
-    table.insert(bushes, poly)
+    insert(bushes, poly)
 	end
 end
 
@@ -236,7 +237,7 @@ function MapPosition:inBush(o)
     else
         point = o
     end
-    for bushId, bush in pairs(self.bushSpatialHashMap:getSpatialObjects(point)) do
+    for bushId, bush in ipairs(self.bushSpatialHashMap:getSpatialObjects(point)) do
         if bush:__contains(point) then
             return true
         end
