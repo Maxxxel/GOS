@@ -88,7 +88,7 @@
 --]]
 
 -- Dependencies ----------------------------------------------------------------
-local Version = 1.33
+local Version = 1.34
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
@@ -101,6 +101,7 @@ GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/U
 
 require "2DGeometry"
 local mapID = GetMapID()
+local open, insert, min, max, floor, ceil = io.open, table.insert, math.min, math.max, math.floor, math.ceil
 -- Config ----------------------------------------------------------------------
 
 regions = {
@@ -378,7 +379,7 @@ wallsTT =
 -- Code ------------------------------------------------------------------------
 
 function fileExists(path)
-	local f = io.open(path, "r") if f ~= nil then f:close() return true else return false end
+	local f = open(path, "r") if f ~= nil then f:close() return true else return false end
 end
 
 function los(x0, y0, x1, y1, callback)
@@ -422,22 +423,6 @@ function los(x0, y0, x1, y1, callback)
 	return true
 end
 
-function line(x0, y0, x1, y1, callback)
-	local points = {}
-	local count = 0
-
-	local result = los(x0, y0, x1, y1, function(x,y)
-		if callback and not callback(x, y) then return false end
-
-		count = count + 1
-		points[count] = {x, y}
-
-		return true
-	end)
-
-	return points, result
-end
-
 class "SpatialHashMap" -- {
 	function SpatialHashMap:__init(spatialObjects, intervalSize, cacheId)
 		if intervalSize == nil then intervalSize = 400 end
@@ -455,7 +440,7 @@ class "SpatialHashMap" -- {
 
 	function SpatialHashMap:loadObjects(spatialObjects)
 		if self.cacheId and fileExists(COMMON_PATH .. "MapPosition_" .. self.cacheId .. ".lua") then
-			_G.s = spatialObjects require ("MapPosition_" .. self.cacheId)
+			_G.s =  spatialObjectsrequire ("MapPosition_" .. self.cacheId)
 
 			self.hashTables = _G.h return
 		end
@@ -467,7 +452,7 @@ class "SpatialHashMap" -- {
 				self:cacheObject(addResult, i)
 			end
 		end
-		for i, spatialObject in pairs(spatialObjects) do
+		for i, spatialObject in ipairs(spatialObjects) do
 			local addResult = self:add(spatialObject)
 
 			if self.cacheId then
@@ -481,18 +466,18 @@ class "SpatialHashMap" -- {
 	end
 
 	function SpatialHashMap:cacheObject(addResult, objectIdentifier)
-		for k, v in pairs(addResult) do
+		for k, v in ipairs(addResult) do
 			if not self.tempCachedData[k] then
 				self.tempCachedData[k] = {objectIdentifier}
 			else
-				table.insert(self.tempCachedData[k], objectIdentifier)
+				insert(self.tempCachedData[k], objectIdentifier)
 			end
 		end
 	end
 
 	function SpatialHashMap:writeCache()
 		local res = "_G.h={"
-		for a, b in pairs(self.tempCachedData) do
+		for a, b in ipairs(self.tempCachedData) do
 			if res == "_G.h={" then
 				res = res .. "[\"" .. a .. "\"]={"
 			else
@@ -533,22 +518,22 @@ class "SpatialHashMap" -- {
 			bottomY = spatialObject.point.y - spatialObject.radius
 			topY = spatialObject.point.y + spatialObject.radius
 		else
-			leftX = math.huge
-			rightX = -math.huge
-			bottomY = math.huge
-			topY = -math.huge
+			leftX = 999999999
+			rightX = -999999999
+			bottomY = 999999999
+			topY = -999999999
 			for i, point in ipairs(spatialObject:__getPoints()) do
-				leftX = math.min(leftX, point.x)
-				rightX = math.max(rightX, point.x)
-				bottomY = math.min(bottomY, point.y)
-				topY = math.max(topY, point.y)
+				leftX = min(leftX, point.x)
+				rightX = max(rightX, point.x)
+				bottomY = min(bottomY, point.y)
+				topY = max(topY, point.y)
 			end
 		end
 
 		foundHashCodes = {}
 		if spatialObject:__type() == "Circle" then
-			for x = math.floor(leftX / self.intervalSize), math.floor(rightX / self.intervalSize), 1 do
-				for y = math.floor(bottomY / self.intervalSize), math.floor(topY / self.intervalSize), 1 do
+			for x = floor(leftX / self.intervalSize), floor(rightX / self.intervalSize), 1 do
+				for y = floor(bottomY / self.intervalSize), floor(topY / self.intervalSize), 1 do
 					hashCode = self:calculateHashCode(Point(x * self.intervalSize, y * self.intervalSize))
 					if self.hashTables[hashCode] == nil then
 						self.hashTables[hashCode] = {}
@@ -562,8 +547,8 @@ class "SpatialHashMap" -- {
 			end
 		else
 			for i, lineSegment in ipairs(spatialObject:__getLineSegments()) do
-				for x = math.floor(leftX / self.intervalSize), math.floor(rightX / self.intervalSize), 1 do
-					for y = math.floor(bottomY / self.intervalSize), math.floor(topY / self.intervalSize), 1 do
+				for x = floor(leftX / self.intervalSize), floor(rightX / self.intervalSize), 1 do
+					for y = floor(bottomY / self.intervalSize), floor(topY / self.intervalSize), 1 do
 						local quadraliterate = Polygon(Point(x * self.intervalSize, y * self.intervalSize), Point(x * self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize))
 
 						hashCode = self:calculateHashCode(quadraliterate.points[1])
@@ -583,21 +568,21 @@ class "SpatialHashMap" -- {
 	end
 
 	function SpatialHashMap:remove(spatialObject)
-		leftX = math.huge
-		rightX = -math.huge
-		bottomY = math.huge
-		topY = -math.huge
+		leftX = 999999999
+		rightX = -999999999
+		bottomY = 999999999
+		topY = -999999999
 		for i, point in ipairs(spatialObject:__getPoints()) do
-			leftX = math.min(leftX, point.x)
-			rightX = math.max(rightX, point.x)
-			bottomY = math.min(bottomY, point.y)
-			topY = math.max(topY, point.y)
+			leftX = min(leftX, point.x)
+			rightX = max(rightX, point.x)
+			bottomY = min(bottomY, point.y)
+			topY = max(topY, point.y)
 		end
 
 		foundHashCodes = {}
 		for i, lineSegment in ipairs(spatialObject:__getLineSegments()) do
-			for x = math.floor(leftX / self.intervalSize), math.floor(rightX / self.intervalSize), 1 do
-				for y = math.floor(bottomY / self.intervalSize), math.floor(topY / self.intervalSize), 1 do
+			for x = floor(leftX / self.intervalSize), floor(rightX / self.intervalSize), 1 do
+				for y = floor(bottomY / self.intervalSize), floor(topY / self.intervalSize), 1 do
 					local quadraliterate = Polygon(Point(x * self.intervalSize, y * self.intervalSize), Point(x * self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize + self.intervalSize), Point(x * self.intervalSize + self.intervalSize, y * self.intervalSize))
 
 					hashCode = self:calculateHashCode(quadraliterate.points[1])
@@ -612,28 +597,28 @@ class "SpatialHashMap" -- {
 	end
 
 	function SpatialHashMap:calculateHashCode(point)
-		return tostring(math.floor(point.x / self.intervalSize)) .. "-" .. tostring(math.floor(point.y / self.intervalSize))
+		return tostring(floor(point.x / self.intervalSize)) .. "-" .. tostring(floor(point.y / self.intervalSize))
 	end
 
 	function SpatialHashMap:getSpatialObjects(referencePoint, range)
 		if referencePoint == nil then
 			local result = {}
 
-			for hashCode, hashTable in pairs(self.hashTables) do
-				for uniqueId, spatialObject in pairs(hashTable) do
+			for hashCode, hashTable in ipairs(self.hashTables) do
+				for uniqueId, spatialObject in ipairs(hashTable) do
 					result[uniqueId] = spatialObject
 				end
 			end
 
 			return result
 		else
-			if range == nil then range = 0 else range = math.ceil(range/self.intervalSize) end
+			if range == nil then range = 0 else range = ceil(range/self.intervalSize) end
 
 			local result = {}
 
 			hashCode = self:calculateHashCode(referencePoint)
 			if self.hashTables[hashCode] ~= nil then
-				for uniqueId, spatialObject in pairs(self.hashTables[hashCode]) do
+				for uniqueId, spatialObject in ipairs(self.hashTables[hashCode]) do
 					result[uniqueId] = spatialObject
 				end
 			end
@@ -641,7 +626,7 @@ class "SpatialHashMap" -- {
 				for k, directionVector in ipairs({Point(-1, -1), Point(-1, 0), Point(-1, 1), Point(0, -1), Point(0, 1), Point(1, -1), Point(1, 0), Point(1, 1)}) do
 					hashCode = self:calculateHashCode(referencePoint + directionVector * i * self.intervalSize)
 					if self.hashTables[hashCode] ~= nil then
-						for uniqueId, spatialObject in pairs(self.hashTables[hashCode]) do
+						for uniqueId, spatialObject in ipairs(self.hashTables[hashCode]) do
 							result[uniqueId] = spatialObject
 						end
 					end
@@ -669,7 +654,7 @@ class "MapPosition" -- {
 	-- Wall Functions ---------------------------------------------------------
 
 	function MapPosition:inWall(point)
-		for wallId, wall in pairs(self.wallSpatialHashMap:getSpatialObjects(point)) do
+		for wallId, wall in ipairs(self.wallSpatialHashMap:getSpatialObjects(point)) do
 			if wall:__contains(point) then
 				return true
 			end
@@ -681,8 +666,8 @@ class "MapPosition" -- {
 	function MapPosition:intersectsWall(pointOrLinesegment)
 		local lineSegment = (pointOrLinesegment:__type() == "Point") and LineSegment(Point(myHero.x, myHero.z), pointOrLinesegment) or pointOrLinesegment
 
-		return not los(math.floor(lineSegment.points[1].x / self.wallSpatialHashMap.intervalSize), math.floor(lineSegment.points[1].y / self.wallSpatialHashMap.intervalSize), math.floor(lineSegment.points[2].x / self.wallSpatialHashMap.intervalSize), math.floor(lineSegment.points[2].y / self.wallSpatialHashMap.intervalSize), function(x, y)
-			for wallId, wall in pairs(self.wallSpatialHashMap:getSpatialObjects(Point(x * self.wallSpatialHashMap.intervalSize, y * self.wallSpatialHashMap.intervalSize))) do
+		return not los(floor(lineSegment.points[1].x / self.wallSpatialHashMap.intervalSize), floor(lineSegment.points[1].y / self.wallSpatialHashMap.intervalSize), floor(lineSegment.points[2].x / self.wallSpatialHashMap.intervalSize), floor(lineSegment.points[2].y / self.wallSpatialHashMap.intervalSize), function(x, y)
+			for wallId, wall in ipairs(self.wallSpatialHashMap:getSpatialObjects(Point(x * self.wallSpatialHashMap.intervalSize, y * self.wallSpatialHashMap.intervalSize))) do
 				if wall:__intersects(lineSegment) then
 					return false
 				end
