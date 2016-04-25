@@ -4,7 +4,7 @@
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.4
+local Version2DGeometry = 0.41
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version2DGeometry) then
         PrintChat("New version found! " .. data)
@@ -14,10 +14,15 @@ function AutoUpdate(data)
 end
 
 GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.version", AutoUpdate)
+
+local uniqueId = 0
+
 class "Point" --{
 --initiating
   function Point:__init(x,y,z)
     local pos= type(x)~="number" and GetOrigin(x) or nil
+    uniqueId = uniqueId + 1
+    self.uniqueId = uniqueId
     self.x = pos and pos.x or x 
     self.y = pos and pos.y or y
     self.z = pos and pos.z or z or 0
@@ -155,7 +160,6 @@ end
           if (d < bestDistance) then
             bestDistance = d
             bestSegment = s
-            s:__draw()
             bestPoint = closestInS
           end
         end
@@ -167,6 +171,8 @@ end
 class "Line" --{
 --init
 	function Line:__init(Point1,Point2)
+    uniqueId = uniqueId + 1
+    self.uniqueId = uniqueId
 		self.points = {Point1,Point2}
 	end
 --type
@@ -235,7 +241,8 @@ class "Line" --{
 
 class "Circle" -- {
     function Circle:__init(point, radius)
-
+        uniqueId = uniqueId + 1
+        self.uniqueId = uniqueId
         self.point = point
         self.radius = radius
 
@@ -325,6 +332,8 @@ class "Circle" -- {
 
 class "LineSegment" -- {
     function LineSegment:__init(point1, point2)
+        uniqueId = uniqueId + 1
+        self.uniqueId = uniqueId
         self.points = {point1, point2}
     end
 
@@ -448,6 +457,8 @@ class "LineSegment" -- {
 
 class "Polygon" -- {
     function Polygon:__init(...)
+        uniqueId = uniqueId + 1
+        self.uniqueId = uniqueId
         self.points = {...}
     end
 
