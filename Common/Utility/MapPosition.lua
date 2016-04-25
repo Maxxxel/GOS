@@ -440,7 +440,7 @@ class "SpatialHashMap" -- {
 
 	function SpatialHashMap:loadObjects(spatialObjects)
 		if self.cacheId and fileExists(COMMON_PATH .. "MapPosition_" .. self.cacheId .. ".lua") then
-			_G.s =  spatialObjectsrequire ("MapPosition_" .. self.cacheId)
+			_G.s =  spatialObjects require ("MapPosition_" .. self.cacheId)
 
 			self.hashTables = _G.h return
 		end
