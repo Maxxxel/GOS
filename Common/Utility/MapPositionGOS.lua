@@ -15,7 +15,7 @@
 -- the script will generate cache files on the first run, this takes ~3 seconds on jit
 --
 -- see MapPosition.lua for documentation
-if _G.MapPositionGOS then return end
+if _G.MapPosition then return end
 local Version = 0.92
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
