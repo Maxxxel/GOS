@@ -1,10 +1,12 @@
 --[[
     2D Geometry 1.3 by Husky
     version 0.2 port by Maxxxel
+
+    0.42 Updated Polygon COntain function
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.41
+local Version2DGeometry = 0.42
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version2DGeometry) then
         PrintChat("New version found! " .. data)
@@ -53,6 +55,10 @@ class "Point" --{
 --give addidtion value
   function Point:__additionValue()
     return self.x+self.y+self.z
+  end
+--perp
+  function Point:__perpendicular()
+    return Point(self.y, -self.x)
   end
 --substract a point
   function Point:__substract(v)
@@ -328,6 +334,10 @@ class "Circle" -- {
         return "Circle(Point(" .. self.point.x .. ", " .. self.point.y .. "), " .. self.radius .. ")"
     end
 
+    function Circle:__draw()
+      DrawCircle(self.point.x, 0, self.point.y, self.radius, 0, 0, GoS.Red)
+    end
+
 -- }
 
 class "LineSegment" -- {
@@ -391,15 +401,27 @@ class "LineSegment" -- {
         elseif spatialObject:__type() == "Line" then
             return math.min(self.points[1]:__distance(spatialObject), self.points[2]:__distance(spatialObject))
         else
-            local minDistance = nil
-            for i, point in ipairs(self:__getPoints()) do
-                distance = point:__distance(spatialObject)
-                if minDistance == nil or distance <= minDistance then
-                    minDistance = distance
-                end
+            local A = Vector(self.points[1].x, 0, self.points[1].y)
+            local B = Vector(self.points[2].x, 0, self.points[2].y)
+            local P = Vector(spatialObject.x, 0, spatialObject.y)
+            local n = B - A
+            local pa = A - P
+
+            local c = n:dotP(pa)
+            local d = pa:dotP(pa)
+            if c > 0 then
+              return d
             end
 
-            return minDistance
+            local bp = P - B
+            local f = bp:dotP(bp)
+            if n:dotP(bp) > 0 then
+              return f
+            end
+
+            local e = pa - n * (c / n:dotP(n))
+            local g = e:dotP(e)
+            --return g
         end
     end
 
@@ -492,6 +514,7 @@ class "Polygon" -- {
     end
 
     function Polygon:__contains(spatialObject)
+        if not spatialObject then return end
         if spatialObject:__type() == "Line" then
             return false
         elseif #self.points == 3 then
@@ -514,21 +537,34 @@ class "Polygon" -- {
             end
 
             return true
-        else
-            for i, point in ipairs(spatialObject:__getPoints()) do
-                inTriangles = false
-                for j, triangle in ipairs(self:__triangulate()) do
-                    if triangle:__contains(point) then
-                        inTriangles = true
-                        break
+        elseif spatialObject:__type() == "Point" then
+            local i, yflag0, yflag1, inside_flag
+            local vtx0, vtx1
+            local tx, ty = spatialObject.x, spatialObject.y
+            local numverts = #self.points
+             
+            vtx0 = self.points[numverts]
+            vtx1 = self.points[1]
+             
+            -- get test bit for above/below X axis
+            yflag0 = ( vtx0.y >= ty )
+            inside_flag = false
+             
+            for i=2,numverts+1 do
+                yflag1 = ( vtx1.y >= ty )
+                if ( yflag0 ~= yflag1 ) then
+                    if ( ((vtx1.y - ty) * (vtx0.x - vtx1.x) >= (vtx1.x - tx) * (vtx0.y - vtx1.y)) == yflag1 ) then
+                        inside_flag =  not inside_flag
                     end
                 end
-                if not inTriangles then
-                    return false
-                end
+             
+                -- Move to the next pair of vertices, retaining info as possible.
+                yflag0  = yflag1
+                vtx0    = vtx1
+                vtx1    = self.points[i]
             end
 
-            return true
+            return inside_flag
         end
     end
 
