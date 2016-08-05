@@ -89,11 +89,12 @@ if _G.MapPosition then return end
 --]]
 
 -- Dependencies ----------------------------------------------------------------
-local Version = 2.0
+local Version = 2.01
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
         PrintChat("Downloading update, please wait...")
+        DeleteDir(COMMON_PATH.."MapPosition")
         DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.lua", COMMON_PATH .. "MapPosition.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
     end
 end
@@ -118,17 +119,17 @@ if not DirExists(Newpath) then
 end
 
 if mapID == HOWLING_ABYSS then
-	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_2.lua")
-	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_2.lua")
+	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_2" .. "_Version_"..Version.. ".lua")
+	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_2" .. "_Version_"..Version.. ".lua")
 elseif mapID == CRYSTAL_SCAR then
-	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_3.lua")
-	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_3.lua")
+	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_3" .. "_Version_"..Version.. ".lua")
+	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_3" .. "_Version_"..Version.. ".lua")
 elseif mapID == TWISTED_TREELINE then
-	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_4.lua")
-	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_4.lua")
+	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_4" .. "_Version_"..Version.. ".lua")
+	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_4" .. "_Version_"..Version.. ".lua")
 elseif mapID == SUMMONERS_RIFT then
-	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_1.lua")
-	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_1.lua")
+	walls_cached = file_exists(Newpath .. "MapPosition_walls_1_1" .. "_Version_"..Version.. ".lua")
+	bushes_cached = file_exists(Newpath .. "MapPosition_bushes_1" .. "_Version_"..Version.. ".lua")
 else
 	print("No Map Data.")
 	return
@@ -275,6 +276,13 @@ walls = {
 	Polygon(Point(10635, 7783), Point(11055, 7783), Point(11055, 7785), Point(11104, 7785), Point(11104, 7787), Point(11108, 7787), Point(11108, 7835), Point(11134, 7835), Point(11134, 7836), Point(11204, 7836), Point(11204, 7837), Point(11208, 7837), Point(11208, 7886), Point(11254, 7886), Point(11254, 7936), Point(11289, 7936), Point(11289, 7937), Point(11304, 7937), Point(11304, 7956), Point(11306, 7956), Point(11306, 7986), Point(11406, 7986), Point(11406, 8186), Point(11356, 8186), Point(11356, 8287), Point(11251, 8287), Point(11251, 8283), Point(11249, 8283), Point(11249, 8237), Point(11201, 8237), Point(11201, 8236), Point(11199, 8236), Point(11199, 8187), Point(11151, 8187), Point(11151, 8186), Point(11149, 8186), Point(11149, 8137), Point(11031, 8137), Point(11031, 8136), Point(10908, 8136), Point(10908, 8187), Point(10858, 8187), Point(10858, 8237), Point(10808, 8237), Point(10808, 8287), Point(10758, 8287), Point(10758, 8532), Point(10808, 8532), Point(10808, 8686), Point(10758, 8686), Point(10758, 8736), Point(10651, 8736), Point(10651, 8719), Point(10649, 8719), Point(10649, 8686), Point(10551, 8686), Point(10551, 8681), Point(10549, 8681), Point(10549, 8636), Point(10499, 8636), Point(10499, 8586), Point(10449, 8586), Point(10449, 8536), Point(10419, 8536), Point(10419, 8535), Point(10399, 8535), Point(10399, 8435), Point(10349, 8435), Point(10349, 8285), Point(10299, 8285), Point(10299, 8225), Point(10300, 8225), Point(10300, 8033), Point(10310, 8033), Point(10310, 8032), Point(10350, 8032), Point(10350, 7932), Point(10400, 7932), Point(10400, 7882), Point(10450, 7882), Point(10450, 7832), Point(10550, 7832), Point(10550, 7782), Point(10635, 7782)),
 	--Red Jungle Right Wall
 	Polygon(Point(6630,4530),Point(6418,4448),Point(6261,4213),Point(6169,3802),Point(6434,3421),Point(6820,3140),Point(6980,3110),Point(7111,3219),Point(7139,3464),Point(6979,3663),Point(6588,3810),Point(6556,4157)),
+	
+	Polygon(Point(831,11392),Point(657,9872),Point(664,8448),Point(717,4931),Point(471,4548),Point(475,3930),Point(532,3655),Point(458,3367),Point(467,2835),Point(531,2549),Point(457,2254),Point(465,1547),Point(364,868),Point(71,596),Point(116,562),Point(106,14735)),
+	Polygon(Point(748,11438),Point(965,12183),Point(1271,12797),Point(1768,13393),Point(2774,13864),Point(3685,14175),Point(5901,14167),Point(106,14735)),
+	Polygon(Point(5893,14167),Point(7603,14183),Point(8944,14273),Point(9978,14211),Point(10477,14407),Point(13247,14376),Point(13489,14261),Point(13860,14419),Point(13904,14681),Point(14505,14607),Point(14652,14741),Point(8695,14735),Point(106,14735)),
+	Polygon(Point(14439,14687),Point(14610,14455),Point(14639,14080),Point(14489,14004),Point(14367,13577),Point(14368,13312),Point(14354,10486),Point(14146,10068),Point(14111,9595),Point(14206,8552),Point(14164,3974),Point(13927,3236),Point(13366,2192),Point(12827,1535),Point(12179,1121),Point(11605,917),Point(10678,758),Point(9697,706),Point(4844,665),Point(4545,497),Point(4069,394),Point(1395,387),Point(889,103),Point(349,124),Point(208,249),Point(116,562),Point(6371,96),Point(14507,210),Point(14588,9045),Point(14652,14741)),
+
+
 	--Blue_Outer_Turret()
 	Circle(Point(10504, 1030), 100),
 	--:Blue_Inner_Turret()
@@ -808,17 +816,17 @@ class "SpatialHashMap" -- {
 class "MapPosition" -- {
 	function MapPosition:__init()
 		if mapID == HOWLING_ABYSS then
-			self.wallSpatialHashMap = SpatialHashMap(wallsHA, 400, "walls_1_2")
-			self.bushSpatialHashMap = SpatialHashMap(bushesHA, 400, "bushes_2")
+			self.wallSpatialHashMap = SpatialHashMap(wallsHA, 400, "walls_1_2".. "_Version_"..Version)
+			self.bushSpatialHashMap = SpatialHashMap(bushesHA, 400, "bushes_2".. "_Version_"..Version)
 		elseif mapID == CRYSTAL_SCAR then
-			self.wallSpatialHashMap = SpatialHashMap(wallsCS, 400, "walls_1_3")
-			self.bushSpatialHashMap = SpatialHashMap(bushesCS, 400, "bushes_3")
+			self.wallSpatialHashMap = SpatialHashMap(wallsCS, 400, "walls_1_3".. "_Version_"..Version)
+			self.bushSpatialHashMap = SpatialHashMap(bushesCS, 400, "bushes_3".. "_Version_"..Version)
 		elseif mapID == TWISTED_TREELINE then
-			self.wallSpatialHashMap = SpatialHashMap(wallsTT, 400, "walls_1_4")
-			self.bushSpatialHashMap = SpatialHashMap(bushesTT, 400, "bushes_4")
+			self.wallSpatialHashMap = SpatialHashMap(wallsTT, 400, "walls_1_4".. "_Version_"..Version)
+			self.bushSpatialHashMap = SpatialHashMap(bushesTT, 400, "bushes_4".. "_Version_"..Version)
 		else
-			self.wallSpatialHashMap = SpatialHashMap(walls, 400, "walls_1_1")
-			self.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_1")
+			self.wallSpatialHashMap = SpatialHashMap(walls, 400, "walls_1_1".. "_Version_"..Version)
+			self.bushSpatialHashMap = SpatialHashMap(bushes, 400, "bushes_1".. "_Version_"..Version)
 		end
 	end
 
