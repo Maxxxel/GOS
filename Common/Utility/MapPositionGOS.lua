@@ -94,7 +94,6 @@ function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
         PrintChat("Downloading update, please wait...")
-        DeleteDir(COMMON_PATH.."MapPosition")
         DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.lua", COMMON_PATH .. "MapPosition.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
     end
 end
