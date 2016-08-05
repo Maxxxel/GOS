@@ -89,7 +89,7 @@ if _G.MapPosition then return end
 --]]
 
 -- Dependencies ----------------------------------------------------------------
-local Version = 201
+local Version = 202
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version) then
         PrintChat("New version found! " .. data)
