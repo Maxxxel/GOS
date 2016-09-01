@@ -2,11 +2,12 @@
     2D Geometry 1.3 by Husky
     version 0.2 port by Maxxxel
 
-    0.42 Updated Polygon COntain function
+    0.42 Updated Polygon Contains function
+    0.43 Updated Closest Point of Circle for given Point (__pointCircleClosest)
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.42
+local Version2DGeometry = 0.43
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version2DGeometry) then
         PrintChat("New version found! " .. data)
@@ -20,116 +21,116 @@ GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/U
 local uniqueId = 0
 
 class "Point" --{
---initiating
-  function Point:__init(x,y,z)
-    local pos= type(x)~="number" and GetOrigin(x) or nil
-    uniqueId = uniqueId + 1
-    self.uniqueId = uniqueId
-    self.x = pos and pos.x or x 
-    self.y = pos and pos.y or y
-    self.z = pos and pos.z or z or 0
-    self.points = {self}
-  end
---type method
-  function Point:__type()
-    return "Point"
-  end
---is an object equal
-  function Point:__equal(Object)
-    return Object:__type() == "Point" and self.x==Object.x and self.y==Object.y and self.z==Object.z
-  end
---make point negative
-  function Point:__makeNegative()
-    return Point(-self.x,-self.y,-self.z)
-  end
---addition with point
-  function Point:__addition(v)
-  	if type(v)=="number" then
-  		return Point(self.x+v,self.y+v,self.z+v)
-  	elseif v:__type()=="Point" then
-   		return Point(self.x+v.x,self.y+v.y,self.z+v.z)
-    else
-    	PrintChat("Error on Point:__addition, value is unexpected")
+  --initiating
+    function Point:__init(x,y,z)
+      local pos= type(x)~="number" and GetOrigin(x) or nil
+      uniqueId = uniqueId + 1
+      self.uniqueId = uniqueId
+      self.x = pos and pos.x or x 
+      self.y = pos and pos.y or y
+      self.z = pos and pos.z or z or 0
+      self.points = {self}
     end
-  end
---give addidtion value
-  function Point:__additionValue()
-    return self.x+self.y+self.z
-  end
---perp
-  function Point:__perpendicular()
-    return Point(self.y, -self.x)
-  end
---substract a point
-  function Point:__substract(v)
+  --type method
+    function Point:__type()
+      return "Point"
+    end
+  --is an object equal
+    function Point:__equal(Object)
+      return Object:__type() == "Point" and self.x==Object.x and self.y==Object.y and self.z==Object.z
+    end
+  --make point negative
+    function Point:__makeNegative()
+      return Point(-self.x,-self.y,-self.z)
+    end
+  --addition with point
+    function Point:__addition(v)
+    	if type(v)=="number" then
+    		return Point(self.x+v,self.y+v,self.z+v)
+    	elseif v:__type()=="Point" then
+     		return Point(self.x+v.x,self.y+v.y,self.z+v.z)
+      else
+      	PrintChat("Error on Point:__addition, value is unexpected")
+      end
+    end
+  --give addidtion value
+    function Point:__additionValue()
+      return self.x+self.y+self.z
+    end
+  --perp
+    function Point:__perpendicular()
+      return Point(self.y, -self.x)
+    end
+  --substract a point
+    function Point:__substract(v)
+    	if type(v)=="number" then
+        return Point(self.x-v,self.y-v,self.z-v)
+      elseif v:__type()=="Point" then
+        return Point(self.x-v.x,self.y-v.y,self.z-v.z)
+      else
+      	PrintChat("Error on Point:__substract, value is unexpected")
+      end
+    end
+  --multiply Point by value or Point
+    function Point:__multiply(v)
+      if type(v)=="number" then
+        return Point(self.x*v,self.y*v,self.z*v)
+       elseif v:__type()=="Point" or type(v)=="table" then
+    		return Point(self.x*v.x,self.y*v.y,self.z*v.z)
+      else
+        PrintChat("Error on Point:__multiply, value is unexpected"..type(v))
+      end
+    end
+  --divide by value or point
+  function Point:__divide(v)
   	if type(v)=="number" then
-      return Point(self.x-v,self.y-v,self.z-v)
+      return Point(self.x/v,self.y/v,self.z/v)
     elseif v:__type()=="Point" then
-      return Point(self.x-v.x,self.y-v.y,self.z-v.z)
+  		return Point(self.x/v.x,self.y/v.y,self.z/v.z)
     else
-    	PrintChat("Error on Point:__substract, value is unexpected")
+      PrintChat("Error on Point:divide, value is unexpected")
     end
   end
---multiply Point by value or Point
-  function Point:__multiply(v)
-    if type(v)=="number" then
-      return Point(self.x*v,self.y*v,self.z*v)
-     elseif v:__type()=="Point" or type(v)=="table" then
-  		return Point(self.x*v.x,self.y*v.y,self.z*v.z)
-    else
-      PrintChat("Error on Point:__multiply, value is unexpected"..type(v))
+  --length of point vector
+    function Point:__lenght()
+      return math.sqrt((self:__expand()):__additionValue())
     end
-  end
---divide by value or point
-function Point:__divide(v)
-	if type(v)=="number" then
-    return Point(self.x/v,self.y/v,self.z/v)
-  elseif v:__type()=="Point" then
-		return Point(self.x/v.x,self.y/v.y,self.z/v.z)
-  else
-    PrintChat("Error on Point:divide, value is unexpected")
-  end
-end
---length of point vector
-  function Point:__lenght()
-    return math.sqrt((self:__expand()):__additionValue())
-  end
---^2 a point values
-  function Point:__expand()
-    return Point(self.x*self.x,self.y*self.y,self.z*self.z)
-  end
---To string
-  function Point:__toString()
-  	if self:__type()=="Point" then
-    	return "Point("..tostring(self.x)..","..tostring(self.y)..","..tostring(self.z)..")"
-    else
-    	PrintChat("Error on toString")
+  --^2 a point values
+    function Point:__expand()
+      return Point(self.x*self.x,self.y*self.y,self.z*self.z)
     end
-  end
---clone point
-  function Point:__clone()
-    return Point(self.x,self.y,self.z)
-  end
---get all points
-  function Point:__getPoints()
-    return self.points
-  end
---point is inside of an object
-  function Point:__insideOf(Object)
-    return Object:__contains(self)
-  end
---distances point: point,line,circle
-  function Point:__distance(Object)
-    if Object:__type()=="Point" then
-      return (self:__substract(Object)):__lenght()
-    elseif Object:__type()=="Line" then
-      return Object:__distance(self)
-    elseif Object:__type()=="LineSegment" then
-      return Object:__distance(self)
-    elseif Object:__type()=="Circle" then
-      --missing
+  --To string
+    function Point:__toString()
+    	if self:__type()=="Point" then
+      	return "Point("..tostring(self.x)..","..tostring(self.y)..","..tostring(self.z)..")"
+      else
+      	PrintChat("Error on toString")
+      end
     end
-  end
+  --clone point
+    function Point:__clone()
+      return Point(self.x,self.y,self.z)
+    end
+  --get all points
+    function Point:__getPoints()
+      return self.points
+    end
+  --point is inside of an object
+    function Point:__insideOf(Object)
+      return Object:__contains(self)
+    end
+  --distances point: point,line,circle
+    function Point:__distance(Object)
+      if Object:__type()=="Point" then
+        return (self:__substract(Object)):__lenght()
+      elseif Object:__type()=="Line" then
+        return Object:__distance(self)
+      elseif Object:__type()=="LineSegment" then
+        return Object:__distance(self)
+      elseif Object:__type()=="Circle" then
+        --missing
+      end
+    end
 
     function Point:__ClosestPointInSegmentTo(Object)
       if Object:__type() == "LineSegment" then
@@ -169,80 +170,82 @@ end
             bestPoint = closestInS
           end
         end
+      elseif Object:__type() == "Circle" then
+        bestPoint = Object:__pointCircleClosest(self)
       end
       return bestPoint, bestSegment
     end
 --}
 
 class "Line" --{
---init
-	function Line:__init(Point1,Point2)
-    uniqueId = uniqueId + 1
-    self.uniqueId = uniqueId
-		self.points = {Point1,Point2}
-	end
---type
-	function Line:__type()
-		return "Line"
-	end
---equal with object
-	function Line:__equal(Object)
-		return Object:__type() == "Line" and self:distance(Object)==0
-  end
---get Points of Line
-	function Line:__getPoints()
-		return self.points
-	end
---Line Segment
-  function Line:__getLineSegments()
-		return {self}
-  end
---does the line contains an object
-	function Line:__contains(Object)
-	  if Object:__type() == "Point" then
-	  	return Object:__distance(self) == 0
-	  elseif Object:__type() == "Line" then
-			return self.points[1]:__distance(Object) == 0 and self.points[2]:__distance(Object) == 0
-	  elseif Object:__type() == "Circle" then
-			return Object.point:__distance(self) == 0 and Object.radius == 0
-	  elseif Object:__type() == "LineSegment" then
-			return Object.points[1]:__distance(self) == 0 and Object.points[2]:__distance(self) == 0
-	  else
-	  	PrintChat("Error on Line:__contains, ObjectType is unexpected")
-	  end
-	end
---is Line is an other object
-	function Line:__insideOf(Object)
-		return Object:__contains(self)
-	end
---distance to other objects
-	function Line:__distance(Object)
-    if Object:__type() == "Circle" then
-			return Object.point:distance(self)-Object.radius
-    elseif Object:__type() == "Line" then
-      distance1 = self.points[1]:__distance(Object)
-      distance2 = self.points[2]:__distance(Object)
-      if distance1 ~= distance2 then
-      	return 0 --they touch in a point
-      else
-      	return distance1
-      end
-    elseif Object:__type() == "Point" then
-    	denominator = (self.points[2].x-self.points[1].x)
-			if denominator== 0 then
-				return math.abs(Object.x-self.points[2].x)
-      end
-			m = (self.points[2].y-self.points[1].y)/denominator
-			return math.abs((m*Object.x-Object.y+(self.points[1].y-m*self.points[1].x))/math.sqrt(m*m+1))
-		else
-    	PrintChat("Error on Line:__distance, ObjectType is unexpected")
+  --init
+  	function Line:__init(Point1,Point2)
+      uniqueId = uniqueId + 1
+      self.uniqueId = uniqueId
+  		self.points = {Point1,Point2}
+  	end
+  --type
+  	function Line:__type()
+  		return "Line"
+  	end
+  --equal with object
+  	function Line:__equal(Object)
+  		return Object:__type() == "Line" and self:distance(Object)==0
     end
-	end
-	function Line:__draw(color, width)
-		local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
-		local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
-		DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
-  end
+  --get Points of Line
+  	function Line:__getPoints()
+  		return self.points
+  	end
+  --Line Segment
+    function Line:__getLineSegments()
+  		return {self}
+    end
+  --does the line contains an object
+  	function Line:__contains(Object)
+  	  if Object:__type() == "Point" then
+  	  	return Object:__distance(self) == 0
+  	  elseif Object:__type() == "Line" then
+  			return self.points[1]:__distance(Object) == 0 and self.points[2]:__distance(Object) == 0
+  	  elseif Object:__type() == "Circle" then
+  			return Object.point:__distance(self) == 0 and Object.radius == 0
+  	  elseif Object:__type() == "LineSegment" then
+  			return Object.points[1]:__distance(self) == 0 and Object.points[2]:__distance(self) == 0
+  	  else
+  	  	PrintChat("Error on Line:__contains, ObjectType is unexpected")
+  	  end
+  	end
+  --is Line is an other object
+  	function Line:__insideOf(Object)
+  		return Object:__contains(self)
+  	end
+  --distance to other objects
+  	function Line:__distance(Object)
+      if Object:__type() == "Circle" then
+  			return Object.point:distance(self)-Object.radius
+      elseif Object:__type() == "Line" then
+        distance1 = self.points[1]:__distance(Object)
+        distance2 = self.points[2]:__distance(Object)
+        if distance1 ~= distance2 then
+        	return 0 --they touch in a point
+        else
+        	return distance1
+        end
+      elseif Object:__type() == "Point" then
+      	denominator = (self.points[2].x-self.points[1].x)
+  			if denominator== 0 then
+  				return math.abs(Object.x-self.points[2].x)
+        end
+  			m = (self.points[2].y-self.points[1].y)/denominator
+  			return math.abs((m*Object.x-Object.y+(self.points[1].y-m*self.points[1].x))/math.sqrt(m*m+1))
+  		else
+      	PrintChat("Error on Line:__distance, ObjectType is unexpected")
+      end
+  	end
+  	function Line:__draw(color, width)
+  		local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
+  		local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
+  		DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
+    end
 --}
 
 class "Circle" -- {
@@ -293,6 +296,18 @@ class "Circle" -- {
 
     function Circle:__distance(spatialObject)
         return self.point:__distance(spatialObject) - self.radius
+    end
+
+    function Circle:__pointCircleClosest(p)
+        local c = self.point
+        local r = self.radius
+        local vX = p.x - c.x
+        local vY = p.y - c.y
+        local magV = math.sqrt(vX * vX + vY * vY)
+        local aX = c.x + vX / magV * r
+        local aY = c.y + vY / magV * r
+        return Point(aX, aY)
+        --Test: p = 2, 2, c = 0, 0, r = 1
     end
 
     function Circle:__intersectionPoints(spatialObject)
@@ -675,12 +690,11 @@ class "Polygon" -- {
         end
       end
   
-  if (sort) then
-    table.sort( points, function(a,b) return math.lengthOf(e,a) > math.lengthOf(e,b) end )
-  end
-  
-  return points
-end
+      if (sort) then
+        table.sort( points, function(a,b) return math.lengthOf(e,a) > math.lengthOf(e,b) end )
+      end
+       return points
+    end
 
     function Polygon:__distance(spatialObject)
         local minDistance = nil
