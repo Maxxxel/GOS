@@ -1,174 +1,15 @@
---version 0.2
---fixed type Error
+--version 0.3
+local VersionCollision = 0.3
 
-class "Point" --{
---initiating
-  function Point:__init(x,y,z)
-    local pos = type(x) ~= "number" and GetOrigin(x) or nil
-    self.x = pos and pos.x or x 
-    self.y = pos and pos.y or y
-    self.z = pos and pos.z or z or 0
-    self.points = {self}
-  end
---type method
-  function Point:__type()
-    return "Point"
-  end
---is an object equal
-  function Point:__equal(Object)
-    return Object:__type() == "Point" and self.x==Object.x and self.y==Object.y and self.z==Object.z
-  end
---make point negative
-  function Point:__makeNegative()
-    return Point(-self.x,-self.y,-self.z)
-  end
---addition with point
-  function Point:__addition(v)
-  	if type(v)=="number" then
-  		return Point(self.x+v,self.y+v,self.z+v)
-  	elseif v:__type()=="Point" then
-   		return Point(self.x+v.x,self.y+v.y,self.z+v.z)
-    else
-    	PrintChat("Error on Point:__addition, value is unexpected")
+function AutoUpdate(data)
+    if tonumber(data) > tonumber(Version2DGeometry) then
+        PrintChat("New version found! " .. data)
+        PrintChat("Downloading update, please wait...")
+        DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.lua", COMMON_PATH .. "Collision.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
     end
-  end
---give addidtion value
-  function Point:__additionValue()
-    return self.x+self.y+self.z
-  end
---substract a point
-  function Point:__substract(v)
-  	if type(v)=="number" then
-      return Point(self.x-v,self.y-v,self.z-v)
-    elseif v:__type()=="Point" then
-      return Point(self.x-v.x,self.y-v.y,self.z-v.z)
-    else
-    	PrintChat("Error on Point:__substract, value is unexpected")
-    end
-  end
---multiply Point by value or Point
-  function Point:__multiply(v)
-    if type(v)=="number" then
-      return Point(self.x*v,self.y*v,self.z*v)
-     elseif v:__type()=="Point" then
-  		return Point(self.x*v.x,self.y*v.y,self.z*v.z)
-    else
-      PrintChat("Error on Point:__multiply, value is unexpected")
-    end
-  end
---divide by value or point
-function Point:__divide(v)
-	if type(v)=="number" then
-    return Point(self.x/v,self.y/v,self.z/v)
-  elseif v:__type()=="Point" then
-		return Point(self.x/v.x,self.y/v.y,self.z/v.z)
-  else
-    PrintChat("Error on Point:divide, value is unexpected")
-  end
 end
---length of point vector
-  function Point:__lenght()
-    return math.sqrt((self:__expand()):__additionValue())
-  end
---^2 a point values
-  function Point:__expand()
-    return Point(self.x*self.x,self.y*self.y,self.z*self.z)
-  end
---To string
-  function Point:__toString()
-  	if self:__type()=="Point" then
-    	return "Point("..tostring(self.x)..","..tostring(self.y)..","..tostring(self.z)..")"
-    else
-    	PrintChat("Error on toString")
-    end
-  end
---clone point
-  function Point:__clone()
-    return Point(self.x,self.y,self.z)
-  end
---get all points
-  function Point:__getPoints()
-    return self.points
-  end
---point is inside of an object
-  function Point:__insideOf(Object)
-    return Object:__contains(self)
-  end
---distances point: point,line,circle
-  function Point:__distance(Object)
-    if Object:__type()=="Point" then
-      return (self:__substract(Object)):__lenght()
-    elseif Object:__type()=="Line" then
-      return Object:__distance(self)
-    elseif Object:__type()=="Circle" then
-      --missing
-    end
-  end
---}
 
-class "Line" --{
---init
-	function Line:__init(Point1,Point2)
-		self.points = {Point1,Point2}
-	end
---type
-	function Line:__type()
-		return "Line"
-	end
---equal with object
-	function Line:__equal(Object)
-		return Object:__type() == "Line" and self:distance(Object)==0
-  end
---get Points of Line
-	function Line:__getPoints()
-		return self.points
-	end
---Line Segment
-  function Line:__getLineSegment()
-		return {}
-  end
---does the line contains an object
-	function Line:__contains(Object)
-	  if Object:__type() == "Point" then
-	  	return Object:__distance(self) == 0
-	  elseif Object:__type() == "Line" then
-			return self.points[1]:__distance(Object) == 0 and self.points[2]:__distance(Object) == 0
-	  elseif Object:__type() == "Circle" then
-			return Object.point:__distance(self) == 0 and Object.radius == 0
-	  elseif Object:__type() == "LineSegment" then
-			return Object.points[1]:__distance(self) == 0 and Object.points[2]:__distance(self) == 0
-	  else
-	  	PrintChat("Error on Line:__contains, ObjectType is unexpected")
-	  end
-	end
---is Line is an other object
-	function Line:__insideOf(Object)
-		return Object:__contains(self)
-	end
---distance to other objects
-	function Line:__distance(Object)
-    if Object:__type() == "Circle" then
-			return Object.point:distance(self)-Object.radius
-    elseif Object:__type() == "Line" then
-      distance1 = self.points[1]:__distance(Object)
-      distance2 = self.points[2]:__distance(Object)
-      if distance1 ~= distance2 then
-      	return 0 --they touch in a point
-      else
-      	return distance1
-      end
-    elseif Object:__type() == "Point" then
-    	denominator = (self.points[2].x-self.points[1].x)
-			if denominator== 0 then
-				return math.abs(Object.x-self.points[2].x)
-      end
-			m = (self.points[2].y-self.points[1].y)/denominator
-			return math.abs((m*Object.x-Object.y+(self.points[1].y-m*self.points[1].x))/math.sqrt(m*m+1))
-		else
-    	PrintChat("Error on Line:__distance, ObjectType is unexpected")
-    end
-	end
---}
+GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.version", AutoUpdate)
 
 local minionWay = {}
 class 'Collision' --{
@@ -278,29 +119,71 @@ DEACTIVATED
 	end
 	--]]
 --collision with minion
-	function Collision:__GetMinionCollision(start,endu,mode)
-		local Pos1 = type(start)~="number" and GetOrigin(start) or nil
-		local Pos2 = type(endu)~="number" and GetOrigin(endu)  or nil
+	function Collision:__GetMinionCollision(start, endu, mode, exclude)
+		local Pos1 = type(start) == "Object" and GetOrigin(start) or nil
+		local Pos2 = type(endu) == "Object" and GetOrigin(endu)  or nil
+
 		local heroes = {}
 		local mCollision = {}
+
 		if not mode then mode = ENEMY end
+
 		if mode == ALLY then
 			for i, mate in pairs(minionManager.objects) do
-				if GetTeam(mate) == GetTeam(myHero) then
+				if exclude and GetTeam(mate) == GetTeam(myHero) then
+					if type(exclude) == "table" then
+						for i = 1, #exclude do
+							if exclude[i].networkID ~= mate.networkID then
+								table.insert(heroes, mate)
+							end
+						end
+					else
+						if exclude[i].networkID ~= mate.networkID then
+							table.insert(heroes, mate)
+						end
+					end
+				elseif GetTeam(mate) == GetTeam(myHero) then
 					table.insert(heroes, mate)
 				end
 			end
 		elseif mode == ALL then
 			for i, all in pairs(minionManager.objects) do
-				table.insert(heroes, all)
+				if exclude then
+					if type(exclude) == "table" then
+						for i = 1, #exclude do
+							if exclude[i].networkID ~= all.networkID then
+								table.insert(heroes, all)
+							end
+						end
+					else
+						if exclude[i].networkID ~= all.networkID then
+							table.insert(heroes, all)
+						end
+					end
+				else
+					table.insert(heroes, all)
+				end
 			end
 		elseif mode == ENEMY then
 			for i, enemy in pairs(minionManager.objects) do
-				if GetTeam(enemy) ~= GetTeam(myHero) then
+				if exclude and GetTeam(enemy) ~= GetTeam(myHero) then
+					if type(exclude) == "table" then
+						for i = 1, #exclude do
+							if exclude[i].networkID ~= enemy.networkID then
+								table.insert(heroes, enemy)
+							end
+						end
+					else
+						if exclude[i].networkID ~= enemy.networkID then
+							table.insert(heroes, enemy)
+						end
+					end
+				elseif GetTeam(enemy) ~= GetTeam(myHero) then
 					table.insert(heroes, enemy)
 				end
-      		end
+			end
 		end
+
 		local distance = 0
 		local Track
 		if Pos1 and Pos2 then
