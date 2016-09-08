@@ -1,5 +1,10 @@
---version 0.3
-local VersionCollision = 0.3
+--version 0.31
+--[[
+	Changelog:
+	 0.31: Changed to many things to count and included Hero Collision and removed WayPoints
+--]]
+
+local VersionCollision = 0.31
 
 function AutoUpdate(data)
     if tonumber(data) > tonumber(VersionCollision) then
@@ -11,34 +16,53 @@ end
 
 GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.version", AutoUpdate)
 
-local minionWay = {}
+local Next, insert = next, table.insert
+local function MergeTables(table1, table2)
+    if type(table1) == 'table' and type(table2) == 'table' then
+    	local newTable = {}
+    	if Next(table2) ~= nil then
+	        for k,v in pairs(table2) do
+	        	if type(v) == 'table' and type(table1[k] or false) == 'table' then 
+	        		self:MergeTables(table1[k], v) 
+	        	else 
+	        		table1[k] = v 
+	        	end 
+	        	return table1
+	        end
+	    else
+	    	return table1
+	    end
+    end
+end
+
 class 'Collision'
     ALL = 1
     ENEMY = 2
     ALLY = 3
+    JUNGLE = 4
+    ENEMYANDJUNGLE = 5
+
 	--init the Collision
-	function Collision:__init(range,projSpeed,delay,width)
+	function Collision:__init(range, projSpeed, delay, width)
 		self.ping = GetLatency()
 		self.range = range
 		self.projSpeed = projSpeed
 		self.delay = delay
-		self.width = width/2 --because we will create a line where my hero is the middle
+		self.width = width
 	end
-	--GetCollision
-	function Collision:__GetCollision(start,endu,mode)
+	--GetCollision for all Units
+	function Collision:__GetCollision(startPos, endPos, mode, exclude, maxRange)
 		if not mode then mode = ENEMY end
-		local units = {}
-		local hitM, minions = self:__GetMinionCollision(start,endu,mode)
-		--local hitH, heroes = self:__GetHeroCollision(start,endu,mode)
-		if not hitM then return false end
-		--if not hitH then return hitM, minions end
-		for i, enemy in ipairs(heroes) do
-			table.insert(units,enemy)
-		end
-		for i, minion in ipairs(minions) do
-			table.insert(units,minion)
-		end
-		return true, units
+		local collidingUnits = {}
+
+		local MinionInWay, collidingMinions = self:__GetMinionCollision(startPos, endPos, mode, exclude, maxRange)
+		local HeroInWay, collidingHeroes = self:__GetHeroCollision(startPos, endPos, mode, exclude, maxRange)
+
+		collidingUnits = MergeTables(collidingMinions, collidingHeroes)
+
+		if not (MinionInWay or HeroInWay) then return false end
+
+		return (MinionInWay or HeroInWay), collidingUnits
 	end
 	--collision with enemy
 	--[[
@@ -119,135 +143,84 @@ class 'Collision'
 		end
 		--]]
 	--collision with minion
-	function Collision:__GetMinionCollision(start, endu, mode, exclude)
-		local Pos1 = type(start) == "Object" and GetOrigin(start) or nil
-		local Pos2 = type(endu) == "Object" and GetOrigin(endu)  or nil
-
-		local heroes = {}
-		local mCollision = {}
-
-		if not mode then mode = ENEMY end
-
-		if mode == ALLY then
-			for i, mate in pairs(minionManager.objects) do
-				if exclude and GetTeam(mate) == GetTeam(myHero) then
-					if type(exclude) == "table" then
-						for i = 1, #exclude do
-							if exclude[i].networkID ~= mate.networkID then
-								table.insert(heroes, mate)
-							end
-						end
-					else
-						if exclude[i].networkID ~= mate.networkID then
-							table.insert(heroes, mate)
-						end
-					end
-				elseif GetTeam(mate) == GetTeam(myHero) then
-					table.insert(heroes, mate)
-				end
-			end
-		elseif mode == ALL then
-			for i, all in pairs(minionManager.objects) do
-				if exclude then
-					if type(exclude) == "table" then
-						for i = 1, #exclude do
-							if exclude[i].networkID ~= all.networkID then
-								table.insert(heroes, all)
-							end
-						end
-					else
-						if exclude[i].networkID ~= all.networkID then
-							table.insert(heroes, all)
-						end
-					end
-				else
-					table.insert(heroes, all)
-				end
-			end
-		elseif mode == ENEMY then
-			for i, enemy in pairs(minionManager.objects) do
-				if exclude and GetTeam(enemy) ~= GetTeam(myHero) then
-					if type(exclude) == "table" then
-						for i = 1, #exclude do
-							if exclude[i].networkID ~= enemy.networkID then
-								table.insert(heroes, enemy)
-							end
-						end
-					else
-						if exclude[i].networkID ~= enemy.networkID then
-							table.insert(heroes, enemy)
-						end
-					end
-				elseif GetTeam(enemy) ~= GetTeam(myHero) then
-					table.insert(heroes, enemy)
-				end
-			end
-		end
-
-		local distance = 0
-		local Track
-
-		if Pos1 and Pos2 then
-			distance = GetDistance(start,endu)
-			Track = Line(Point(Pos1.x,Pos1.z),Point(Pos2.x,Pos2.z))
-		elseif Pos1 and not Pos2 then
-			local t = Point(Pos1.x,Pos1.z)
-			distance = t:__distance(endu)
-			Track = Line(Point(Pos1.x,Pos1.z),endu)
-		elseif not Pos1 and Pos2 then
-			local t = Point(Pos2.x,Pos2.z)
-			distance = t:__distance(start)
-			Track = Line(start,Point(Pos2.x,Pos2.z))
+	function Collision:__GetMinionCollision(startPos, endPos, mode, exclude, maxRange)
+		--1. translate startPos and endPos to same level
+		local Start = {x = 0, y = 0, z = 0}
+		if type(startPos) == "Object" or type(startPos) == "table" or type(startPos) == "Point" then
+			Start.x = startPos.x
+			Start.y = not startPos.z and startPos.y or 0
+			Start.z = startPos.z and startPos.z or 0
 		else
-			distance = start:__distance(endu)
-			Track = Line(Point(start.x,start.z),Point(endu.x,endu.z))
+			print("Collision: Error, startPos has wrong format.")
 		end
 
-		if distance > self.range then
-			distance = self.range
+		local End = {x = 0, y = 0, z = 0}
+		if type(endPos) == "Object" or type(endPos) == "table" or type(endPos) == "Point" then
+			End.x = endPos.x
+			End.y = not endPos.z and endPos.y or 0
+			End.z = endPos.z and endPos.z or 0
+
+			if maxRange then
+				End = Vector(startPos) - (Vector(startPos) - Vector(endPos)) * (self.range / GetDistance(startPos, endPos))
+			end
+		else
+			print("Collision: Error, endPos has wrong format.")
 		end
+		------------
 
-		for i, hero in ipairs(heroes) do
-			if hero and not IsDead(hero) and IsVisible(hero) and Track then
-				local hPos = GetOrigin(hero)
-				local hP = Point(hPos.x,hPos.z)
+		--2. Set needed tables
+		local collidingMinions = {}
+		local MinionInWay = false
+		local distance = GetDistance(Start, End) > self.range and self.range or GetDistance(Start, End)
+		local collidingLine = LineSegment(Point(Start), Point(End)) or nil
+		------------
 
-				if (GetDistance(start,hero) < distance) or type(start)~="Object" and start:__distance(hP) < distance then
-					if hP:__distance(Track)<=self.width+GetHitBox(hero) then
-						table.insert(mCollision,hero)
-					end
+		--Get Minions + Collision wrapped together
+		if not mode then mode = ENEMY end
+		local team = mode == 3 and myHero.team or
+			  		 mode == 4 and 300 or
+			  		 mode == 2 and (myHero.team == 100 and 200 or 100) or
+			  		 mode == 5 and 400 or
+			  		 mode == 1 and 0
+		local normal = mode == 2 or mode == 3 or mode == 4
 
-					if minionWay.place and minionWay.ID==GetNetworkID(hero) then
-						local mP = Point(place.x,place.z)
-						if mP:__distance(Track)<=self.width+GetHitBox(hero) then
-							table.insert(mCollision,hero)
+		if collidingLine then
+			collidingLine:__draw()
+			for i = 1, #minionManager.objects do
+				local __ = minionManager.objects[i]
+				if __ and not __.charName:lower():find("dummy") and __.valid and __.visible and not __.dead and ((normal and __.team == team) or (not normal and (team == 400 and (__.team == 300 or __.team == (myHero.team == 100 and 200 or 100)) or team == 0))) and (maxRange and GetDistance(startPos, endPos) < self.range or not maxRange) then
+					if type(exclude) == "Object" then
+						if exclude.networkID ~= __.networkID then
+							local Place = Point(__)
+							if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
+								MinionInWay = true
+								insert(collidingMinions, __)
+							end
 						end
-					end
-					
-					if minionWay.place2 and minionWay.ID2==GetNetworkID(hero) then
-						local mP = Point(place2.x,place2.z)
-						if mP:__distance(Track)<=self.width+GetHitBox(hero) then
-							table.insert(mCollision,hero)
+					elseif Next(exclude) ~= nil then
+						for i = 1, #exclude do
+							local check = exclude[i]
+							if __.networkID ~= check.networkID then
+								local Place = Point(__)
+								if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
+									MinionInWay = true
+									insert(collidingMinions, __)
+								end
+							end
+						end
+					else
+						local Place = Point(__)
+						if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
+							MinionInWay = true
+							insert(collidingMinions, __)
 						end
 					end
 				end
 			end
+		else
+			collidingMinions = {}
+			MinionInWay = false
 		end
-		if #mCollision > 0 then return true, mCollision else return false, mCollision end
+		------------
+		return MinionInWay, collidingMinions
 	end
-
-OnProcessWaypoint(function(Object,waypointProc)
-	if GetObjectType(Object) == Obj_AI_Minion then
-		if GetTeam(Object)~=GetTeam(myHero) then
-			local test = {}
-			if waypointProc.index == 1 then
-				test = {place=waypointProc.position, ID=GetNetworkID(Object)}
-				table.insert(minionWay, test)
-			end
-			if waypointProc.index == 2 then
-				test = {place2=waypointProc.position, ID2=GetNetworkID(Object)}
-				table.insert(minionWay, test)
-			end
-		end
-	end
-end)
