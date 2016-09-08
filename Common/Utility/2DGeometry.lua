@@ -4,10 +4,12 @@
 
     0.42 Updated Polygon Contains function
     0.43 Updated Closest Point of Circle for given Point (__pointCircleClosest)
+    0.44 Updated LineSegemnt distance to point
+    0.45 Changed Point translation
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.43
+local Version2DGeometry = 0.45
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version2DGeometry) then
         PrintChat("New version found! " .. data)
@@ -23,12 +25,21 @@ local uniqueId = 0
 class "Point" --{
   --initiating
     function Point:__init(x,y,z)
-      local pos= type(x)~="number" and GetOrigin(x) or nil
+      local pos = {x = 0, y = 0, z = 0}
       uniqueId = uniqueId + 1
+      if type(x) == "number" then
+        pos.x = x
+        pos.y = not z and y or 0
+        pos.z = z and z or 0
+      elseif type(x) == "Object" or type(x) == "table" then
+        pos.x = x.x
+        pos.y = not x.z and x.y or 0
+        pos.z = x.z and x.z or 0
+      end
       self.uniqueId = uniqueId
-      self.x = pos and pos.x or x 
-      self.y = pos and pos.y or y
-      self.z = pos and pos.z or z or 0
+      self.x = pos and pos.x or 0
+      self.y = pos and pos.y or 0
+      self.z = pos and pos.z or 0
       self.points = {self}
     end
   --type method
@@ -241,7 +252,13 @@ class "Line" --{
       	PrintChat("Error on Line:__distance, ObjectType is unexpected")
       end
   	end
+
   	function Line:__draw(color, width)
+      -- self.points[1].z = self.points[1].z == 0 and self.points[1].y or self.points[1].z
+      -- self.points[1].y = self.points[1].z == 0 and 0 or self.points[1].y
+      -- self.points[2].z = self.points[2].z == 0 and self.points[2].y or self.points[2].z
+      -- self.points[2].y = self.points[2].z == 0 and 0 or self.points[2].y
+
   		local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
   		local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
   		DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
@@ -410,32 +427,61 @@ class "LineSegment" -- {
         return spatialObject:__contains(self)
     end
 
+    local sqr = function(x) return x * x end
+    local dist2 = function(v, w) return sqr(v.x - w.x) + sqr(v.y - w.y) end
+    local distToSegmentSquared = function(p, v, w)
+      local l2 = dist2(v, w)
+
+      if (l2 == 0) then
+        return dist2(p, v)
+      end
+
+      local t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2
+      t = math.max(0, math.min(1, t))
+      return dist2(p, {x = v.x + t * (w.x - v.x), y = v.y + t * (w.y - v.y) })
+    end
+    local distToSegment = function(p, v, w) return math.sqrt(distToSegmentSquared(p, v, w)) end
+
     function LineSegment:__distance(spatialObject)
         if spatialObject:__type() == "Circle" then
             return spatialObject.point:__distance(self) - spatialObject.radius
         elseif spatialObject:__type() == "Line" then
             return math.min(self.points[1]:__distance(spatialObject), self.points[2]:__distance(spatialObject))
         else
-            local A = Vector(self.points[1].x, 0, self.points[1].y)
-            local B = Vector(self.points[2].x, 0, self.points[2].y)
-            local P = Vector(spatialObject.x, 0, spatialObject.y)
+            local z1 = self.points[1].y ~= 0 and self.points[1].z == 0 and self.points[1].y or self.points[1].z
+            local z2 = self.points[2].y ~= 0 and self.points[2].z == 0 and self.points[2].y or self.points[2].z
+            local z3 = spatialObject.y ~= 0 and spatialObject.z == 0 and spatialObject.y or spatialObject.z
+
+            local A = Vector(self.points[1].x, 0, z1) --from
+            local B = Vector(self.points[2].x, 0, z2) --to
+            local P = Vector(spatialObject.x, 0, z3) --between
+
             local n = B - A
             local pa = A - P
 
             local c = n:dotP(pa)
             local d = pa:dotP(pa)
+
             if c > 0 then
               return d
             end
 
             local bp = P - B
             local f = bp:dotP(bp)
+
             if n:dotP(bp) > 0 then
               return f
             end
 
             local e = pa - n * (c / n:dotP(n))
             local g = e:dotP(e)
+
+            local v = {x = self.points[1].x, y = z1}
+            local w = {x = self.points[2].x, y = z2}
+            local p = {x = spatialObject.x, y = z3}
+
+            local R = distToSegment(p, v, w)
+            return R
             --return g
         end
     end
@@ -481,8 +527,18 @@ class "LineSegment" -- {
     end
 
     function LineSegment:__draw(color, width)
-    	local newPoint1 = WorldToScreen(1, self.points[1].x, 0, self.points[1].y)
-			local newPoint2 = WorldToScreen(1, self.points[2].x, 0, self.points[2].y)
+      self.points[1].z = self.points[1].z == 0 and self.points[1].y or self.points[1].z
+      self.points[1].y = self.points[1].z > 0 and 0 or self.points[1].y
+
+      -- self.points[2].z = self.points[2].z == 0 and self.points[2].y or self.points[2].z
+      -- self.points[2].y = self.points[2].z > 0 and 0 or self.points[2].y
+
+      -- print(self.points[1]:__toString())
+      -- print(self.points[2]:__toString())
+      
+
+    	local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
+			local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
 			if newPoint1.flag and newPoint2.flag then
 				DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
 			end
