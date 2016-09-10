@@ -3,9 +3,10 @@
 	Changelog:
 	 0.31: Changed to many things to count and removed WayPoints
 	 0.32: Added Hero Collision
+	 0.33: Fixed small bug
 --]]
 
-local VersionCollision = 0.32
+local VersionCollision = 0.33
 
 function AutoUpdate(data)
     if tonumber(data) > tonumber(VersionCollision) then
@@ -108,7 +109,6 @@ class 'Collision'
 		local normal = mode == 2 or mode == 3 or mode == 4
 
 		if collidingLine then
-			collidingLine:__draw()
 			for i = 1, #heroManager.iCount do
 				local __ = heroManager.iCount[i]
 				if __ and __.valid and __.visible and not __.dead and ((normal and __.team == team) or (not normal and (team == 400 and (__.team == 300 or __.team == (myHero.team == 100 and 200 or 100)) or team == 0))) and (maxRange and GetDistance(startPos, endPos) < self.range or not maxRange) then
@@ -190,7 +190,6 @@ class 'Collision'
 		local normal = mode == 2 or mode == 3 or mode == 4
 
 		if collidingLine then
-			collidingLine:__draw()
 			for i = 1, #minionManager.objects do
 				local __ = minionManager.objects[i]
 				if __ and not __.charName:lower():find("dummy") and __.valid and __.visible and not __.dead and ((normal and __.team == team) or (not normal and (team == 400 and (__.team == 300 or __.team == (myHero.team == 100 and 200 or 100)) or team == 0))) and (maxRange and GetDistance(startPos, endPos) < self.range or not maxRange) then
