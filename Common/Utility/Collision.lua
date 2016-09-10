@@ -1,4 +1,3 @@
---version 0.31
 --[[
 	Changelog:
 	 0.31: Changed to many things to count and removed WayPoints
