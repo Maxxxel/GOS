@@ -14,6 +14,10 @@ LoadGOSScript(Base64Decode("tm9O/pU7LxgA3GIf3etdDn4pL5BCww511zzK8I9ABnCerMWRtnLc
 			Path:GetData(unit)
 				unit[object]: The object u want to get the Data from
 				==> returns table holding: index, position, dashgravity, dashspeed ({} if no Data)
+				==> #Path:GetData(unit): returns number of Waypoints saved for that unit
+				table structure: GetData(unit) = {
+					waypoint.index = {position, dashgravity, dashspeed}
+				}
 
 		Get Position of unit after time x
 			Path:GetPositionAfter(unit, time)
