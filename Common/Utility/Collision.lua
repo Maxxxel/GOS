@@ -207,7 +207,7 @@ class 'Collision'
 					if type(exclude) == "Object" then
 						if exclude.networkID ~= __.networkID then
 							local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
-							if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
+							if Place:__distance(collidingLine) < self.width + __.boundingRadius - 15  then
 								MinionInWay = true
 								insert(collidingMinions, __)
 							end
@@ -217,7 +217,7 @@ class 'Collision'
 							local check = exclude[i]
 							if __.networkID ~= check.networkID then
 								local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
-								if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
+								if Place:__distance(collidingLine) <= self.width + __.boundingRadius - 15 then
 									MinionInWay = true
 									insert(collidingMinions, __)
 								end
@@ -225,7 +225,7 @@ class 'Collision'
 						end
 					else
 						local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
-						if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
+						if Place:__distance(collidingLine) <= self.width + __.boundingRadius - 15  then
 							MinionInWay = true
 							insert(collidingMinions, __)
 						end
