@@ -6,10 +6,11 @@
     0.43 Updated Closest Point of Circle for given Point (__pointCircleClosest)
     0.44 Updated LineSegemnt distance to point
     0.45 Changed Point translation
+    0.46 Updated LineSegment Distance to point
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.45
+local Version2DGeometry = 0.46
 function AutoUpdate(data)
     if tonumber(data) > tonumber(Version2DGeometry) then
         PrintChat("New version found! " .. data)
@@ -452,37 +453,74 @@ class "LineSegment" -- {
             local z2 = self.points[2].y ~= 0 and self.points[2].z == 0 and self.points[2].y or self.points[2].z
             local z3 = spatialObject.y ~= 0 and spatialObject.z == 0 and spatialObject.y or spatialObject.z
 
-            local A = Vector(self.points[1].x, 0, z1) --from
-            local B = Vector(self.points[2].x, 0, z2) --to
-            local P = Vector(spatialObject.x, 0, z3) --between
+            local y1 = self.points[1].y or 0
+            local y2 = self.points[2].y or 0
+            local y3 = spatialObject.y or 0
 
-            local n = B - A
-            local pa = A - P
+            local A = Vector(self.points[1].x, y1, z1) --from
+            local B = Vector(self.points[2].x, y2, z2) --to
+            local P = Vector(spatialObject.x, y3, z3) --between
 
-            local c = n:dotP(pa)
-            local d = pa:dotP(pa)
+            --   local n = B - A
+            --   local pa = A - P
 
-            if c > 0 then
-              return d
+            --   local c = n:dotP(pa)
+            --   local d = pa:dotP(pa)
+
+            --   if c > 0 then
+            --     return d
+            --   end
+
+            -- local bp = P - B
+            -- local f = bp:dotP(bp)
+
+            -- if n:dotP(bp) > 0 then
+            --   return f
+            -- end
+
+            -- local e = pa - n * (c / n:dotP(n))
+            -- local g = e:dotP(e)
+
+            -- local v = {x = self.points[1].x, y = z1}
+            -- local w = {x = self.points[2].x, y = z2}
+            -- local p = {x = spatialObject.x, y = z3}
+
+            -- local R = distToSegment(p, v, w)
+            -- return R
+            -- --return g
+            -- local d = ((B - A):crossP(P - A)):len() / (B - A):len()
+            -- return d
+            local pt = {X = spatialObject.x, Y = z3}
+            local p1 = {X = self.points[1].x, Y = z1}
+            local p2 = {X = self.points[2].x, Y = z2}
+            local dx = self.points[2].x - self.points[1].x
+            local dy = z2 - z1
+            if ((dx == 0) and (dy == 0)) then
+                --It's a point not a line segment.
+                closest = self.points[1]
+                dx = spatialObject.x - self.points[1].x
+                dy = z3 - z1
+                return math.sqrt(dx * dx + dy * dy)
             end
 
-            local bp = P - B
-            local f = bp:dotP(bp)
+            --Calculate the t that minimizes the distance.
+            local t = ((pt.X - p1.X) * dx + (pt.Y - p1.Y) * dy) / (dx * dx + dy * dy)
 
-            if n:dotP(bp) > 0 then
-              return f
+            --See if this represents one of the segments end points or a point in the middle.
+            if (t < 0) then
+                closest = Point(p1.X, p1.Y)
+                dx = pt.X - p1.X
+                dy = pt.Y - p1.Y
+            elseif (t > 1) then
+                closest = Point(p2.X, p2.Y)
+                dx = pt.X - p2.X
+                dy = pt.Y - p2.Y
+            else
+                closest = Point(p1.X + t * dx, p1.Y + t * dy)
+                dx = pt.X - closest.x
+                dy = pt.Y - closest.y
             end
-
-            local e = pa - n * (c / n:dotP(n))
-            local g = e:dotP(e)
-
-            local v = {x = self.points[1].x, y = z1}
-            local w = {x = self.points[2].x, y = z2}
-            local p = {x = spatialObject.x, y = z3}
-
-            local R = distToSegment(p, v, w)
-            return R
-            --return g
+            return math.sqrt(dx * dx + dy * dy)
         end
     end
 
@@ -527,18 +565,11 @@ class "LineSegment" -- {
     end
 
     function LineSegment:__draw(color, width)
-      self.points[1].z = self.points[1].z == 0 and self.points[1].y or self.points[1].z
-      self.points[1].y = self.points[1].z > 0 and 0 or self.points[1].y
+      local Y1, Z1, Y2, Z2 = self.points[1].y, self.points[1].z, self.points[2].y, self.points[2].z
 
-      -- self.points[2].z = self.points[2].z == 0 and self.points[2].y or self.points[2].z
-      -- self.points[2].y = self.points[2].z > 0 and 0 or self.points[2].y
-
-      -- print(self.points[1]:__toString())
-      -- print(self.points[2]:__toString())
-      
-
-    	local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
-			local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
+      local DrawY1, DrawZ1, DrawY2, DrawZ2 = 0, Z1 > 0 and Z1 or Y1, 0, Z2 > 0 and Z2 or Y2
+    	local newPoint1 = WorldToScreen(1, self.points[1].x, DrawY1,  DrawZ1)
+			local newPoint2 = WorldToScreen(1, self.points[2].x, DrawY2,  DrawZ2)
 			if newPoint1.flag and newPoint2.flag then
 				DrawLine(newPoint1.x, newPoint1.y, newPoint2.x, newPoint2.y ,width or 4,color or 0XFF00FF00);
 			end
