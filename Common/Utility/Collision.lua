@@ -3,9 +3,10 @@
 	 0.31: Changed to many things to count and removed WayPoints
 	 0.32: Added Hero Collision
 	 0.33: Fixed small bug
+	 0.34: Added Pathing
 --]]
 
-local VersionCollision = 0.33
+local VersionCollision = 0.34
 
 function AutoUpdate(data)
     if tonumber(data) > tonumber(VersionCollision) then
@@ -16,6 +17,16 @@ function AutoUpdate(data)
 end
 
 GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.version", AutoUpdate)
+
+if not FileExist(COMMON_PATH.."Pathing.lua") then
+	PrintChat("A Lib is missing...Downloading...")
+	DownloadFileAsync("https://raw.githubusercontent.com/LoggeL/GoS/master/Pathing.lua", COMMON_PATH.."Pathing.lua", function() PrintChat("Download Completed, please 2x F6!") return end)
+	return
+end
+
+require 'Analytics'
+
+require 'Pathing'
 
 local Next, insert = next, table.insert
 local function MergeTables(table1, table2)
@@ -50,6 +61,7 @@ class 'Collision'
 		self.projSpeed = projSpeed
 		self.delay = delay
 		self.width = width
+		Path:__init(range)
 	end
 	--GetCollision for all Units
 	function Collision:__GetCollision(startPos, endPos, mode, exclude, maxRange)
@@ -113,7 +125,7 @@ class 'Collision'
 				if __ and __.valid and __.visible and not __.dead and ((normal and __.team == team) or (not normal and (team == 400 and (__.team == 300 or __.team == (myHero.team == 100 and 200 or 100)) or team == 0))) and (maxRange and GetDistance(startPos, endPos) < self.range or not maxRange) then
 					if type(exclude) == "Object" then
 						if exclude.networkID ~= __.networkID then
-							local Place = Point(__)
+							local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
 							if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
 								HeroInWay = true
 								insert(collidingHeroes, __)
@@ -123,7 +135,7 @@ class 'Collision'
 						for i = 1, #exclude do
 							local check = exclude[i]
 							if __.networkID ~= check.networkID then
-								local Place = Point(__)
+								local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
 								if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
 									HeroInWay = true
 								insert(collidingHeroes, __)
@@ -131,7 +143,7 @@ class 'Collision'
 							end
 						end
 					else
-						local Place = Point(__)
+						local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
 						if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
 							HeroInWay = true
 							insert(collidingHeroes, __)
@@ -194,7 +206,7 @@ class 'Collision'
 				if __ and not __.charName:lower():find("dummy") and __.valid and __.visible and not __.dead and ((normal and __.team == team) or (not normal and (team == 400 and (__.team == 300 or __.team == (myHero.team == 100 and 200 or 100)) or team == 0))) and (maxRange and GetDistance(startPos, endPos) < self.range or not maxRange) then
 					if type(exclude) == "Object" then
 						if exclude.networkID ~= __.networkID then
-							local Place = Point(__)
+							local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
 							if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
 								MinionInWay = true
 								insert(collidingMinions, __)
@@ -204,7 +216,7 @@ class 'Collision'
 						for i = 1, #exclude do
 							local check = exclude[i]
 							if __.networkID ~= check.networkID then
-								local Place = Point(__)
+								local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
 								if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
 									MinionInWay = true
 									insert(collidingMinions, __)
@@ -212,7 +224,7 @@ class 'Collision'
 							end
 						end
 					else
-						local Place = Point(__)
+						local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
 						if Place:__distance(collidingLine) <= (self.width + __.boundingRadius) * .5 then
 							MinionInWay = true
 							insert(collidingMinions, __)
