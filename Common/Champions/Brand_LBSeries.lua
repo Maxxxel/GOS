@@ -1,8 +1,7 @@
 if GetObjectName(myHero) ~= "Brand" then return end
-require('Collision')
 
---Version 1.4.1
---fixed DelayAction, OnDrawDmgOverHPBar, QStunOnly, minions in range
+--Version 1.5 -final-
+--removed collision
 
 -------------------------------------------------------------------------------
 -----------------------------	   MENU		-----------------------------------
@@ -132,14 +131,8 @@ end
 
 local function QCanHit(unit)
 	local QPred = GetPredictionForPlayer(GetOrigin(myHero),unit,GetMoveSpeed(unit),1532,250 + GetLatency(),1044,75,true,false)
-	local CollisionE = Collision(1044, 1532, 250 + GetLatency(), 75)
-	local CollisionCheck, Objects = CollisionE:__GetMinionCollision(myHero,Point(QPred.PredPos.x, QPred.PredPos.z),ENEMY)
 	if QPred.PredPos and QPred.HitChance == 1 then
-		if not CollisionCheck then
-			return true
-		else
-			return false
-		end
+		return true
 	else
 		return false
 	end
