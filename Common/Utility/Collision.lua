@@ -4,9 +4,10 @@
 	 0.32: Added Hero Collision
 	 0.33: Fixed small bug
 	 0.34: Added Pathing
+	 0.35: Fixed small bug
 --]]
 
-local VersionCollision = 0.34
+local VersionCollision = 0.35
 
 function AutoUpdate(data)
     if tonumber(data) > tonumber(VersionCollision) then
@@ -23,8 +24,6 @@ if not FileExist(COMMON_PATH.."Pathing.lua") then
 	DownloadFileAsync("https://raw.githubusercontent.com/LoggeL/GoS/master/Pathing.lua", COMMON_PATH.."Pathing.lua", function() PrintChat("Download Completed, please 2x F6!") return end)
 	return
 end
-
-require 'Analytics'
 
 require 'Pathing'
 
