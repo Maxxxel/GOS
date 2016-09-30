@@ -91,7 +91,7 @@ if _G.MapPosition then return end
 
 -- Dependencies ----------------------------------------------------------------
 local Version = 203
-local interval = 200 
+local interval = 400 
 --[[
 	200: 64kb 28seconds
 	300: 34kb 13seconds
