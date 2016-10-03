@@ -7,10 +7,10 @@
 	 0.35: Fixed small bug
 --]]
 
-local VersionCollision = 0.35
+local VersionCollision = 0.36
 
 function AutoUpdate(data)
-    if tonumber(data) > tonumber(VersionCollision) then
+    if tonumber(data) > VersionCollision then
         PrintChat("New version found! " .. data)
         PrintChat("Downloading update, please wait...")
         DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.lua", COMMON_PATH .. "Collision.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
