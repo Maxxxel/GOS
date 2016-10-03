@@ -90,7 +90,7 @@ if _G.MapPosition then return end
 --]]
 
 -- Dependencies ----------------------------------------------------------------
-local Version = 203
+local Version = 204
 local interval = 400 
 --[[
 	200: 64kb 28seconds
@@ -100,7 +100,7 @@ local interval = 400
 --]]
 
 function AutoUpdate(data)
-    if tonumber(data) > tonumber(Version) then
+    if tonumber(data) > Version then
         PrintChat("New version found! " .. data)
         PrintChat("Downloading update, please wait...")
         DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/MapPositionGOS.lua", COMMON_PATH .. "MapPositionGOS.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
