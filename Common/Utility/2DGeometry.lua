@@ -10,9 +10,9 @@
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.46
+local Version2DGeometry = 0.47
 function AutoUpdate(data)
-    if tonumber(data) > tonumber(Version2DGeometry) then
+    if tonumber(data) > Version2DGeometry then
         PrintChat("New version found! " .. data)
         PrintChat("Downloading update, please wait...")
         DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.lua", COMMON_PATH .. "2DGeometry.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
