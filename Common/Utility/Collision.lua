@@ -5,9 +5,10 @@
 	 0.33: Fixed small bug
 	 0.34: Added Pathing
 	 0.35: Fixed small bug
+	 0.36: Fxed some bugs
 --]]
 
-local VersionCollision = 0.36
+local VersionCollision = 0.37
 
 function AutoUpdate(data)
     if tonumber(data) > VersionCollision then
@@ -21,7 +22,7 @@ GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/U
 
 if not FileExist(COMMON_PATH.."Pathing.lua") then
 	PrintChat("A Lib is missing...Downloading...")
-	DownloadFileAsync("https://raw.githubusercontent.com/LoggeL/GoS/master/Pathing.lua", COMMON_PATH.."Pathing.lua", function() PrintChat("Download Completed, please 2x F6!") return end)
+	DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Pathing.lua", COMMON_PATH.."Pathing.lua", function() PrintChat("Download Completed, please 2x F6!") return end)
 	return
 end
 
