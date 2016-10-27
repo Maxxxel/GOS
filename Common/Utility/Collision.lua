@@ -6,19 +6,24 @@
 	 0.34: Added Pathing
 	 0.35: Fixed small bug
 	 0.36: Fxed some bugs
+	 0.37: Fixed some small bugs
+	 0.38: Added check for Multiload and delayed the UpdateCheck
 --]]
+if _G.Collision then return end
 
-local VersionCollision = 0.37
+local VersionCollision = 0.38
 
-function AutoUpdate(data)
-    if tonumber(data) > VersionCollision then
-        PrintChat("New version found! " .. data)
-        PrintChat("Downloading update, please wait...")
-        DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.lua", COMMON_PATH .. "Collision.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
-    end
-end
+DelayAction(function()
+	function AutoUpdate(data)
+	    if tonumber(data) > VersionCollision then
+		PrintChat("New version found! " .. data)
+		PrintChat("Downloading update, please wait...")
+		DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.lua", COMMON_PATH .. "Collision.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
+	    end
+	end
 
-GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.version", AutoUpdate)
+	GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.version", AutoUpdate)
+end, 1)
 
 if not FileExist(COMMON_PATH.."Pathing.lua") then
 	PrintChat("A Lib is missing...Downloading...")
