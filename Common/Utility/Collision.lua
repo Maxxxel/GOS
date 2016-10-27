@@ -32,6 +32,7 @@ if not FileExist(COMMON_PATH.."Pathing.lua") then
 	return
 end
 
+require '2DGeometry'
 require 'Pathing'
 
 local Next, insert = next, table.insert
