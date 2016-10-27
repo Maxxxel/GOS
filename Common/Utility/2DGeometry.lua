@@ -7,20 +7,28 @@
     0.44 Updated LineSegemnt distance to point
     0.45 Changed Point translation
     0.46 Updated LineSegment Distance to point
+    0.47 Fixed little Bug
+    0.48 Added Multiload check and small bugfix, also delayed the Update
 --]]
 
 -- Code ------------------------------------------------------------------------
-local Version2DGeometry = 0.47
+local strng = '2DGeometry'
+if _G.strng then return end
+
+local Version2DGeometry = 0.48
+
 function AutoUpdate(data)
-    if tonumber(data) > Version2DGeometry then
+    local num = tonumber(data)
+    if num > Version2DGeometry then
         PrintChat("New version found! " .. data)
         PrintChat("Downloading update, please wait...")
         DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.lua", COMMON_PATH .. "2DGeometry.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
     end
 end
 
-GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.version", AutoUpdate)
-
+DelayAction(function()
+    GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.version", AutoUpdate)
+end, 1.2)
 local uniqueId = 0
 
 class "Point" --{
