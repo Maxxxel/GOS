@@ -13,15 +13,16 @@ if _G.Collision then return end
 
 local VersionCollision = 0.38
 
-DelayAction(function()
-	function AutoUpdate(data)
-	    if tonumber(data) > VersionCollision then
-		PrintChat("New version found! " .. data)
-		PrintChat("Downloading update, please wait...")
-		DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.lua", COMMON_PATH .. "Collision.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
-	    end
-	end
+local function AutoUpdate(data)
+    local num = tonumber(data)
+    if num > VersionCollision then
+	PrintChat("New version found! " .. data)
+	PrintChat("Downloading update, please wait...")
+	DownloadFileAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.lua", COMMON_PATH .. "Collision.lua", function() PrintChat("Update Complete, please 2x F6!") return end)
+    end
+end
 
+DelayAction(function()
 	GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/Collision.version", AutoUpdate)
 end, 1)
 
