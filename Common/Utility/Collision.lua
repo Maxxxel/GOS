@@ -8,10 +8,11 @@
 	 0.36: Fxed some bugs
 	 0.37: Fixed some small bugs
 	 0.38: Added check for Multiload and delayed the UpdateCheck
+	 0.39: Fixed hero Collision
 --]]
 if _G.Collision then return end
 
-local VersionCollision = 0.38
+local VersionCollision = 0.39
 
 local function AutoUpdate(data)
     local num = tonumber(data)
@@ -127,8 +128,8 @@ class 'Collision'
 		local normal = mode == 2 or mode == 3 or mode == 4
 
 		if collidingLine then
-			for i = 1, #heroManager.iCount do
-				local __ = heroManager.iCount[i]
+			for i = 1, heroManager.iCount do
+				local __ = heroManager:GetHero(i)
 				if __ and __.valid and __.visible and not __.dead and ((normal and __.team == team) or (not normal and (team == 400 and (__.team == 300 or __.team == (myHero.team == 100 and 200 or 100)) or team == 0))) and (maxRange and GetDistance(startPos, endPos) < self.range or not maxRange) then
 					if type(exclude) == "Object" then
 						if exclude.networkID ~= __.networkID then
