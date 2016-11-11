@@ -15,7 +15,7 @@
 local strng = '2DGeometry'
 if _G.strng then return end
 
-local Version2DGeometry = 0.48
+local Version2DGeometry = 0.49
 
 function AutoUpdate(data)
     local num = tonumber(data)
@@ -26,9 +26,9 @@ function AutoUpdate(data)
     end
 end
 
-DelayAction(function()
-    GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.version", AutoUpdate)
-end, 1.2)
+
+GetWebResultAsync("https://raw.githubusercontent.com/Maxxxel/GOS/master/Common/Utility/2DGeometry.version", AutoUpdate)
+
 local uniqueId = 0
 
 class "Point" --{
