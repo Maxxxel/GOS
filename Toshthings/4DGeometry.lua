@@ -18,7 +18,7 @@ local Version4DGeometry = 0.52
 local uniqueId = 0
 
 OnTick = function()
-print("3. Dimension - Y Value: " .. myHero.y .. "\n4. Dimension - Time: " .. Game.Timer())
+print("3. Dimension - Y Value: " .. myHero.pos.y .. "\n4. Dimension - Time: " .. Game.Timer())
 end
 
 class "Point"
