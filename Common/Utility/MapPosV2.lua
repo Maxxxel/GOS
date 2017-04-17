@@ -1,4 +1,4 @@
-local version = 0.1
+local Version = 0.11
 local floor = math.floor
 local MinGridPos, TranslationMaxGridPos = {x = -1.104897, y = 32.7558}, {x = 0.02004294, y = 0.02001053}
 
@@ -540,21 +540,26 @@ end
 
 function isWall(x, y, z)
     local pos = z and Vector(x, z) or 
-    			y and Vector(x, y, 0) or 
-    			type(x) == "number" and Vector(x, z or y, 0) or
-    			x.pos and Vector(x.pos.x, x.pos.z, 0) or 
-    			x.x and Vector(x.x, x.z or x.y, 0)
+    	y and Vector(x, y, 0) or 
+    	type(x) == "number" and Vector(x, z or y, 0) or
+    	x.pos and Vector(x.pos.x, x.pos.z, 0) or 
+    	x.x and Vector(x.x, x.z or x.y, 0)
  
-    pos = TranslateTo^Grid(pos)
+    pos = TranslateToNavGrid(pos)
     
     return Walls[pos.x] and Walls[pos.x][pos.y]
 end
 
 function isBush(x, y, z)
-    local pos = z and Vector(x, z) or y and Vector(x, y, 0) or x.pos and Vector(x.pos.x, x.pos.z, 0) or Vector(x.x, x.z, 0)
+    local pos = z and Vector(x, z) or 
+    	y and Vector(x, y, 0) or 
+    	type(x) == "number" and Vector(x, z or y, 0) or
+    	x.pos and Vector(x.pos.x, x.pos.z, 0) or 
+    	x.x and Vector(x.x, x.z or x.y, 0)
+	
     pos = TranslateToNavGrid(pos)
 	
-	return Bushes[pos.x] and Bushes[pos.x][pos.y]
+    return Bushes[pos.x] and Bushes[pos.x][pos.y]
 end
 
 --Credits: F.
