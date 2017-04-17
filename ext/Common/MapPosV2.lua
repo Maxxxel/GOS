@@ -545,7 +545,7 @@ function isWall(x, y, z)
     	x.pos and Vector(x.pos.x, x.pos.z, 0) or 
     	x.x and Vector(x.x, x.z or x.y, 0)
  
-    pos = TranslateToGrid(pos)
+    pos = TranslateToNavGrid(pos)
     
     return Walls[pos.x] and Walls[pos.x][pos.y]
 end
