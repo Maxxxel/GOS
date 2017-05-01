@@ -1,66 +1,40 @@
 require '2DGeometry'
-local remove = table.remove
 
-local function slice(table, from, to)
-	to = to or #table
-	local newTable = {}
-
-	for _, data in pairs(table) do
-		if _ <= to and _ > from then
-			newTable[#newTable + 1] = data
-		end
-	end
-
-	return newTable
-end
-
-local function merge(A, B)
-	local newTable = {}
-
-	for i = 1, #A do
-		newTable[#newTable + 1] = A[i]
-	end
-
-	for i = 1, #B do
-		newTable[#newTable + 1] = B[i]
-	end
-
-	return newTable
-end
-
-function RDPA(points, tolerance)
+local function DP(points, start, last, epsilon)
 	points = points.points or points
-	local distanceMax, index = 0, 0
-	local pointsEnd = #points
-	for i = 2, pointsEnd do
-		local distance = points[i]:__distance(LineSegment(points[1], points[pointsEnd]))
-		if distance > distanceMax then
+	local dmax = 0
+	local index = start
+
+	for i = index + 1, last do
+		local d = points[i]:__distance(Line(points[start], points[last]))
+		if d > dmax then
 			index = i
-			distanceMax = distance
+			dmax = d
 		end
 	end
 
-	if distanceMax > tolerance then
-		local firstHalf = RDPA(
-			slice(points, 1, index + 1),
-			tolerance
-		)
-		local secondHalf = RDPA(
-			slice(points, index),
-			tolerance
-		)
-		remove(secondHalf, 1)
-		points = merge(firstHalf, secondHalf)
-	else
-		points = {points[1], points[pointsEnd]}
-	end
+	if dmax > epsilon then
+		local res1 = DP(points, start, index, epsilon)
+		local res2 = DP(points, index, last, epsilon)
+		local finalRes = {}
 
-	return points
+		for i = 1, #res1 do
+			finalRes[#finalRes + 1] = res1[i]
+		end
+
+		for i = 1, #res2 do
+			finalRes[#finalRes + 1] = res2[i]
+		end
+
+		return finalRes
+	else
+		return {points[start], points[last]}
+	end
 end
 
 --[[Example:
 require 'MapPositionGOS'
-local reduced = (RDPA(walls[1], 50))
+local reduced = (DP(walls[1], 1, #walls[1].points, 50))
 local P = Polygon()
 P.points = reduced
 
