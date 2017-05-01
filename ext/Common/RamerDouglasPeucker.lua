@@ -28,9 +28,7 @@ local function merge(A, B)
 	return newTable
 end
 
-class 'RDPA'
-
-function RDPA:_reduce(points, tolerance)
+function RDPA(points, tolerance)
 	points = points.points or points
 	local distanceMax, index = 0, 0
 	local pointsEnd = #points
@@ -43,11 +41,11 @@ function RDPA:_reduce(points, tolerance)
 	end
 
 	if distanceMax > tolerance then
-		local firstHalf = self:_reduce(
+		local firstHalf = RDPA(
 			slice(points, 1, index + 1),
 			tolerance
 		)
-		local secondHalf = self:_reduce(
+		local secondHalf = RDPA(
 			slice(points, index),
 			tolerance
 		)
@@ -62,7 +60,7 @@ end
 
 --[[Example:
 require 'MapPositionGOS'
-local reduced = (RDPA:_reduce(walls[1], 50))
+local reduced = (RDPA(walls[1], 50))
 local P = Polygon()
 P.points = reduced
 
