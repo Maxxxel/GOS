@@ -1,6 +1,6 @@
 local clock = os.clock
 
-local function Core:GoodTarget(unit, range)
+local function GoodTarget(unit, range)
 		local range = range or 25000
 		return unit and unit.distance < range and not unit.dead and unit.isTargetable and unit.pos2D.onScreen and unit.health > 0
 end
