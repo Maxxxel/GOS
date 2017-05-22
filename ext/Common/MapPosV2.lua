@@ -562,4 +562,32 @@ function isBush(x, y, z)
     return SickVariableName and SickVariableName[pos.y]
 end
 
+local pi, sqrt, cos, sin = math.pi, math.sqrt, math.cos, math.sin
+function GetWallExit(x, y, z)
+     local pos = z and Vector(x, z) or 
+    	y and Vector(x, y, 0) or 
+    	type(x) == "number" and Vector(x, z or y, 0) or
+    	x.pos and Vector(x.pos.x, x.pos.z, 0) or 
+    	x.x and Vector(x.x, x.z or x.y, 0)
+	
+     if not isWall(pos) then
+         return location
+     end
+
+     local trueX = pos.x
+     local trueY = pos.y
+     local angle = pi / 4
+     local rr = (pos.x - trueX) * (pos.x - trueX) + (pos.y - trueY) * (pos.y - trueY)
+     local r = sqrt(rr)
+
+     while isWall(trueX, trueY) do
+         trueX = location.x + r * cos(angle)
+         trueY = location.y + r * sin(angle)
+         angle = angle + pi / 4
+         r = r + 1
+
+         return Vector(trueX, 0, trueY)
+    end
+end
+
 --Credits: F.
