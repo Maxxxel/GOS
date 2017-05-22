@@ -546,8 +546,8 @@ function isWall(x, y, z)
     	x.x and Vector(x.x, x.z or x.y, 0)
  
     pos = TranslateToNavGrid(pos)
-    
-    return Walls[pos.x] and Walls[pos.x][pos.y]
+    local SickVariableName = Walls[pos.x] -- courtesy of tosh and his very imaginative variable naming scheme
+    return SickVariableName and SickVariableName[pos.y]
 end
 
 function isBush(x, y, z)
@@ -558,8 +558,8 @@ function isBush(x, y, z)
     	x.x and Vector(x.x, x.z or x.y, 0)
 	
     pos = TranslateToNavGrid(pos)
-	
-    return Bushes[pos.x] and Bushes[pos.x][pos.y]
+    local SickVariableName = Bushes[pos.x] -- courtesy of tosh and his very imaginative variable naming scheme
+    return SickVariableName and SickVariableName[pos.y]
 end
 
 --Credits: F.
