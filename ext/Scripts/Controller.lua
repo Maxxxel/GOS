@@ -19,7 +19,7 @@ Controller.Keys:MenuElement({id = "Enabled", name = "Global On/Off ( . )", key =
 Controller.Keys:MenuElement({id = "Enabled2", name = "Range Limit On/Off ( , )", key = 188, toggle = true})
 Controller.Keys:MenuElement({id = "Enabled3", name = "Reset Limit On/Off ( - )", key = 189, toggle = true})
 --Main Program
-function GetDistance(A, B)
+local function GetDistance(A, B)
 	local ABX, ABY = A.x - B.x, A.y - B.y
 
 	return sqrt(ABX * ABX + ABY * ABY)
