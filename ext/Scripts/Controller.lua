@@ -1,4 +1,5 @@
-local Version = 0.01
+local Version = 0.02
+local Author = "Maxxxel"
 --Set Display Range
 local X, Y = Game.Resolution().x, Game.Resolution().y
 --Get Centerpoint
@@ -9,7 +10,7 @@ local Last = cursorPos
 local StartUp = false
 local sqrt = math.sqrt
 --Settings-Menu
-Controller = MenuElement({id = "Controller", name = "LOL-Controller v." .. Version, type = MENU})
+Controller = MenuElement({id = "Controller", name = "LOL-Controller v." .. Version .. " [Made by " .. Author .. "]", type = MENU})
 Controller:MenuElement({id = "Settings", name = "Settings", type = MENU})
 Controller.Settings:MenuElement({id = "MouseMoveRange", name = "Mouse Move Range", value = 300, min = 300, max = Y * .5 - 50, step = 50})
 Controller.Settings:MenuElement({id = "MouseResetDelay", name = "Mouse Reset Delay", value = .1, min = .01, max = .5, step = .01})
@@ -32,7 +33,10 @@ local function Main()
 	
 	if Controller.Keys.Enabled:Value() and Controller.Keys.Enabled2:Value() then
 		if GetDistance(cursorPos, Centerpoint) > Controller.Settings.MouseMoveRange:Value() then
-			local newPos = Centerpoint - (Centerpoint - cursorPos):Normalized() * Controller.Settings.MouseMoveRange:Value()
+			local c = Vector(cursorPos.x, cursorPos.y, 0)
+			local newPos = Centerpoint - (Centerpoint - c):Normalized() * Controller.Settings.MouseMoveRange:Value()
+
+			Draw.Circle(newPos, 50)
 			Control.SetCursorPos(newPos.x, newPos.y)
 		end
 	end
