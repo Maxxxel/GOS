@@ -865,7 +865,7 @@ class "MapPosition" -- {
 	end
 
 	function MapPosition:intersectsWall(pointOrLinesegment)
-		local lineSegment = (pointOrLinesegment.type == "Point") and LineSegment(Point(myHero.x, myHero.z), pointOrLinesegment) or pointOrLinesegment
+		local lineSegment = (pointOrLinesegment.type == "Point") and LineSegment(Point(myHero.pos.x, myHero.pos.z), pointOrLinesegment) or pointOrLinesegment
 
 		return not los(floor(lineSegment.points[1].x / self.wallSpatialHashMap.intervalSize), floor(lineSegment.points[1].y / self.wallSpatialHashMap.intervalSize), floor(lineSegment.points[2].x / self.wallSpatialHashMap.intervalSize), floor(lineSegment.points[2].y / self.wallSpatialHashMap.intervalSize), function(x, y)
 			for wallId, wall in pairs(self.wallSpatialHashMap:getSpatialObjects(Point(x * self.wallSpatialHashMap.intervalSize, y * self.wallSpatialHashMap.intervalSize))) do
