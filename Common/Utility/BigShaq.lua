@@ -78,6 +78,32 @@ class 'BS'
 		return true
 	end
 
+	function BS:__downloadFile(table)
+		local x = ""
+		local i = nil
+
+		for _, __ in pairs(table) do
+
+			if __ then
+				x = __
+				i = _
+
+				break
+			end
+		end
+
+		if x ~= "" then
+			DownloadFileAsync("https://github.com/Maxxxel/GOS/blob/master/Common/Utility/req/BS/" .. x .. ".wav?raw=true", self.soundDirectory .. x .. ".wav",
+				function()
+					table[i] = nil
+					return self:__downloadFile(table)
+				end
+			)
+		else
+			PrintChat("<font color='#FFFF00'>Big Shaq says: </font><font color='#FFFFFF'>Download of clips was successful.\nPress 2x F6 to reload.</font>")
+		end
+	end
+
 	function BS:__loadSounds()
 		self.soundDirectory = COMMON_PATH .. "Big Shaq\\"
 		self.Clips = {
@@ -90,17 +116,20 @@ class 'BS'
 		end
 
 		--Download files
+		local missing = {}
+		local reload = false
+
 		for i = 1, #self.Clips do
 			local clipName = self.Clips[i]
 
 			if not file_exists(clipName .. ".wav", self.soundDirectory) then
-				DownloadFileAsync("https://github.com/Maxxxel/GOS/blob/master/Common/Utility/req/BS/" .. clipName .. ".wav?raw=true", self.soundDirectory .. clipName .. ".wav",
-				function() 
-					if i == #self.Clips then
-						PrintChat("<font color='#FFFF00'>Big Shaq says: </font><font color='#FFFFFF'>Download of clips was successful.\nPress 2x F6 to reload.</font>")
-					end
-				end)
+				missing[i] = clipName
+				reload = true
 			end
+		end
+
+		if reload then
+			self:__downloadFile(missing)
 		end
 	end
 
