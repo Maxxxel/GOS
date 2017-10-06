@@ -78,34 +78,6 @@ class 'BS'
 		return true
 	end
 
-	function BS:__downloadFile(table)
-		local x = ""
-		local i = nil
-
-		for _, __ in pairs(table) do
-
-			if __ then
-				x = __
-				i = _
-
-				break
-			end
-		end
-
-		if x ~= "" then
-			print("Trying to download: " .. x)
-			DownloadFileAsync("https://github.com/Maxxxel/GOS/blob/master/Common/Utility/req/BS/" .. x .. ".wav?raw=true", self.soundDirectory .. x .. ".wav",
-				function()
-					table[i] = nil
-					print("Download of " .. x .. " successful")
-					return self:__downloadFile(table)
-				end
-			)
-		else
-			PrintChat("<font color='#FFFF00'>Big Shaq says: </font><font color='#FFFFFF'>Download of clips was successful.\nPress 2x F6 to reload.</font>")
-		end
-	end
-
 	function BS:__loadSounds()
 		print("Prepare to load Sounds")
 		self.soundDirectory = COMMON_PATH .. "Big Shaq\\"
@@ -113,33 +85,6 @@ class 'BS'
 			"44", "All_Time_I_Sneak", "Big_Shaq", "Boom", "Boom2", "Boom3", "Brother", "Charles2", "Chipmunk", "Concentry", "ConMansHeadRuf", "Dulukrupulpubum",
 			"Just_Sauce", "Man_Say_Squadeded", "No_Ketchup", "Pupurrubum", "Quak", "Quick_Maths", "Raw_Sauce", "Rrratnu", "Skia", "Skrrrrrra" 
 		}
-
-		if not DirExists(self.soundDirectory) then
-			print("Dir is missing, creating it now")
-			CreateDir(COMMON_PATH.."Big Shaq\\")
-		end
-
-		--Download files
-		local missing = {}
-		local reload = false
-		local a = 0
-
-		for i = 1, #self.Clips do
-			local clipName = self.Clips[i]
-
-			if not file_exists(clipName .. ".wav", self.soundDirectory) then
-				missing[i] = clipName
-				reload = true
-				a = a + 1
-			end
-		end
-
-		print("Missing: " .. a .. " files")
-
-		if reload then
-			print("Download of missing files...")
-			self:__downloadFile(missing)
-		end
 	end
 
 	function BS:attackBefore(unit, spell)
