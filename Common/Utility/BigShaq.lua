@@ -90,20 +90,18 @@ class 'BS'
 		end
 
 		--Download files
-		local reload = false
 		for i = 1, #self.Clips do
 			local clipName = self.Clips[i]
 
 			if not file_exists(clipName .. ".wav", self.soundDirectory) then
 				DownloadFileAsync("https://github.com/Maxxxel/GOS/blob/master/Common/Utility/req/BS/" .. clipName .. ".wav?raw=true", self.soundDirectory .. clipName .. ".wav",
 				function() 
+					if i == #self.Clips then
+						PrintChat("<font color='#FFFF00'>Big Shaq says: </font><font color='#FFFFFF'>Download of clips was successful.\nPress 2x F6 to reload.</font>")
+					end
 				end)
-
-				reload = true
 			end
 		end
-
-		if reload then PrintChat("<font color='#FFFF00'>Big Shaq says: </font><font color='#FFFFFF'>Download of clips was successful.\nPress 2x F6 to reload.</font>") end
 	end
 
 	function BS:attackBefore(unit, spell)
