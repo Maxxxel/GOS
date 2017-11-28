@@ -1,27 +1,14 @@
 --[[
-		maxActivator v0.01
+		maxActivator v0.02
 		
 		by Maxxxel
 	
-
-	Warding Logic
-
-		-premade Points with hover effect
-		-remember last 5 warding spots
-		-dis/enable auto logic
-
-	Anti-Invisible Logic
-
-		-scan premade Points
-		-remember enemy warding spots
-		-dis/enable auto logic
-
-	Shield Logic
-
-		-protect self and allys
-		-if under % HP
+	
+		Changelog:
+			0.01 - Creation
+			0.02 - Restructured, Added Ward System
 --]]
-local version = 0.01
+local version = 0.02
 
 local Timer = Game.Timer
 local sqrt = math.sqrt
@@ -33,41 +20,8 @@ local Base =
 			MapID == CRYSTAL_SCAR and {x = 0, y = 0, z = 0}
 
 local itemsIndex = {
-	[3340] = {name = "Warding Totem", 				type = "ward", id = 3340, range = 600},
-	[2049] = {name = "Sightstone", 					type = "ward", id = 2049, range = 600},
-	[0000] = {name = "Tracker's Knife", 			type = "ward", id = 0000, range = 600},
-	[2045] = {name = "Ruby Sightstone", 			type = "ward", id = 2045, range = 600},
-	[2302] = {name = "Eye of the Oasis", 			type = "ward", id = 2302, range = 600},
-	[2301] = {name = "Eye of the Watchers", 		type = "ward", id = 2301, range = 600},
-	[2303] = {name = "Eye of the Equinox", 			type = "ward", id = 2303, range = 600},
-	[2055] = {name = "Control Ward", 				type = "ward", id = 2055, range = 600},
-	[3363] = {name = "Farsight Alteration", 		type = "ward", id = 3363, range = 4000},
 	[3341] = {name = "Sweeping Lens",				type = "anti", id = 3341, range = 1700, radius = 550},
 	[3364] = {name = "Oracle Alteration", 			type = "anti", id = 3364, range = 0000, radius = 720},
-	[2420] = {name = "Stopwatch", 					type = "shld", id = 2420, target = "self", effect = "Stasis"},
-	[3157] = {name = "Zhonya's Hourglass", 			type = "shld", id = 3157, target = "self", effect = "Stasis"},
-	[3814] = {name = "Edge of Night", 				type = "shld", id = 3814, target = "self", effect = "Spell Shield"},
-	[3140] = {name = "Quicksilver Sash", 			type = "shld", id = 3140, target = "self", effect = "CC"},
-	[3139] = {name = "Mercurial Scimittar", 		type = "shld", id = 3139, target = "self", effect = "CC"},
-	[3222] = {name = "Mikael's Crucible", 			type = "shld", id = 3222, target = "unit", range = 0650, effect = "CC"},
-	[3190] = {name = "Locket of the Iron Solari", 	type = "shld", id = 3190, target = "unit", range = 0700, effect = "Shield"},
-	[3401] = {name = "Face of the Mountain", 		type = "shld", id = 3401, target = "unit", range = 1100, effect = "Shield"},
-	[3077] = {name = "Tiamat", 						type = "damg", id = 3077, target = "self", range = 300},
-	[3144] = {name = "Bilgewater Cutlass", 			type = "damg", id = 3144, target = "unit", range = 0600, effect = "Slow"},
-	[3152] = {name = "Hextech Protobelt-01", 		type = "damg", id = 3152, target = "unit", range = 0800},
-	[3030] = {name = "Hextech GLP-800", 			type = "damg", id = 3030, target = "unit", range = 0800},
-	[3146] = {name = "Hextech Gunblade", 			type = "damg", id = 3146, target = "unit", range = 0700, effect = "Slow"},
-	[3153] = {name = "Blade of the Ruined King", 	type = "damg", id = 3153, target = "unit", range = 0600, effect = "Slow"},
-	[3074] = {name = "Ravenous Hydra", 				type = "damg", id = 3074, target = "self", range = 300},
-	[3748] = {name = "Titanic Hydra", 				type = "damg", id = 3748, target = "self", range = 300},
-	[2003] = {name = "Health Potion", 				type = "cnsm", id = 2003, effect = "life"},
-	[2031] = {name = "Refillable Potion", 			type = "cnsm", id = 2031, effect = "life"},
-	[2010] = {name = "Biscuit of Rejuvenation", 	type = "cnsm", id = 2010, effect = "life"},
-	[2032] = {name = "Hunter's Potion", 			type = "cnsm", id = 2032, effect = "both"},
-	[2033] = {name = "Corrupting Potion", 			type = "cnsm", id = 2033, effect = "both", active = "damage"},
-	[2139] = {name = "Elixir of Sorcery", 			type = "cnsm", id = 2139, effect = "both", active = "damage"},
-	[2140] = {name = "Elixir of Wrath", 			type = "cnsm", id = 2140, effect = "none", active = "damage"},
-	[2138] = {name = "Elixir of Iron", 				type = "cnsm", id = 2138, effect = "life", active = "defensive"},
 	[3060] = {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
 	[3069] = {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
 	[3092] = {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
@@ -77,6 +31,50 @@ local itemsIndex = {
 	[3512] = {name = "Zz'Rot Portal", 				type = "spcl", id = 3512, target = "spot", effect = "Portal"},
 	[3142] = {name = "Youmuu's Ghostblade", 		type = "spcl", id = 3142, target = "self", effect = "Speed"},
 	[3143] = {name = "Randuin's Omen", 				type = "spcl", id = 3143, target = "self", effect = "Slow"},
+}
+
+local damageItems = {
+	["tia"] = {name = "Tiamat", id = 3077, range = 300},
+	["hyd"] = {name = "Ravenous Hydra", id = 3074, range = 300},
+	["tit"] = {name = "Titanic Hydra", id = 3748, range = 300},
+	["bot"] = {name = "Blade of the Ruined King", id = 3153, range = 600},
+	["bil"] = {name = "Bilgewater Cutlass", id = 3144, range = 600},
+	["pro"] = {name = "Hextech Protobelt-01", id = 3152, range = 800},
+	["glp"] = {name = "Hextech GLP-800", id = 3030, range = 800},
+	["gun"] = {name = "Hextech Gunblade", id = 3146, range = 700}
+}
+
+local consumableItems = {
+	["bor"] = {name = "Biscuit of Rejuvenation", id = 2010, type = "", buffName = "ItemMiniRegenPotion"},
+	["hpp"] = {name = "Health Potion", id = 2003, type = "", buffName = "RegenerationPotion"},
+	["rfp"] = {name = "Refillable Potion", id = 2031, type = "", buffName = "ItemCrystalFlask"},
+	["hup"] = {name = "Hunter's Potion", id = 2032, type = "mph", buffName = "ItemCrystalFlaskJungle"},
+	["crp"] = {name = "Corrupting Potion", id = 2033, type = "mph", buffName = "ItemDarkCrystalFlask"},
+	["eos"] = {name = "Elixir of Sorcery", id = 2139, type = "mph", buffName = "ElixirOfSorcery"},
+	["eoi"] = {name = "Elixir of Iron", id = 2138, type = "", buffName = "ElixirOfIron"}
+}
+
+local wardItems = {
+	["wrt"] = {name = "Warding Totem", 		id = 3340, range = 600},
+	["sgt"] = {name = "Sightstone", 		id = 2049, range = 600},
+	-- ["tkn"] = {name = "Tracker's Knife", 	id = 0000, range = 600},
+	["rsg"] = {name = "Ruby Sightstone", 	id = 2045, range = 600},
+	["eoo"] = {name = "Eye of the Oasis", 	id = 2302, range = 600},
+	["eow"] = {name = "Eye of the Watchers", id = 2301, range = 600},
+	["eoe"] = {name = "Eye of the Equinox", id = 2303, range = 600},
+	["ctw"] = {name = "Control Ward", 		id = 2055, range = 600},
+	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000}
+}
+
+local shieldItems = {
+	["stw"] = {name = "Stopwatch", 				id = 2420, target = "self", effect = "Stasis"},
+	["zhg"] = {name = "Zhonya's Hourglass", 	id = 3157, target = "self", effect = "Stasis"},
+	-- ["eon"] = {name = "Edge of Night", 			id = 3814, target = "self", effect = "Spell Shield"}, to Situational
+	["qss"] = {name = "Quicksilver Sash", 		id = 3140, target = "self", effect = "CC"},
+	["msc"] = {name = "Mercurial Scimittar", 	id = 3139, target = "self", effect = "CC"},
+	["mcr"] = {name = "Mikael's Crucible", 		id = 3222, target = "unit", range = 0650, effect = "CC"},
+	["lis"] = {name = "Locket of the Iron Solari", id = 3190, target = "unit", range = 0700, effect = "Shield"},
+	["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},
 }
 
 local function GetDistance(A, B)
@@ -91,111 +89,105 @@ end
 class 'maxActivator'
 
 	function maxActivator:__init()
-		self:__loadMenu()
-		self:__loadCallbacks()
 		self:__loadTables()
 		self:__loadUnits()
+		self:__loadMenu()
+		self:__loadCallbacks()
 	end
 
 	function maxActivator:__loadMenu()
 		self.menu = MenuElement({id = "maxActivator", name = "maxActivator v" .. version .. "", type = MENU})
 			self.menu:MenuElement({id = "ward", name = "Ward", type = MENU})
 				self.menu.ward:MenuElement({id = "_e", name = "Enable Ward", value = true})
-				self.menu.ward:MenuElement({id = "_m", name = "Warding Mode", value = 1, drop = {"Auto", "Hover"}})
+				self.menu.ward:MenuElement({id = "_m", name = "Warding Mode", value = 1, drop = {"Auto", "Mouse Hover"}})
 				self.menu.ward:MenuElement({id = "_d", name = "Draw Spots", value = true})
+				self.menu.ward:MenuElement({id = "info", name = "+++ ITEMS +++", type = SPACE})
+				for short, data in pairs(wardItems) do
+					self.menu.ward:MenuElement({id = short, name = data.name, value = true})
+				end
 
 			self.menu:MenuElement({id = "anti", 	name = "Anti-Ward", type = MENU})
-				self.menu.anti:MenuElement({id = "_e", 	name = "Enable Anti-Ward", value = true})
+				-- self.menu.anti:MenuElement({id = "_e", 	name = "Enable Anti-Ward", value = true})
 
 			self.menu:MenuElement({id = "shld", 	name = "Shield", type = MENU})
-				self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
-				-- "Stopwatch", 					type = "shld", id = 2420, target = "self", effect = "Stasis"},
-				-- "Zhonya's Hourglass", 			type = "shld", id = 3157, target = "self", effect = "Stasis"},
-				-- "Edge of Night", 				type = "shld", id = 3814, target = "self", effect = "Spell Shield"},
-				-- "Quicksilver Sash", 			type = "shld", id = 3140, target = "self", effect = "CC"},
-				-- "Mercurial Scimittar", 		type = "shld", id = 3139, target = "self", effect = "CC"},
-				-- "Mikael's Crucible", 			type = "shld", id = 3222, target = "unit", range = 0650, effect = "CC"},
-				-- "Locket of the Iron Solari", 	type = "shld", id = 3190, target = "unit", range = 0700, effect = "Shield"},
-				-- "Face of the Mountain", 		type = "shld", id = 3401, target = "unit", range = 1100, effect = "Shield"},
-				-- Seraph's Embrace
+				-- self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
+				-- for short, data in pairs(shieldItems) do
+				-- 	self.menu.shld:MenuElement({id = short, name = data.name, type = MENU})
+				-- 	self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
+
+				-- 	if data.effect == "Stasis" then
+				-- 		self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
+				-- 	elseif data.effect == "Shield" then
+				-- 		self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
+						
+				-- 		for i = 1, #self.Heroes.Allies do
+				-- 			if i == 1 then
+				-- 				self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
+				-- 			end
+
+				-- 			local ally = self.Heroes.Allies[i]
+
+				-- 			if ally.networkID ~= myHero.networkID then
+				-- 				self.menu.shld[short]:MenuElement({id = "ahp", name = "Help " .. ally.charName .. "?", value = true})
+				-- 			end
+				-- 		end
+				-- 	elseif data.effect == "CC" then
+				-- 		self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Disarm", name = "Clear Disarm", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Charm", name = "Clear Charm", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Root", name = "Clear Root", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Silence", name = "Clear Silence", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Stun", name = "Clear Stun", value = true})
+						
+				-- 		if short ~= "mcr" then
+				-- 			self.menu.shld[short]:MenuElement({id = "Suppression", name = "Clear Suppression", value = true})
+				-- 			self.menu.shld[short]:MenuElement({id = "Blind", name = "Clear Blind", value = true})
+				-- 			self.menu.shld[short]:MenuElement({id = "Nearsight", name = "Clear Nearsight", value = true})
+				-- 		end
+
+				-- 		if short == "mcr" then
+				-- 			for i = 1, #self.Heroes.Allies do
+				-- 				if i == 1 then
+				-- 					self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
+				-- 				end
+
+				-- 				local ally = self.Heroes.Allies[i]
+
+				-- 				if ally.networkID ~= myHero.networkID then
+				-- 					self.menu.shld[short]:MenuElement({id = "help", name = "Help: " .. ally.charName .. "?", value = true})
+				-- 				end
+				-- 			end
+				-- 		end
+				-- 	end
+				-- end
 
 			self.menu:MenuElement({id = "damg", 	name = "Damage", type = MENU})
 				self.menu.damg:MenuElement({id = "_e", 	name = "Enable Damage", value = true})
-				self.menu.damg:MenuElement({id = "tia", name = "Tiamat", type = MENU})
-					self.menu.damg.tia:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.tia:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.tia:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.tia:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "hyd", name = "Ravenous Hydra", type = MENU})
-					self.menu.damg.hyd:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.hyd:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.hyd:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.hyd:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "tit", name = "Titanic Hydra", type = MENU})
-					self.menu.damg.tit:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.tit:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.tit:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.tit:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "bot", name = "Blade of the Ruined King", type = MENU})
-					self.menu.damg.bot:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.bot:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.bot:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.bot:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "bil", name = "Bilgewater Cutlass", type = MENU})
-					self.menu.damg.bil:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.bil:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.bil:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.bil:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "pro", name = "Hextech Protobelt-01", type = MENU})
-					self.menu.damg.pro:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.pro:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.pro:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.pro:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "glp", name = "Hextech GLP-800", type = MENU})
-					self.menu.damg.glp:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.glp:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.glp:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.glp:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
-				self.menu.damg:MenuElement({id = "gun", name = "Hextech Gunblade", type = MENU})
-					self.menu.damg.gun:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.damg.gun:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg.gun:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
-					self.menu.damg.gun:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
+				for short, data in pairs(damageItems) do
+					self.menu.damg:MenuElement({id = short, name = data.name, type = MENU})
+					self.menu.damg[short]:MenuElement({id = "_e", name = "Enable", value = true})
+					self.menu.damg[short]:MenuElement({id = "_c", name = "Only on Combo", value = true})
+					self.menu.damg[short]:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
+					self.menu.damg[short]:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
+				end
 
 			self.menu:MenuElement({id = "cnsm", 	name = "Consume", type = MENU})
 				self.menu.cnsm:MenuElement({id = "_e", 	name = "Enable Consume", value = true})
-				self.menu.cnsm:MenuElement({id = "bor", name = "Biscuit of Rejuvenation", type = MENU})
-					self.menu.cnsm.bor:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.bor:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
-				self.menu.cnsm:MenuElement({id = "hpp", name = "Health Potion", type = MENU})
-					self.menu.cnsm.hpp:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.hpp:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
-				self.menu.cnsm:MenuElement({id = "rfp", name = "Refillable Potion", type = MENU})
-					self.menu.cnsm.rfp:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.rfp:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
-				self.menu.cnsm:MenuElement({id = "hup", name = "Hunter's Potion", type = MENU})
-					self.menu.cnsm.hup:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.hup:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
-					self.menu.cnsm.hup:MenuElement({id = "swi", name = "---------------->", value = 1, drop = {"Ignore Mana", "AND", "OR"}})
-					self.menu.cnsm.hup:MenuElement({id = "man", name = "Minimum MP %", value = 50, min = 0, max = 100, step = 1})
-				self.menu.cnsm:MenuElement({id = "crp", name = "Corrupting Potion", type = MENU})
-					self.menu.cnsm.crp:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.crp:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
-					self.menu.cnsm.crp:MenuElement({id = "swi", name = "---------------->", value = 1, drop = {"Ignore Mana", "AND", "OR"}})
-					self.menu.cnsm.crp:MenuElement({id = "man", name = "Minimum MP %", value = 50, min = 0, max = 100, step = 1})
-				self.menu.cnsm:MenuElement({id = "eos", name = "Elixir of Sorcery", type = MENU})
-					self.menu.cnsm.eos:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.eos:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
-					self.menu.cnsm.eos:MenuElement({id = "swi", name = "---------------->", value = 1, drop = {"Ignore Mana", "AND", "OR"}})
-					self.menu.cnsm.eos:MenuElement({id = "man", name = "Minimum MP %", value = 50, min = 0, max = 100, step = 1})
-				self.menu.cnsm:MenuElement({id = "eow", name = "Elixir of Wrath", type = MENU})
-					self.menu.cnsm.eow:MenuElement({id = "info", name = "Not Supported", type = SPACE})
-				self.menu.cnsm:MenuElement({id = "eoi", name = "Elixir of Iron", type = MENU})
-					self.menu.cnsm.eoi:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm.eoi:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
+				for short, data in pairs(consumableItems) do
+					self.menu.cnsm:MenuElement({id = short, name = data.name, type = MENU})
+					self.menu.cnsm[short]:MenuElement({id = "_e", name = "Enable", value = true})
+					self.menu.cnsm[short]:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
+
+					if data.type == "mph" then
+						self.menu.cnsm[short]:MenuElement({id = "swi", name = "---------------->", value = 1, drop = {"Ignore Mana", "AND", "OR"}})
+						self.menu.cnsm[short]:MenuElement({id = "man", name = "Minimum MP %", value = 50, min = 0, max = 100, step = 1})
+					end
+				end
 
 			self.menu:MenuElement({id = "spcl", 	name = "Special", type = MENU})
-				self.menu.spcl:MenuElement({id = "_e", 	name = "Enable Special", value = true})
+				-- self.menu.spcl:MenuElement({id = "_e", 	name = "Enable Special", value = true})
 				-- {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
 				-- {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
 				-- {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
@@ -207,14 +199,13 @@ class 'maxActivator'
 				-- {name = "Randuin's Omen", 				type = "spcl", id = 3143, target = "self", effect = "Slow"},
 
 			self.menu:MenuElement({id = "summs", 	name = "Summoner", type = MENU})
-				self.menu.summs:MenuElement({id = "_e", 	name = "Enable Summoner", value = true})
+				-- self.menu.summs:MenuElement({id = "_e", 	name = "Enable Summoner", value = true})
 				-- Heal
 				-- Barrier
 				-- Exhaust
 				-- Cleanse
 				-- Ignite
 				-- Smite
-
 
 			self.menu:MenuElement({id = "_se", 		name = "Settings", type = MENU})
 				self.menu._se:MenuElement({id = "_e", 	name = "Global Enable", value = true})
@@ -227,7 +218,22 @@ class 'maxActivator'
 
 	function maxActivator:__loadTables()
 		self.wards = {
-			["preSpots"] = {}
+			["preSpots"] = {
+				{x = 10383, y = 50, z = 3081},
+				{x = 11882, y = -70, z = 4121},
+				{x = 9703, y = -32, z = 6338},
+				{x = 8618, y = 52, z = 4768},
+				{x = 5206, y = -46, z = 8511},
+				{x = 3148, y = -66, z = 10814},
+				{x = 4450, y = 56, z = 11803},
+				{x = 6287, y = 54, z = 10150},
+				{x = 8268, y = 49, z = 10225},
+				{x = 11590, y = 51, z = 7115},
+				{x = 10540, y = -62, z = 5117},
+				{x = 4421, y = -67, z = 9703},
+				{x = 2293, y = 52, z = 9723},
+				{x = 7044, y = 54, z = 11352}
+			}
 		}
 
 		self.itemKey = {
@@ -304,13 +310,13 @@ class 'maxActivator'
 	end
 
 	function maxActivator:castItem(unit, id, range)
-		if unit == myHero or GetDistance(myHero, mousePos) <= range then
+		if unit == myHero or GetDistance(myHero, unit) <= range then
 			local keyIndex = self:__getSlot(id) - 5
 			local key = self.itemKey[keyIndex]
 
 			if key then
 				if unit ~= myHero then
-					Control.CastSpell(key, unit.pos)
+					Control.CastSpell(key, unit.pos or unit)
 				else
 					Control.CastSpell(key)
 				end
@@ -338,24 +344,57 @@ class 'maxActivator'
 --==================== WARD MODULE ====================--
 	function maxActivator:doWardLogic()
 		local mode = self.menu.ward._m:Value()
+		local readyWard = nil
 
-		if mode == 1 then --Auto
-			--[[
-					1. Do we have wards in inv?
-					2.
-			--]]
-		else --Hover
+		for short, data in pairs(wardItems) do
+			if self:itemReady(data.id) and self.menu.ward[short]:Value() then
+				readyWard = data
+			end
+		end
+
+		if readyWard then
+			for i = 1, #self.wards.preSpots do
+				local ward = Vector(self.wards.preSpots[i])
+
+				if ward:To2D().onScreen and GetDistance(ward, (mode == 1 and myHero or mousePos)) <= (mode == 1 and readyWard.range or 100) then
+					local c, d = self:getNearesetWardToPos(ward)
+
+					if not (c and d < 600) and not (self.lastWard and Timer() - self.lastWard < 1) then
+						self.lastWard = Timer()
+						self:castItem(ward, readyWard.id, readyWard.range)
+					end
+				end
+			end
 		end
 	end
 
 	function maxActivator:doWardDrawings()
 		for i = 1, #self.wards.preSpots do
-			local wardSpot = self.wards.preSpots[i]:To2D()
+			local wardSpot = Vector(self.wards.preSpots[i]):To2D()
 
 			if wardSpot.onScreen then
 				Draw.Text("Ward Spot", 10, wardSpot.x, wardSpot.y)
 			end
 		end
+	end
+
+	function maxActivator:getNearesetWardToPos(pos)
+		local closest, distance = nil, 999999
+
+		for i = 1, Game.WardCount() do
+			local ward = Game.Ward(i)
+
+			if ward.team == myHero.team then
+				local d = GetDistance(ward, pos) 
+
+				if d < distance then
+					distance = d
+					closest = ward
+				end
+			end
+		end
+
+		return closest, distance
 	end
 --=====================================================--
 --==================== ANTI WARD MODULE ====================--
@@ -365,46 +404,14 @@ class 'maxActivator'
 --==================== DAMAGE MODULE ====================--
 	function maxActivator:doDamageLogic()
 		local damgMenu = self.menu.damg
+		local combo = self:isCombo()
 
-		self.damgTarget.tia = self:itemReady(3077) and damgMenu.tia._e:Value() and not (damgMenu.tia._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.tia.mode:Value()) and self:getDamgTarget(damgMenu.tia.target:Value())
-		self.damgTarget.hyd = self:itemReady(3074) and damgMenu.hyd._e:Value() and not (damgMenu.hyd._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.hyd.mode:Value()) and self:getDamgTarget(damgMenu.hyd.target:Value())
-		self.damgTarget.tit = self:itemReady(3748) and damgMenu.tit._e:Value() and not (damgMenu.tit._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.tit.mode:Value()) and self:getDamgTarget(damgMenu.tit.target:Value())
-		self.damgTarget.bot = self:itemReady(3153) and damgMenu.bot._e:Value() and not (damgMenu.bot._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.bot.mode:Value()) and self:getDamgTarget(damgMenu.bot.target:Value())
-		self.damgTarget.bil = self:itemReady(3144) and damgMenu.bil._e:Value() and not (damgMenu.bil._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.bil.mode:Value()) and self:getDamgTarget(damgMenu.bil.target:Value())
-		self.damgTarget.pro = self:itemReady(3152) and damgMenu.pro._e:Value() and not (damgMenu.pro._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.pro.mode:Value()) and self:getDamgTarget(damgMenu.pro.target:Value())
-		self.damgTarget.glp = self:itemReady(3030) and damgMenu.glp._e:Value() and not (damgMenu.glp._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.glp.mode:Value()) and self:getDamgTarget(damgMenu.glp.target:Value())
-		self.damgTarget.gun = self:itemReady(3146) and damgMenu.gun._e:Value() and not (damgMenu.gun._c:Value() and not self:isCombo()) and self:getDamgMode(damgMenu.gun.mode:Value()) and self:getDamgTarget(damgMenu.gun.target:Value())
+		for short, data in pairs(damageItems) do
+			local target = self:itemReady(data.id) and damgMenu.short._e:Value() and not (damgMenu.short._c:Value() and not combo) and self:getDamgMode(damgMenu.short.mode:Value()) and self:getDamgTarget(damgMenu.short.target:Value())
 
-		if self.damgTarget.tia then
-			self:castItem(self.damgTarget.tia, 3077, itemsIndex[3077].range)
-		end
-
-		if self.damgTarget.hyd then
-			self:castItem(self.damgTarget.hyd, 3074, itemsIndex[3074].range)
-		end
-
-		if self.damgTarget.tit then
-			self:castItem(self.damgTarget.tit, 3748, itemsIndex[3748].range)
-		end
-
-		if self.damgTarget.bot then
-			self:castItem(self.damgTarget.bot, 3153, itemsIndex[3153].range)
-		end
-
-		if self.damgTarget.bil then
-			self:castItem(self.damgTarget.bil, 3144, itemsIndex[3144].range)
-		end
-
-		if self.damgTarget.pro then
-			self:castItem(self.damgTarget.pro, 3152, itemsIndex[3152].range)
-		end
-
-		if self.damgTarget.glp then
-			self:castItem(self.damgTarget.glp, 3030, itemsIndex[3030].range)
-		end
-
-		if self.damgTarget.gun then
-			self:castItem(self.damgTarget.gun, 3146, itemsIndex[3146].range)
+			if target then
+				self:castItem(target, data.id, data.range)
+			end
 		end
 	end
 
@@ -469,61 +476,25 @@ class 'maxActivator'
 --==================== CONSUMABLE MODULE ====================--
 	function maxActivator:doConsumLogic()
 		if GetDistance(myHero, Base) > 600 then
-			local a = self:itemReady(2003)
-			local b = self:itemReady(2031)
-			local c = self:itemReady(2032)
-			local d = self:itemReady(2033)
-			local e = self:itemReady(2139)
-			local f = self:itemReady(2138)
-			local g = self:itemReady(2010)
+			local cnsmMenu = self.menu.cnsm
 
-			if (a or b or c or d or e or f or g) then
-				local cnsmMenu = self.menu.cnsm
+			for short, data in pairs(consumableItems) do
+				if cnsmMenu[short]._e:Value() then
+					local ready = self:itemReady(data.id)
 
-				if a and cnsmMenu.hpp._e:Value() and not self:checkBuff(myHero, "RegenerationPotion") and self:getPercentHP(myHero) <= cnsmMenu.hpp.min:Value() then
-					self:castItem(myHero, 2003)
-				end
+					if ready and not self:checkBuff(myHero, data.buffName) then
+						if data.type == "mph" then
+							local A = self:getPercentHP(myHero) <= cnsmMenu[short].min:Value()
+							local B = cnsmMenu[short].swi:Value()
+							local C = self:getPercentMP(myHero) <= cnsmMenu[short].man:Value()
 
-				if b and cnsmMenu.rfp._e:Value() and not self:checkBuff(myHero, "ItemCrystalFlask") and self:getPercentHP(myHero) <= cnsmMenu.rfp.min:Value() then
-					self:castItem(myHero, 2031)
-				end
-
-				if c and cnsmMenu.hup._e:Value() and not self:checkBuff(myHero, "ItemCrystalFlaskJungle") then
-					local A = self:getPercentHP(myHero) <= cnsmMenu.hup.min:Value()
-					local B = cnsmMenu.hup.swi:Value()
-					local C = self:getPercentMP(myHero) <= cnsmMenu.hup.man:Value()
-
-					if (B == 1 and A) or (B == 2 and A and C) or (B == 3 and (A or C)) then
-						self:castItem(myHero, 2032)
+							if (B == 1 and A) or (B == 2 and A and C) or (B == 3 and (A or C)) then
+								self:castItem(myHero, data.id)
+							end
+						elseif self:getPercentHP(myHero) <= cnsmMenu[short].min:Value() then
+							self:castItem(myHero, data.id)
+						end
 					end
-				end
-
-				if d and cnsmMenu.crp._e:Value() and not self:checkBuff(myHero, "ItemDarkCrystalFlask") then
-					local A = self:getPercentHP(myHero) <= cnsmMenu.crp.min:Value()
-					local B = cnsmMenu.crp.swi:Value()
-					local C = self:getPercentMP(myHero) <= cnsmMenu.crp.man:Value()
-
-					if (B == 1 and A) or (B == 2 and A and C) or (B == 3 and (A or C)) then
-						self:castItem(myHero, 2033)
-					end
-				end
-
-				if e and cnsmMenu.eos._e:Value() and not self:checkBuff(myHero, "ElixirOfSorcery") then
-					local A = self:getPercentHP(myHero) <= cnsmMenu.eos.min:Value()
-					local B = cnsmMenu.eos.swi:Value()
-					local C = self:getPercentMP(myHero) <= cnsmMenu.eos.man:Value()
-
-					if (B == 1 and A) or (B == 2 and A and C) or (B == 3 and (A or C)) then
-						self:castItem(myHero, 2139)
-					end
-				end
-
-				if f and cnsmMenu.eoi._e:Value() and not self:checkBuff(myHero, "ElixirOfIron") and self:getPercentHP(myHero) <= cnsmMenu.eoi.min:Value() then
-					self:castItem(myHero, 2138)
-				end
-
-				if g and cnsmMenu.bor._e:Value() and not self:checkBuff(myHero, "ItemMiniRegenPotion") and self:getPercentHP(myHero) <= cnsmMenu.bor.min:Value() then
-					self:castItem(myHero, 2010)
 				end
 			end
 		end
