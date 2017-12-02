@@ -7,8 +7,9 @@
 		Changelog:
 			0.01 - Creation
 			0.02 - Restructured, Added Ward System
+			0.01 - Added Anti Ward/Stealth
 --]]
-local version = 0.02
+local version = 0.03
 
 local Timer = Game.Timer
 local sqrt = math.sqrt
@@ -20,8 +21,6 @@ local Base =
 			MapID == CRYSTAL_SCAR and {x = 0, y = 0, z = 0}
 
 local itemsIndex = {
-	[3341] = {name = "Sweeping Lens",				type = "anti", id = 3341, range = 1700, radius = 550},
-	[3364] = {name = "Oracle Alteration", 			type = "anti", id = 3364, range = 0000, radius = 720},
 	[3060] = {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
 	[3069] = {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
 	[3092] = {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
@@ -77,6 +76,37 @@ local shieldItems = {
 	["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},
 }
 
+local sweepModRange = {
+	500, 500, 500,
+	800, 800, 800,
+	1100, 1100, 1100,
+	1400, 1400, 1400,
+	1700, 1700, 1700,
+	2000, 2000, 2000
+}
+
+local sweepModRadius = {
+	450, 450, 450,
+	475, 475, 475,
+	500, 500, 500,
+	525, 525, 525,
+	550, 550, 550,
+	575, 575, 575
+}
+
+local oracleModRadius = {
+	660, 660, 660, 660, 660, 660, 660, 660, 660, 660,
+	690, 690, 690,
+	720, 720, 720,
+	750, 750
+}
+
+local antiWardItems = {
+	["swe"] = {name = "Sweeping Lens", id = 3341, range = -1, radius = -1},
+	["orc"] = {name = "Oracle Alteration", id = 3364, range = 0000, radius = -2},
+	["ctw"] = {name = "Control Ward", id = 2055, range = 600, radius = 600}
+}
+
 local function GetDistance(A, B)
 	local A = A.pos or A
 	local B = B.pos or B
@@ -107,7 +137,31 @@ class 'maxActivator'
 				end
 
 			self.menu:MenuElement({id = "anti", 	name = "Anti-Ward", type = MENU})
-				-- self.menu.anti:MenuElement({id = "_e", 	name = "Enable Anti-Ward", value = true})
+				self.menu.anti:MenuElement({id = "_e", 	name = "Enable Anti-Ward", value = true})
+				self.menu.anti:MenuElement({id = "_d", 	name = "Draw Enemy Wards", value = true})
+				self.menu.anti:MenuElement({id = "info", name = "+++ ITEMS +++", type = SPACE})
+				for short, data in pairs(antiWardItems) do
+					self.menu.anti:MenuElement({id = short, name = data.name, value = true})
+					self.menu.anti[short]:MenuElement({id = "_e", name = "Enable", value = true})
+				end
+				for unit in pairs(self.antiWardUnits) do
+					for i = 1, #self.Heroes.Enemies do
+						local enemy = self.Heroes.Enemies[i]
+
+						if enemy.charName == unit then
+							if not self.enableAntiUnit then
+								self.enableAntiUnit = true
+								self.menu.anti:MenuElement({id = "info", name = "+++ ENEMIES +++", type = SPACE})
+							end
+
+							self.menu.anti:MenuElement({id = unit, name = "Reveal " .. unit, type = MENU})
+
+							for short, data in pairs(antiWardItems) do
+								self.menu.anti[unit]:MenuElement({id = short, name = data.name, value = true})
+							end
+						end
+					end
+				end
 
 			self.menu:MenuElement({id = "shld", 	name = "Shield", type = MENU})
 				-- self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
@@ -236,6 +290,91 @@ class 'maxActivator'
 			}
 		}
 
+		self.antiWardUnits = {
+			["Akali"] = _W,
+			["Talon"] = _R,
+			["Twitch"] = _Q,
+			["MonkeyKing"] = _W,
+			["Shaco"] = _Q,
+			["KhaZix"] = _R,
+			["Vayne"] = _Q
+		}
+
+		self.unitShields = {
+			["Alistar"] = {
+				{type = Active, spell = _E, range = 575, shieldType = "heal"},
+            	{type = Active, spell = _R, shieldType = "self"}
+			},
+            ["Bard"] = {
+            	{type = Skillshot, spell = _W, range = 800, shieldType = "heal"},
+            	{type = Skillshot, spell = _R, range = 900, shieldType = "protect"}
+			},
+            ["Braum"] = {
+            	{type = Targeted, spell = _W, range = 650, shieldType = "shield"},
+            	{type = Skillshot, spell = _E, range = 600, shieldType = "wall"}
+            },
+            ["Diana"] = {type = Active, spell = _W, shieldType = "self"},
+            ["DrMundo"] = {type = Active, spell = _R, shieldType = "self"},
+            ["Ekko"] = {type = Active, spell = _R, shieldType = "self"},
+            ["Evelynn"] = {type = Skillshot, spell = _R, range = 650, shieldType = "enemy"},
+            ["Fiora"] = {type = Skillshot, spell = _W, range = 400, shieldType = "self"},
+            ["Fizz"] = {type = Skillshot, spell = _E, range = 600, shieldType = "self"},
+            ["Galio"] = {type = Targeted, spell = _W, range = 800, shieldType = "shield"},
+            ["Gangplank"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Garen"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Janna"] = {type = Targeted, spell = _E, range = 800, shieldType = "shield"},
+            ["JarvanIV"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Karma"] = {type = Targeted, spell = _E, range = 675, shieldType = "shield"},
+            ["Kayle"] = {
+            	{type = Targeted, spell = _W, range = 900, shieldType = "heal"},
+            	{type = Targeted, spell = _R, range = 900, shieldType = "protect"}
+			},
+            ["Kindred"] = {type = Active, spell = _R, range = 500, shieldType = "protect"},
+            ["LeeSin"] = {type = Targeted, spell = _W, range = 700, shieldType = "shield"},
+            ["Leona"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Lissandra"] = {type = Targeted, spell = _R, range = 600, shieldType = "self"},
+            ["Lulu"] = {
+            	{type = Targeted, spell = _E, range = 650, shieldType = "shield"},
+            	{type = Targeted, spell = _R, range = 650, shieldType = "protect"}
+            },
+            ["Lux"] = {type = Skillshot, spell = _W, range = 1075, shieldType = "shield"},
+            ["Morgana"] = {type = Targeted, spell = _E, range = 800, shieldType = "shield"},
+            ["Nami"] = {type = Targeted, spell = _W, range = 725, shieldType = "heal"},
+            ["Nasus"] = {type = Active, spell = _R, shieldType = "self"},
+            ["Nautilus"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Nidalee"] = {type = Targeted, spell = _E, range = 600, shieldType = "heal"},
+            ["Nocturne"] = {type = Active, spell = _W, shieldType = SpellBlock},
+            ["Orianna"] = {type = Targeted, spell = _E, range = 1100, shieldType = "shield"},
+            ["Renekton"] = {type = Active, spell = _R, shieldType = "self"},
+            ["Rengar"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Riven"] = {type = Skillshot, spell = _E, range = 325, shieldType = "self"},
+            ["Rumble"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Sion"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Sivir"] = {type = Active, spell = _E, shieldType = SpellBlock},
+            ["Skarner"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Sona"] = {type = Active, spell = _W, range = 1000, shieldType = "heal"},
+            ["Soraka"] = {
+            	{type = Targeted, spell = _W, range = 550, shieldType = "heal"},
+            	{type = Active, spell = _R, shieldType = "protect"}
+            },
+            ["Shen"] = {type = Targeted, spell = _R, shieldType = "protect"},
+            ["TahmKench"] = {
+            	{type = Targeted, spell = _W, range = 250, shieldType = "shield"},
+            	{type = Active, spell = _E, shieldType = "self"}
+            },
+            ["Taric"] = {
+            	{type = Active, spell = _Q, range = 350, shieldType = "heal"},
+            	{type = Targeted, spell = _W, range = 800, shieldType = "shield"},
+            	{type = Active, spell = _R, range = 400, shieldType = "protect"}
+            },
+            ["Thresh"] = {type = Active, spell = _W, range = 950, shieldType = "shield"},
+            ["Tryndamere"] = {type = Active, spell = _R, shieldType = "self"},
+            ["Urgot"] = {type = Active, spell = _W, shieldType = "self"},
+            ["Viktor"] = {type = Targeted, spell = _Q, range = 600, shieldType = "enemy"},
+            ["Yasuo"] = {type = Skillshot, spell = _W, range = 400, shieldType = "wall"},
+			["Zilean"] = {type = Targeted, spell = _R, range = 900, shieldType = "protect"}
+		}
+
 		self.itemKey = {
 		}
 
@@ -282,12 +421,20 @@ class 'maxActivator'
 			if self.menu.cnsm._e:Value() then
 				self:doConsumLogic()
 			end
+			--Anti Ward Stuff
+			if self.menu.anti._e:Value() then
+				self:doAntiLogic()
+			end
 		end
 	end
 
 	function maxActivator:__OnDraw()
 		if self.menu.ward._d:Value() then
 			self:doWardDrawings()
+		end
+
+		if self.menu.anti._d:Value() then
+			self:doAntiDrawings()
 		end
 	end
 
@@ -398,6 +545,64 @@ class 'maxActivator'
 	end
 --=====================================================--
 --==================== ANTI WARD MODULE ====================--
+	function maxActivator:doAntiLogic()
+		for i = 1, Game.WardCount() do
+			local ward = Game.Ward(i)
+
+			if ward.health ~= 0 then --• and ward.team ~= myHero.team and not ward.visible then
+				for short, data in pairs(antiWardItems) do
+					if self.menu.anti[short]._e:Value() and self:itemReady(data.id) then
+						local d = ward.distance
+						local ra, rd = data.range, data.radius
+
+						ra = ra == -1 and sweepModRange[myHero.levelData.lvl] or ra
+						rd = rd == -1 and sweepModRadius[myHero.levelData.lv] or rd == -2 and oracleModRadius[myHero.levelData.lvl] or rd
+
+						if d < ra + rd then
+							local castPos = myHero.pos - (myHero.pos - ward.pos):Normalized() * (d - ra)
+
+							self:castItem(castPos, data.id, ra + rd)
+						end
+					end
+				end
+			end
+		end
+
+		if self.enableAntiUnit then
+			for i = 1, #self.Heroes.Enemies do
+				local enemy = self.Heroes.Enemies[i]
+				local db = self.antiWardUnits[enemy.charName]
+
+				if db and enemy.activeSpellSlot == db and enemy.activeSpell.valid then
+					for short, data in pairs(antiWardItems) do
+						if self.menu.anti[enemy.charName][short]:Value() and self:itemReady(data.id) then
+							local d = enemy.distance
+							local ra, rd = data.range, data.radius
+
+							ra = ra == -1 and sweepModRange[myHero.levelData.lvl] or ra
+							rd = rd == -1 and sweepModRadius[myHero.levelData.lv] or rd == -2 and oracleModRadius[myHero.levelData.lvl] or rd
+
+							if d < ra + rd then
+								local castPos = myHero.pos - (myHero.pos - enemy.pos):Normalized() * (d - ra)
+
+								self:castItem(castPos, data.id, ra + rd)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	function maxActivator:doAntiDrawings()
+		for i = 1, Game.WardCount() do
+			local ward = Game.Ward(i)
+
+			if ward.health ~= 0 and ward.team ~= myHero.team then
+				Draw.Text("Enemy Ward", 10, ward.pos2D.x, ward.pos2D.y, Draw.Color(0xffff0000))
+			end
+		end
+	end
 --==========================================================--
 --==================== SHIELD MODULE ====================--
 --=======================================================--
@@ -507,5 +712,3 @@ class 'maxActivator'
 
 maxActivator()
 print("maxActivator v" .. version .. " loaded.")
-
--- for i = 6, 12 do print(myHero:GetItemData(i)) end
