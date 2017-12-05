@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.03
+		maxActivator v0.04
 		
 		by Maxxxel
 	
@@ -7,9 +7,10 @@
 		Changelog:
 			0.01 - Creation
 			0.02 - Restructured, Added Ward System
-			0.01 - Added Anti Ward/Stealth
+			0.03 - Added Anti Ward/Stealth
+			0.04 - Added Anti CC
 --]]
-local version = 0.03
+local version = 0.04
 
 local Timer = Game.Timer
 local sqrt = math.sqrt
@@ -164,14 +165,14 @@ class 'maxActivator'
 				end
 
 			self.menu:MenuElement({id = "shld", 	name = "Shield", type = MENU})
-				-- self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
-				-- for short, data in pairs(shieldItems) do
-				-- 	self.menu.shld:MenuElement({id = short, name = data.name, type = MENU})
-				-- 	self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
+				self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
+				for short, data in pairs(shieldItems) do
+					self.menu.shld:MenuElement({id = short, name = data.name, type = MENU})
+					self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
 
-				-- 	if data.effect == "Stasis" then
+					if data.effect == "Stasis" then
 				-- 		self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
-				-- 	elseif data.effect == "Shield" then
+					elseif data.effect == "Shield" then
 				-- 		self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
 						
 				-- 		for i = 1, #self.Heroes.Allies do
@@ -185,37 +186,43 @@ class 'maxActivator'
 				-- 				self.menu.shld[short]:MenuElement({id = "ahp", name = "Help " .. ally.charName .. "?", value = true})
 				-- 			end
 				-- 		end
-				-- 	elseif data.effect == "CC" then
-				-- 		self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Disarm", name = "Clear Disarm", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Charm", name = "Clear Charm", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Root", name = "Clear Root", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Silence", name = "Clear Silence", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
-				-- 		self.menu.shld[short]:MenuElement({id = "Stun", name = "Clear Stun", value = true})
-						
-				-- 		if short ~= "mcr" then
-				-- 			self.menu.shld[short]:MenuElement({id = "Suppression", name = "Clear Suppression", value = true})
-				-- 			self.menu.shld[short]:MenuElement({id = "Blind", name = "Clear Blind", value = true})
-				-- 			self.menu.shld[short]:MenuElement({id = "Nearsight", name = "Clear Nearsight", value = true})
-				-- 		end
+					elseif data.effect == "CC" then
+						self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
+						self.menu.shld[short]:MenuElement({id = "Cripple", name = "Clear Cripple", value = false})
+						self.menu.shld[short]:MenuElement({id = "Charm", name = "Clear Charm", value = true})
+						self.menu.shld[short]:MenuElement({id = "Fear", name = "Clear Fear", value = true})
+						self.menu.shld[short]:MenuElement({id = "Flee", name = "Clear Flee", value = true})
+						self.menu.shld[short]:MenuElement({id = "Taunt", name = "Clear Taunt", value = true})
+						self.menu.shld[short]:MenuElement({id = "Snare", name = "Clear Root/Snare", value = true})
+						self.menu.shld[short]:MenuElement({id = "Polymorph", name = "Clear Polymorph", value = true})
+						self.menu.shld[short]:MenuElement({id = "Silence", name = "Clear Silence", value = true})
+						self.menu.shld[short]:MenuElement({id = "Sleep", name = "Clear Sleep", value = true})
+						self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
+						self.menu.shld[short]:MenuElement({id = "Stun", name = "Clear Stun", value = true})
+						self.menu.shld[short]:MenuElement({id = "Poison", name = "Clear Poison", value = true})
+						self.menu.shld[short]:MenuElement({id = "Disarm", name = "Clear Disarm", value = true})
 
-				-- 		if short == "mcr" then
-				-- 			for i = 1, #self.Heroes.Allies do
-				-- 				if i == 1 then
-				-- 					self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
-				-- 				end
+						if short ~= "mcr" then
+							self.menu.shld[short]:MenuElement({id = "Blind", name = "Clear Blind", value = true})
+							self.menu.shld[short]:MenuElement({id = "Nearsight", name = "Clear Nearsight", value = true})
+							self.menu.shld[short]:MenuElement({id = "Suppression", name = "Clear Suppression", value = true})
+						end
 
-				-- 				local ally = self.Heroes.Allies[i]
+						if short == "mcr" then
+							for i = 1, #self.Heroes.Allies do
+								if i == 1 and #self.Heroes.Allies > 1 then
+									self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
+								end
 
-				-- 				if ally.networkID ~= myHero.networkID then
-				-- 					self.menu.shld[short]:MenuElement({id = "help", name = "Help: " .. ally.charName .. "?", value = true})
-				-- 				end
-				-- 			end
-				-- 		end
-				-- 	end
-				-- end
+								local ally = self.Heroes.Allies[i]
+
+								if ally.networkID ~= myHero.networkID then
+									self.menu.shld[short]:MenuElement({id = "help" .. ally.charName, name = "Help: " .. ally.charName .. "?", value = true})
+								end
+							end
+						end
+					end
+				end
 
 			self.menu:MenuElement({id = "damg", 	name = "Damage", type = MENU})
 				self.menu.damg:MenuElement({id = "_e", 	name = "Enable Damage", value = true})
@@ -378,6 +385,28 @@ class 'maxActivator'
 		self.itemKey = {
 		}
 
+		self.ccNames = {
+			["Cripple"] = 3,
+			["Stun"] = 5,
+			["Silence"] = 7,
+			["Taunt"] = 8,
+			["Polymorph"] = 9,
+			["Slow"] = 10,
+			["Snare"] = 11,
+			["Sleep"] = 18,
+			["Nearsight"] = 19,
+			["Fear"] = 21,
+			["Charm"] = 22,
+			["Poison"] = 23,
+			["Suppression"] = 24,
+			["Blind"] = 25,
+			-- ["Shred"] = 27,
+			["Flee"] = 28,
+			-- ["Knockup"] = 29,
+			["Airborne"] = 30,
+			["Disarm"] = 31
+		}
+		
 		self.lastAttack = 0
 		self.damgTarget = {}
 		self.Heroes = {Enemies = {}, Allies = {}}
@@ -424,6 +453,10 @@ class 'maxActivator'
 			--Anti Ward Stuff
 			if self.menu.anti._e:Value() then
 				self:doAntiLogic()
+			end
+			--Shield Stuff
+			if self.menu.shld._e:Value() then
+				self:doShieldLogic()
 			end
 		end
 	end
@@ -479,15 +512,17 @@ class 'maxActivator'
 		return unit.mana * 100 / unit.maxMana
 	end
 
-	function maxActivator:checkBuff(unit, name)
+	function maxActivator:checkBuff(unit, name, _type)
 		for i = 0, 63 do
 			local buff = unit:GetBuff(i)
 
-			if buff.count > 0 and buff.name == name then return true end
+			if buff.count > 0 and buff.name ~= "" and (buff.name == name or _type and buff.type == _type) then return true end
 		end
 
 		return false
 	end
+
+	--snare 11, 
 --==================== WARD MODULE ====================--
 	function maxActivator:doWardLogic()
 		local mode = self.menu.ward._m:Value()
@@ -605,6 +640,44 @@ class 'maxActivator'
 	end
 --==========================================================--
 --==================== SHIELD MODULE ====================--
+	function maxActivator:doShieldLogic()
+		local shldMenu = self.menu.shld
+		local qssMenu, mscMenu, mcrMenu = shldMenu["qss"], shldMenu["msc"], shldMenu["mcr"]
+
+		if qssMenu._e:Value() or mscMenu._e:Value() or mcrMenu._e:Value() then --Anti CC
+			if self:itemReady(3140) then
+				for ccName, ccType in pairs(self.ccNames) do
+					if qssMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
+						self:castItem(myHero, 3140)
+					end
+				end
+			elseif self:itemReady(3139) then
+				for ccName, ccType in pairs(self.ccNames) do
+					if mscMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
+						self:castItem(myHero, 3139)
+					end
+				end
+			elseif self:itemReady(3222) then
+				for i = 1, #self.Heroes.Allies do
+					local ally = self.Heroes.Allies[i]
+
+					if ally.networkID ~= myHero.networkID and mcrMenu["help" .. ally.charName]:Value() then
+						for ccName, ccType in pairs(self.ccNames) do
+							if mcrMenu[ccName]:Value() and self:checkBuff(ally, "", ccType) then
+								self:castItem(ally, 3222, 650)
+							end
+						end
+					end
+				end
+
+				for ccName, ccType in pairs(self.ccNames) do
+					if mcrMenu[ccName] and mcrMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
+						self:castItem(myHero, 3222)
+					end
+				end
+			end
+		end
+	end
 --=======================================================--
 --==================== DAMAGE MODULE ====================--
 	function maxActivator:doDamageLogic()
