@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.04
+		maxActivator v0.05
 		
 		by Maxxxel
 	
@@ -9,8 +9,9 @@
 			0.02 - Restructured, Added Ward System
 			0.03 - Added Anti Ward/Stealth
 			0.04 - Added Anti CC
+			0.05 - 8.2 Changes to Support Items/Ward Items
 --]]
-local version = 0.04
+local version = 0.05
 
 local Timer = Game.Timer
 local sqrt = math.sqrt
@@ -23,8 +24,8 @@ local Base =
 
 local itemsIndex = {
 	[3060] = {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
-	[3069] = {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
-	[3092] = {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
+	-- [3069] = {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
+	-- [3092] = {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
 	[3050] = {name = "Zeke's Convergence", 			type = "spcl", id = 3050, target = "bind", effect = "Boost Ally"},
 	[3056] = {name = "Ohmwrecker", 					type = "spcl", id = 3056, target = "self", effect = "Stop Turrets"},
 	[3800] = {name = "Righteous Glory", 			type = "spcl", id = 3800, target = "self", effect = "Speed"},
@@ -56,12 +57,18 @@ local consumableItems = {
 
 local wardItems = {
 	["wrt"] = {name = "Warding Totem", 		id = 3340, range = 600},
-	["sgt"] = {name = "Sightstone", 		id = 2049, range = 600},
+	-- ["sgt"] = {name = "Sightstone", 		id = 2049, range = 600},
+	["eof"] = {name = "Eye of Frost", 		id = 3098, range = 600},
+	["eow"] = {name = "Eye of the Watchers", 	id = 3092, range = 600},
+	["frf"] = {name = "Nomad's Medallion", 		id = 3096, range = 600},
+	["roa"] = {name = "Remnant of the Ascended", id = 3069, range = 600},
+	["tab"] = {name = "Targon's Brace", 		id = 3097, range = 600},
+	["frf"] = {name = "Remnant of the Aspect", 	id = 3401, range = 600},
 	-- ["tkn"] = {name = "Tracker's Knife", 	id = 0000, range = 600},
-	["rsg"] = {name = "Ruby Sightstone", 	id = 2045, range = 600},
-	["eoo"] = {name = "Eye of the Oasis", 	id = 2302, range = 600},
-	["eow"] = {name = "Eye of the Watchers", id = 2301, range = 600},
-	["eoe"] = {name = "Eye of the Equinox", id = 2303, range = 600},
+	-- ["rsg"] = {name = "Ruby Sightstone", 	id = 2045, range = 600},
+	-- ["eoo"] = {name = "Eye of the Oasis", 	id = 2302, range = 600},
+	-- ["eow"] = {name = "Eye of the Watchers", id = 2301, range = 600},
+	-- ["eoe"] = {name = "Eye of the Equinox", id = 2303, range = 600},
 	["ctw"] = {name = "Control Ward", 		id = 2055, range = 600},
 	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000}
 }
@@ -74,7 +81,7 @@ local shieldItems = {
 	["msc"] = {name = "Mercurial Scimittar", 	id = 3139, target = "self", effect = "CC"},
 	["mcr"] = {name = "Mikael's Crucible", 		id = 3222, target = "unit", range = 0650, effect = "CC"},
 	["lis"] = {name = "Locket of the Iron Solari", id = 3190, target = "unit", range = 0700, effect = "Shield"},
-	["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},
+	-- ["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},
 }
 
 local sweepModRange = {
@@ -436,6 +443,26 @@ class 'maxActivator'
 				HK_ITEM_7
 			}
 		end
+
+		for i = 6, 12 do
+			local itemID = myHero:GetItemData(i)
+			if itemID.itemID ~= 0 then print(itemID) end
+			-- local item = myHero:GetSpellData(i)
+			-- if item.name ~= "" then
+			-- 	print(item)
+			-- 	print("\n")
+			-- 	print("\n")
+			-- 	print("\n")
+			-- 	print("\n")
+			-- 	print("\n")
+			-- end
+		end
+
+		-- for i = 0, 63 do
+		-- 	local buff = myHero:GetBuff(i)
+
+		-- 	-- if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
+		-- end
 
 		if self.menu._se._e:Value() then
 			--Ward Stuff
