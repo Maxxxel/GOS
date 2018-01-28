@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.05
+		maxActivator v0.06
 		
 		by Maxxxel
 	
@@ -10,8 +10,14 @@
 			0.03 - Added Anti Ward/Stealth
 			0.04 - Added Anti CC
 			0.05 - 8.2 Changes to Support Items/Ward Items
+			0.06 - Fixed Anti-Stealth and Damage Modules
+
+		To-Do:
+			-Special Items
+			-Summoners
+			-Shield Items
 --]]
-local version = 0.05
+local version = 0.06
 
 local Timer = Game.Timer
 local sqrt = math.sqrt
@@ -58,8 +64,8 @@ local consumableItems = {
 local wardItems = {
 	["wrt"] = {name = "Warding Totem", 		id = 3340, range = 600},
 	-- ["sgt"] = {name = "Sightstone", 		id = 2049, range = 600},
-	["eof"] = {name = "Eye of Frost", 		id = 3098, range = 600},
-	["eow"] = {name = "Eye of the Watchers", 	id = 3092, range = 600},
+	["eof"] = {name = "Frostfang", 		id = 3098, range = 600},
+	["eow"] = {name = "Remnant of the Watchers", id = 3092, range = 600},
 	["frf"] = {name = "Nomad's Medallion", 		id = 3096, range = 600},
 	["roa"] = {name = "Remnant of the Ascended", id = 3069, range = 600},
 	["tab"] = {name = "Targon's Brace", 		id = 3097, range = 600},
@@ -74,13 +80,13 @@ local wardItems = {
 }
 
 local shieldItems = {
-	["stw"] = {name = "Stopwatch", 				id = 2420, target = "self", effect = "Stasis"},
-	["zhg"] = {name = "Zhonya's Hourglass", 	id = 3157, target = "self", effect = "Stasis"},
+	-- ["stw"] = {name = "Stopwatch", 				id = 2420, target = "self", effect = "Stasis"},
+	-- ["zhg"] = {name = "Zhonya's Hourglass", 	id = 3157, target = "self", effect = "Stasis"},
 	-- ["eon"] = {name = "Edge of Night", 			id = 3814, target = "self", effect = "Spell Shield"}, to Situational
 	["qss"] = {name = "Quicksilver Sash", 		id = 3140, target = "self", effect = "CC"},
 	["msc"] = {name = "Mercurial Scimittar", 	id = 3139, target = "self", effect = "CC"},
 	["mcr"] = {name = "Mikael's Crucible", 		id = 3222, target = "unit", range = 0650, effect = "CC"},
-	["lis"] = {name = "Locket of the Iron Solari", id = 3190, target = "unit", range = 0700, effect = "Shield"},
+	-- ["lis"] = {name = "Locket of the Iron Solari", id = 3190, target = "unit", range = 0700, effect = "Shield"},
 	-- ["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},
 }
 
@@ -178,21 +184,21 @@ class 'maxActivator'
 					self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
 
 					if data.effect == "Stasis" then
-				-- 		self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
+						-- self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
 					elseif data.effect == "Shield" then
-				-- 		self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
+						-- self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
 						
-				-- 		for i = 1, #self.Heroes.Allies do
-				-- 			if i == 1 then
-				-- 				self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
-				-- 			end
+						-- for i = 1, #self.Heroes.Allies do
+						-- 	if i == 1 then
+						-- 		self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
+						-- 	end
 
-				-- 			local ally = self.Heroes.Allies[i]
+						-- 	local ally = self.Heroes.Allies[i]
 
-				-- 			if ally.networkID ~= myHero.networkID then
-				-- 				self.menu.shld[short]:MenuElement({id = "ahp", name = "Help " .. ally.charName .. "?", value = true})
-				-- 			end
-				-- 		end
+						-- 	if ally.networkID ~= myHero.networkID then
+						-- 		self.menu.shld[short]:MenuElement({id = "ahp", name = "Help " .. ally.charName .. "?", value = true})
+						-- 	end
+						-- end
 					elseif data.effect == "CC" then
 						self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
 						self.menu.shld[short]:MenuElement({id = "Cripple", name = "Clear Cripple", value = false})
@@ -444,9 +450,9 @@ class 'maxActivator'
 			}
 		end
 
-		for i = 6, 12 do
-			local itemID = myHero:GetItemData(i)
-			if itemID.itemID ~= 0 then print(itemID) end
+		-- for i = 6, 12 do
+			-- local itemID = myHero:GetItemData(i)
+			-- if itemID.itemID ~= 0 then print(itemID) end
 			-- local item = myHero:GetSpellData(i)
 			-- if item.name ~= "" then
 			-- 	print(item)
@@ -456,7 +462,7 @@ class 'maxActivator'
 			-- 	print("\n")
 			-- 	print("\n")
 			-- end
-		end
+		-- end
 
 		-- for i = 0, 63 do
 		-- 	local buff = myHero:GetBuff(i)
@@ -508,11 +514,11 @@ class 'maxActivator'
 		return nil
 	end
 
-	function maxActivator:itemReady(id)
+	function maxActivator:itemReady(id, ward)
 		local slot = self:__getSlot(id)
 
 		if slot then
-			return myHero:GetSpellData(slot).currentCd == 0
+			return myHero:GetSpellData(slot).currentCd == 0 and not (ward and myHero:GetSpellData(slot).ammo == 0)
 		end
 	end
 
@@ -525,7 +531,7 @@ class 'maxActivator'
 				if unit ~= myHero then
 					Control.CastSpell(key, unit.pos or unit)
 				else
-					Control.CastSpell(key)
+					Control.CastSpell(key, myHero)
 				end
 			end
 		end
@@ -548,15 +554,13 @@ class 'maxActivator'
 
 		return false
 	end
-
-	--snare 11, 
 --==================== WARD MODULE ====================--
 	function maxActivator:doWardLogic()
 		local mode = self.menu.ward._m:Value()
 		local readyWard = nil
 
 		for short, data in pairs(wardItems) do
-			if self:itemReady(data.id) and self.menu.ward[short]:Value() then
+			if self:itemReady(data.id, true) and self.menu.ward[short]:Value() then
 				readyWard = data
 			end
 		end
@@ -611,17 +615,16 @@ class 'maxActivator'
 		for i = 1, Game.WardCount() do
 			local ward = Game.Ward(i)
 
-			if ward.health ~= 0 then --• and ward.team ~= myHero.team and not ward.visible then
+			if ward.health ~= 0 and ward.team ~= myHero.team and not ward.visible then
 				for short, data in pairs(antiWardItems) do
 					if self.menu.anti[short]._e:Value() and self:itemReady(data.id) then
 						local d = ward.distance
 						local ra, rd = data.range, data.radius
-
 						ra = ra == -1 and sweepModRange[myHero.levelData.lvl] or ra
 						rd = rd == -1 and sweepModRadius[myHero.levelData.lv] or rd == -2 and oracleModRadius[myHero.levelData.lvl] or rd
 
 						if d < ra + rd then
-							local castPos = myHero.pos - (myHero.pos - ward.pos):Normalized() * (d - ra)
+							local castPos = myHero.pos - (myHero.pos - ward.pos):Normalized() * (d)
 
 							self:castItem(castPos, data.id, ra + rd)
 						end
@@ -635,19 +638,24 @@ class 'maxActivator'
 				local enemy = self.Heroes.Enemies[i]
 				local db = self.antiWardUnits[enemy.charName]
 
-				if db and enemy.activeSpellSlot == db and enemy.activeSpell.valid then
-					for short, data in pairs(antiWardItems) do
-						if self.menu.anti[enemy.charName][short]:Value() and self:itemReady(data.id) then
-							local d = enemy.distance
-							local ra, rd = data.range, data.radius
+				if db then
+					local _ = enemy:GetSpellData(db)
+					local casted = _.castTime - Timer() > 1
 
-							ra = ra == -1 and sweepModRange[myHero.levelData.lvl] or ra
-							rd = rd == -1 and sweepModRadius[myHero.levelData.lv] or rd == -2 and oracleModRadius[myHero.levelData.lvl] or rd
+					if enemy.activeSpellSlot == db and enemy.activeSpell.valid or casted then
+						for short, data in pairs(antiWardItems) do
+							if self.menu.anti[enemy.charName][short]:Value() and self:itemReady(data.id) then
+								local d = enemy.distance
+								local ra, rd = data.range, data.radius
 
-							if d < ra + rd then
-								local castPos = myHero.pos - (myHero.pos - enemy.pos):Normalized() * (d - ra)
+								ra = ra == -1 and sweepModRange[myHero.levelData.lvl] or ra
+								rd = rd == -1 and sweepModRadius[myHero.levelData.lv] or rd == -2 and oracleModRadius[myHero.levelData.lvl] or rd
 
-								self:castItem(castPos, data.id, ra + rd)
+								if d < ra + rd then
+									local castPos = myHero.pos - (myHero.pos - enemy.pos):Normalized() * (d - ra)
+
+									self:castItem(castPos, data.id, ra + rd)
+								end
 							end
 						end
 					end
@@ -674,13 +682,13 @@ class 'maxActivator'
 		if qssMenu._e:Value() or mscMenu._e:Value() or mcrMenu._e:Value() then --Anti CC
 			if self:itemReady(3140) then
 				for ccName, ccType in pairs(self.ccNames) do
-					if qssMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
+					if qssMenu[ccName] and qssMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
 						self:castItem(myHero, 3140)
 					end
 				end
 			elseif self:itemReady(3139) then
 				for ccName, ccType in pairs(self.ccNames) do
-					if mscMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
+					if mscMenu[ccName] and mscMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
 						self:castItem(myHero, 3139)
 					end
 				end
@@ -690,7 +698,7 @@ class 'maxActivator'
 
 					if ally.networkID ~= myHero.networkID and mcrMenu["help" .. ally.charName]:Value() then
 						for ccName, ccType in pairs(self.ccNames) do
-							if mcrMenu[ccName]:Value() and self:checkBuff(ally, "", ccType) then
+							if mcrMenu[ccName] and mcrMenu[ccName]:Value() and self:checkBuff(ally, "", ccType) then
 								self:castItem(ally, 3222, 650)
 							end
 						end
@@ -712,7 +720,7 @@ class 'maxActivator'
 		local combo = self:isCombo()
 
 		for short, data in pairs(damageItems) do
-			local target = self:itemReady(data.id) and damgMenu.short._e:Value() and not (damgMenu.short._c:Value() and not combo) and self:getDamgMode(damgMenu.short.mode:Value()) and self:getDamgTarget(damgMenu.short.target:Value())
+			local target = self:itemReady(data.id) and damgMenu[short]._e:Value() and not (damgMenu[short]._c:Value() and not combo) and self:getDamgMode(damgMenu[short].mode:Value()) and self:getDamgTarget(damgMenu[short].target:Value())
 
 			if target then
 				self:castItem(target, data.id, data.range)
@@ -758,12 +766,13 @@ class 'maxActivator'
 
 		local state = false
 		local Access = myHero.attackData
-		local readiness = Access.state == 1 and 100 or (Access.endTime - Timer()) * 100 / Access.animationTime
-		--Before Attack, After Attack, Always
+
 		if mode == 1 then
-			state = readiness == 100
+			state = Access.state == 1
 		elseif mode == 2 then
-			state = readiness <= 60
+			state = Access.state == 3
+		else
+			state = true
 		end
 
 		return state
