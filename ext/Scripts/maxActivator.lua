@@ -11,13 +11,14 @@
 			0.04 - Added Anti CC
 			0.05 - 8.2 Changes to Support Items/Ward Items
 			0.06 - Fixed Anti-Stealth and Damage Modules
+			0.07 - Fixed Pot onDeath, added Base Debug Drawing, increased Base Range, Added Arcane Sweeper
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.06
+local version = 0.07
 
 local Timer = Game.Timer
 local sqrt = math.sqrt
@@ -63,18 +64,12 @@ local consumableItems = {
 
 local wardItems = {
 	["wrt"] = {name = "Warding Totem", 		id = 3340, range = 600},
-	-- ["sgt"] = {name = "Sightstone", 		id = 2049, range = 600},
 	["eof"] = {name = "Frostfang", 		id = 3098, range = 600},
 	["eow"] = {name = "Remnant of the Watchers", id = 3092, range = 600},
 	["frf"] = {name = "Nomad's Medallion", 		id = 3096, range = 600},
 	["roa"] = {name = "Remnant of the Ascended", id = 3069, range = 600},
 	["tab"] = {name = "Targon's Brace", 		id = 3097, range = 600},
 	["frf"] = {name = "Remnant of the Aspect", 	id = 3401, range = 600},
-	-- ["tkn"] = {name = "Tracker's Knife", 	id = 0000, range = 600},
-	-- ["rsg"] = {name = "Ruby Sightstone", 	id = 2045, range = 600},
-	-- ["eoo"] = {name = "Eye of the Oasis", 	id = 2302, range = 600},
-	-- ["eow"] = {name = "Eye of the Watchers", id = 2301, range = 600},
-	-- ["eoe"] = {name = "Eye of the Equinox", id = 2303, range = 600},
 	["ctw"] = {name = "Control Ward", 		id = 2055, range = 600},
 	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000}
 }
@@ -118,7 +113,8 @@ local oracleModRadius = {
 local antiWardItems = {
 	["swe"] = {name = "Sweeping Lens", id = 3341, range = -1, radius = -1},
 	["orc"] = {name = "Oracle Alteration", id = 3364, range = 0000, radius = -2},
-	["ctw"] = {name = "Control Ward", id = 2055, range = 600, radius = 600}
+	["ctw"] = {name = "Control Ward", id = 2055, range = 600, radius = 600},
+	["hts"] = {name = "Arcane Sweeper", id = 3348, range = 800, radius = 375}
 }
 
 local function GetDistance(A, B)
@@ -243,7 +239,7 @@ class 'maxActivator'
 					self.menu.damg:MenuElement({id = short, name = data.name, type = MENU})
 					self.menu.damg[short]:MenuElement({id = "_e", name = "Enable", value = true})
 					self.menu.damg[short]:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg[short]:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
+					self.menu.damg[short]:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack (buggy)", "After Attack", "Always"}})
 					self.menu.damg[short]:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
 				end
 
@@ -283,6 +279,8 @@ class 'maxActivator'
 
 			self.menu:MenuElement({id = "_se", 		name = "Settings", type = MENU})
 				self.menu._se:MenuElement({id = "_e", 	name = "Global Enable", value = true})
+				self.menu._se:MenuElement({id = "_b", 	name = "DebugBase", value = false})
+				self.menu._se:MenuElement({id = "_r", 	name = "No Pots Range", value = 1000, min = 0, max = 2000, step = 100})
 	end
 
 	function maxActivator:__loadCallbacks()
@@ -451,17 +449,17 @@ class 'maxActivator'
 		end
 
 		-- for i = 6, 12 do
-			-- local itemID = myHero:GetItemData(i)
-			-- if itemID.itemID ~= 0 then print(itemID) end
-			-- local item = myHero:GetSpellData(i)
-			-- if item.name ~= "" then
-			-- 	print(item)
-			-- 	print("\n")
-			-- 	print("\n")
-			-- 	print("\n")
-			-- 	print("\n")
-			-- 	print("\n")
-			-- end
+		-- 	local itemID = myHero:GetItemData(i)
+		-- 	if itemID.itemID ~= 0 then print(itemID) end
+		-- 	local item = myHero:GetSpellData(i)
+		-- 	if item.name ~= "" then
+		-- 		print(item)
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 	end
 		-- end
 
 		-- for i = 0, 63 do
@@ -470,7 +468,7 @@ class 'maxActivator'
 		-- 	-- if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
 		-- end
 
-		if self.menu._se._e:Value() then
+		if self.menu._se._e:Value() and not myHero.dead then
 			--Ward Stuff
 			if self.menu.ward._e:Value() then
 				self:doWardLogic()
@@ -501,6 +499,10 @@ class 'maxActivator'
 
 		if self.menu.anti._d:Value() then
 			self:doAntiDrawings()
+		end
+		
+		if self.menu._se._b:Value() then
+			Draw.Circle(Vector(Base), self.menu._se._r:Value())
 		end
 	end
 
@@ -766,7 +768,7 @@ class 'maxActivator'
 
 		local state = false
 		local Access = myHero.attackData
-
+		print(Access.state)
 		if mode == 1 then
 			state = Access.state == 1
 		elseif mode == 2 then
@@ -789,7 +791,7 @@ class 'maxActivator'
 --=======================================================--
 --==================== CONSUMABLE MODULE ====================--
 	function maxActivator:doConsumLogic()
-		if GetDistance(myHero, Base) > 600 then
+		if GetDistance(myHero, Base) > self.menu._se._r:Value() then
 			local cnsmMenu = self.menu.cnsm
 
 			for short, data in pairs(consumableItems) do
