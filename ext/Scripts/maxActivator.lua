@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.06
+		maxActivator v0.08
 		
 		by Maxxxel
 	
@@ -12,16 +12,17 @@
 			0.05 - 8.2 Changes to Support Items/Ward Items
 			0.06 - Fixed Anti-Stealth and Damage Modules
 			0.07 - Fixed Pot onDeath, added Base Debug Drawing, increased Base Range, Added Arcane Sweeper
+			0.08 - Fixed Pot Ammo, added new way of AA Detection, fixed Damage Items
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.07
+local version = 0.08
 
 local Timer = Game.Timer
-local sqrt = math.sqrt
+local sqrt, abs = math.sqrt, math.abs
 local MapID = Game.mapID
 local Base = 
 			MapID == TWISTED_TREELINE and myHero.team == 100 and {x=1076, y=150, z=7275} or myHero.team == 200 and {x=14350, y=151, z=7299} or
@@ -289,6 +290,12 @@ class 'maxActivator'
 	end
 
 	function maxActivator:__loadTables()
+		self.itemAmmoStorage = {
+			[2031] = {maxStorage = 2, savedStorage = 0},
+			[2032] = {maxStorage = 5, savedStorage = 0},
+			[2033] = {maxStorage = 3, savedStorage = 0}
+		}
+
 		self.wards = {
 			["preSpots"] = {
 				{x = 10383, y = 50, z = 3081},
@@ -449,17 +456,20 @@ class 'maxActivator'
 		end
 
 		-- for i = 6, 12 do
-		-- 	local itemID = myHero:GetItemData(i)
-		-- 	if itemID.itemID ~= 0 then print(itemID) end
-		-- 	local item = myHero:GetSpellData(i)
-		-- 	if item.name ~= "" then
-		-- 		print(item)
-		-- 		print("\n")
-		-- 		print("\n")
-		-- 		print("\n")
-		-- 		print("\n")
-		-- 		print("\n")
-		-- 	end
+			-- local itemID = myHero:GetItemData(i)
+
+			-- if itemID.itemID ~= 0 then 
+				
+			-- end
+			-- local item = myHero:GetSpellData(i)
+			-- if item.name ~= "" then
+			-- 	print(item)
+			-- 	print("\n")
+			-- 	print("\n")
+			-- 	print("\n")
+			-- 	print("\n")
+			-- 	print("\n")
+			-- end
 		-- end
 
 		-- for i = 0, 63 do
@@ -475,6 +485,7 @@ class 'maxActivator'
 			end
 			--Damage Stuff
 			if self.menu.damg._e:Value() then
+				self:AAState()
 				self:doDamageLogic()
 			end
 			--Consumables Stuff
@@ -516,11 +527,71 @@ class 'maxActivator'
 		return nil
 	end
 
-	function maxActivator:itemReady(id, ward)
+	function maxActivator:itemReady(id, ward, pot)
 		local slot = self:__getSlot(id)
 
 		if slot then
-			return myHero:GetSpellData(slot).currentCd == 0 and not (ward and myHero:GetSpellData(slot).ammo == 0)
+			local cd = myHero:GetSpellData(slot).currentCd == 0
+
+			if cd then
+				if ward then
+					local wardNum = myHero:GetSpellData(slot).ammo
+
+					return wardNum ~= 0 and wardNum < 10
+				elseif pot then
+					if self.itemAmmoStorage[id].savedStorage == 0 then
+						self.itemAmmoStorage[id].savedStorage = myHero:GetItemData(slot).ammo
+					end
+
+					local potNum = myHero:GetItemData(slot).ammo
+					local saved = self.itemAmmoStorage[id].savedStorage
+					local num = abs(saved - potNum - self.itemAmmoStorage[id].maxStorage) 
+
+					return num > 0 and num <= 5
+				else
+					return true
+				end
+			end
+		end
+
+		return false
+	end
+
+	function maxActivator:AAState()
+		if not self.AALoaded then
+			self.state = 0
+			self.AAHitIn = 0
+			self.NextAAIn = 0
+			self.ReadyIn = 100
+
+			self.AALoaded = true
+		end
+
+		local as = myHero.activeSpell
+		local ad = myHero.attackData
+
+		if as.valid and not as.isChanneling then
+			if self.state == 0 then
+				self.NextAAIn = Timer() + as.animation
+				self.AAHitIn = as.windup + Timer() + ad.attackDelayOffsetPercent
+				self.state = 1
+			elseif self.AAHitIn - Timer() < 0 and self.state == 1 then
+				self.state = 2
+
+				DelayAction(function()
+					self.state = 3
+
+					DelayAction(function()
+						self.state = 0
+					end, self.NextAAIn - Timer() - 0.01)
+				end, 0.01)
+			end
+		elseif self.state == 1 then
+			self.state = 3
+
+			DelayAction(function()
+				self.state = 0
+			end, Timer() - self.AAHitIn)
 		end
 	end
 
@@ -767,12 +838,12 @@ class 'maxActivator'
 		if mode == 3 then return true end
 
 		local state = false
-		local Access = myHero.attackData
-		print(Access.state)
+		local Access = self.state
+
 		if mode == 1 then
-			state = Access.state == 1
+			state = Access == 0
 		elseif mode == 2 then
-			state = Access.state == 3
+			state = Access == 2 or Access == 3
 		else
 			state = true
 		end
@@ -796,7 +867,7 @@ class 'maxActivator'
 
 			for short, data in pairs(consumableItems) do
 				if cnsmMenu[short]._e:Value() then
-					local ready = self:itemReady(data.id)
+					local ready = self:itemReady(data.id, false, true)
 
 					if ready and not self:checkBuff(myHero, data.buffName) then
 						if data.type == "mph" then
