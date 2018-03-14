@@ -240,7 +240,7 @@ class 'maxActivator'
 					self.menu.damg:MenuElement({id = short, name = data.name, type = MENU})
 					self.menu.damg[short]:MenuElement({id = "_e", name = "Enable", value = true})
 					self.menu.damg[short]:MenuElement({id = "_c", name = "Only on Combo", value = true})
-					self.menu.damg[short]:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack (buggy)", "After Attack", "Always"}})
+					self.menu.damg[short]:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
 					self.menu.damg[short]:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
 				end
 
