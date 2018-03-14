@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.08
+		maxActivator v0.081
 		
 		by Maxxxel
 	
@@ -13,13 +13,14 @@
 			0.06 - Fixed Anti-Stealth and Damage Modules
 			0.07 - Fixed Pot onDeath, added Base Debug Drawing, increased Base Range, Added Arcane Sweeper
 			0.08 - Fixed Pot Ammo, added new way of AA Detection, fixed Damage Items
+			0.081 - Bugfix
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.08
+local version = 0.081
 
 local Timer = Game.Timer
 local sqrt, abs = math.sqrt, math.abs
@@ -539,6 +540,7 @@ class 'maxActivator'
 
 					return wardNum ~= 0 and wardNum < 10
 				elseif pot then
+					if not self.itemAmmoStorage[id] then return true end
 					if self.itemAmmoStorage[id].savedStorage == 0 then
 						self.itemAmmoStorage[id].savedStorage = myHero:GetItemData(slot).ammo
 					end
