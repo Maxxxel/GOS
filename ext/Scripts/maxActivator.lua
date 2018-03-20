@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.081
+		maxActivator v0.082
 		
 		by Maxxxel
 	
@@ -14,13 +14,14 @@
 			0.07 - Fixed Pot onDeath, added Base Debug Drawing, increased Base Range, Added Arcane Sweeper
 			0.08 - Fixed Pot Ammo, added new way of AA Detection, fixed Damage Items
 			0.081 - Bugfix
+			0.082 - Fixed AntiWard double Menu Entry
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.081
+local version = 0.082
 
 local Timer = Game.Timer
 local sqrt, abs = math.sqrt, math.abs
@@ -154,7 +155,6 @@ class 'maxActivator'
 				self.menu.anti:MenuElement({id = "info", name = "+++ ITEMS +++", type = SPACE})
 				for short, data in pairs(antiWardItems) do
 					self.menu.anti:MenuElement({id = short, name = data.name, value = true})
-					self.menu.anti[short]:MenuElement({id = "_e", name = "Enable", value = true})
 				end
 				for unit in pairs(self.antiWardUnits) do
 					for i = 1, #self.Heroes.Enemies do
@@ -692,7 +692,7 @@ class 'maxActivator'
 
 			if ward.health ~= 0 and ward.team ~= myHero.team and not ward.visible then
 				for short, data in pairs(antiWardItems) do
-					if self.menu.anti[short]._e:Value() and self:itemReady(data.id) then
+					if self.menu.anti[short]:Value() and self:itemReady(data.id) then
 						local d = ward.distance
 						local ra, rd = data.range, data.radius
 						ra = ra == -1 and sweepModRange[myHero.levelData.lvl] or ra
