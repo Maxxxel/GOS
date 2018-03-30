@@ -11,9 +11,10 @@
     0.48 Added Multiload check and small bugfix, also delayed the Update
     0.50 Updated for Gos ext
     0.51 Fixed an error with Line
+    0.52 Added 3D Drawings
 --]]
 
-local Version2DGeometry = 0.51
+local Version2DGeometry = 0.52
 local uniqueId = 0
 
 class "Point"
@@ -27,10 +28,13 @@ class "Point"
 
         if type(x) == "number" then
             self.x = x
-            self.y = z and z ~= 0 and z < 999999 and z or y
+            self.d3 = z and y or 0
+            self.y = z or y
         else
-            self.x = x.pos and x.pos.x or x.x
-            self.y = x.pos and (x.pos.z and x.pos.z ~= 0 and x.pos.z < 999999 and x.pos.z or x.pos.y) or (x. z and x.z ~= 0 and x.z < 999999 and x.z or x.y)
+            local a = x.pos or x
+            self.x = a.x
+            self.d3 = a.z and a.y or 0
+            self.y = a.z or a.y
         end
 
         self.points = {self}
@@ -311,8 +315,9 @@ class "Line"
     function Line:__draw(width, color)
         --local newPoint1 = WorldToScreen(1, self.points[1].x, self.points[1].y, self.points[1].z)
         --local newPoint2 = WorldToScreen(1, self.points[2].x, self.points[2].y, self.points[2].z)
-        local A = Vector(self.points[1].x, 0, self.points[1].y):To2D()
-    	local B = Vector(self.points[2].x, 0, self.points[2].y):To2D()
+
+        local A = Vector(self.points[1].x, self.points[1].d3, self.points[1].y):To2D()
+    	local B = Vector(self.points[2].x, self.points[2].d3, self.points[2].y):To2D()
     	
     	if A.onScreen and B.onScreen then
         	Draw.Line(A.x, A.y, B.x, B.y, width or 4, color or Draw.Color(255, 255, 0, 0))
@@ -613,8 +618,8 @@ class "LineSegment"
         Draws a LineSegment
     --]]
     function LineSegment:__draw(width, color)
-    	local A = Vector(self.points[1].x, 0, self.points[1].y):To2D()
-    	local B = Vector(self.points[2].x, 0, self.points[2].y):To2D()
+    	local A = Vector(self.points[1].x, self.points[1].d3, self.points[1].y):To2D()
+    	local B = Vector(self.points[2].x, self.points[2].d3, self.points[2].y):To2D()
     	
     	if A.onScreen and B.onScreen then
         	Draw.Line(A.x, A.y, B.x, B.y, width or 4, color or Draw.Color(255, 255, 0, 0))
