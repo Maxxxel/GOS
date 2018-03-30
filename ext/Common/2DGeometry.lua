@@ -14,7 +14,7 @@
     0.52 Added 3D Drawings
 --]]
 
-local Version2DGeometry = 0.52
+local Version2DGeometry = 0.521
 local uniqueId = 0
 
 class "Point"
@@ -22,6 +22,7 @@ class "Point"
         Takes a 3D Vector or an obj as input and converts it to a 2D Point
     --]]
     function Point:__init(x, y, z)
+        if x.type == "Point" then return x end
         uniqueId = uniqueId + 1
         self.uniqueId = uniqueId
         self.type = "Point"
@@ -331,11 +332,13 @@ class "Circle"
     function Circle:__init(point, radius)
         uniqueId = uniqueId + 1
         self.uniqueId = uniqueId
-        self.point = point
+        self.point = Point(point)
         self.radius = radius
         self.type = "Circle"
 
-        self.points = {self.point}
+        self.points = {
+            self.point
+        }
     end
     --[[
         Comapres 2 Circles
@@ -434,7 +437,7 @@ class "Circle"
         Draws a Cirlce
     --]]
     function Circle:__draw(width, color)
-        Draw.Circle(self.point.x, 0, self.point.y, self.radius, width or 4, color or Draw.Color(255, 255, 0, 0))
+        Draw.Circle(self.point.x, self.point.d3, self.point.y, self.radius, width or 4, color or Draw.Color(255, 255, 0, 0))
     end
 
 class "LineSegment"
