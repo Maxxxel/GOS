@@ -15,13 +15,14 @@
 			0.08 - Fixed Pot Ammo, added new way of AA Detection, fixed Damage Items
 			0.081 - Bugfix
 			0.082 - Fixed AntiWard double Menu Entry
+			0.083 - Bugfix
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.082
+local version = 0.083
 
 local Timer = Game.Timer
 local sqrt, abs = math.sqrt, math.abs
@@ -525,7 +526,7 @@ class 'maxActivator'
 			end
 		end
 
-		return nil
+		return 0
 	end
 
 	function maxActivator:itemReady(id, ward, pot)
