@@ -9,10 +9,11 @@
 	 0.37: Fixed some small bugs
 	 0.38: Added check for Multiload and delayed the UpdateCheck
 	 0.39: Fixed hero Collision
+	 0.40: Fixed exlcude bug
 --]]
 if _G.Collision then return end
 
-local VersionCollision = 0.39
+local VersionCollision = 0.40
 
 local function AutoUpdate(data)
     local num = tonumber(data)
@@ -87,6 +88,7 @@ class 'Collision'
 	end
 	--collision with enemy
 	function Collision:__GetHeroCollision(startPos, endPos, mode, exclude, maxRange)
+		exclude = exclude or {}
 		--1. translate startPos and endPos to same level
 		local Start = {x = 0, y = 0, z = 0}
 		if type(startPos) == "Object" or type(startPos) == "table" or type(startPos) == "Point" then
@@ -168,6 +170,7 @@ class 'Collision'
 	end
 	--collision with minion
 	function Collision:__GetMinionCollision(startPos, endPos, mode, exclude, maxRange)
+		exclude = exclude or {}
 		--1. translate startPos and endPos to same level
 		local Start = {x = 0, y = 0, z = 0}
 		if type(startPos) == "Object" or type(startPos) == "table" or type(startPos) == "Point" then
