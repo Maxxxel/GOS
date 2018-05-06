@@ -10,10 +10,12 @@
 	 0.38: Added check for Multiload and delayed the UpdateCheck
 	 0.39: Fixed hero Collision
 	 0.40: Fixed exlcude bug
+	 0.41: Added Debug
 --]]
 if _G.Collision then return end
 
-local VersionCollision = 0.40
+local debug = false
+local VersionCollision = 0.41
 
 local function AutoUpdate(data)
     local num = tonumber(data)
@@ -200,6 +202,9 @@ class 'Collision'
 		local MinionInWay = false
 		local distance = GetDistance(Start, End) > self.range and self.range or GetDistance(Start, End)
 		local collidingLine = LineSegment(Point(Start), Point(End)) or nil
+		if debug and collidingLine then
+			collidingLine:__draw()
+		end
 		------------
 
 		--Get Minions + Collision wrapped together
@@ -236,6 +241,10 @@ class 'Collision'
 						end
 					else
 						local Place = Point(Path:GetPositionAfter(__, __.distance / self.projSpeed))
+						if debug and Place then
+							DrawCircle(Place.x, 0, Place.y, __.boundingRadius, 1, 0, GoS.Red)
+						end
+
 						if Place:__distance(collidingLine) <= self.width + __.boundingRadius - 15  then
 							MinionInWay = true
 							insert(collidingMinions, __)
