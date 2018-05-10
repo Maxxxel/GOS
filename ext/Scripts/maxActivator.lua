@@ -16,13 +16,14 @@
 			0.081 - Bugfix
 			0.082 - Fixed AntiWard double Menu Entry
 			0.083 - Bugfix
+			0.084 - Bugfix (no item changes)
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.083
+local version = 0.084
 
 local Timer = Game.Timer
 local sqrt, abs = math.sqrt, math.abs
@@ -427,9 +428,11 @@ class 'maxActivator'
 			["Disarm"] = 31
 		}
 		
-		self.lastAttack = 0
 		self.damgTarget = {}
 		self.Heroes = {Enemies = {}, Allies = {}}
+		self.state = 0
+		self.AAHitIn = 0
+		self.NextAAIn = 0
 	end
 
 	function maxActivator:__loadUnits()
@@ -458,20 +461,26 @@ class 'maxActivator'
 		end
 
 		-- for i = 6, 12 do
-			-- local itemID = myHero:GetItemData(i)
+		-- 	local itemID = myHero:GetItemData(i)
 
-			-- if itemID.itemID ~= 0 then 
-				
-			-- end
-			-- local item = myHero:GetSpellData(i)
-			-- if item.name ~= "" then
-			-- 	print(item)
-			-- 	print("\n")
-			-- 	print("\n")
-			-- 	print("\n")
-			-- 	print("\n")
-			-- 	print("\n")
-			-- end
+		-- 	if itemID.itemID ~= 0 then 
+		-- 		-- print(itemID)
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 	end
+		-- 	local item = myHero:GetSpellData(i)
+		-- 	if item.name ~= "" and item.name ~= "BaseSpell" then
+		-- 		-- print(item.name .. " | " .. item.ammo)
+		-- 		-- print(item)
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 	end
 		-- end
 
 		-- for i = 0, 63 do
@@ -561,19 +570,10 @@ class 'maxActivator'
 	end
 
 	function maxActivator:AAState()
-		if not self.AALoaded then
-			self.state = 0
-			self.AAHitIn = 0
-			self.NextAAIn = 0
-			self.ReadyIn = 100
-
-			self.AALoaded = true
-		end
-
 		local as = myHero.activeSpell
 		local ad = myHero.attackData
 
-		if as.valid and not as.isChanneling then
+		if as.valid and not myHero.isChanneling then
 			if self.state == 0 then
 				self.NextAAIn = Timer() + as.animation
 				self.AAHitIn = as.windup + Timer() + ad.attackDelayOffsetPercent
