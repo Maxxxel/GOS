@@ -116,8 +116,8 @@ local oracleModRadius = {
 }
 
 local antiWardItems = {
-	["swe"] = {name = "Sweeping Lens", id = 3341, range = -1, radius = -1},
-	["orc"] = {name = "Oracle Alteration", id = 3364, range = 0000, radius = -2},
+	-- ["swe"] = {name = "Sweeping Lens", id = 3341, range = -1, radius = -1},
+	["orc"] = {name = "Oracle Lens", id = 3364, range = 0000, radius = -2},
 	["ctw"] = {name = "Control Ward", id = 2055, range = 600, radius = 600},
 	["hts"] = {name = "Arcane Sweeper", id = 3348, range = 800, radius = 375}
 }
