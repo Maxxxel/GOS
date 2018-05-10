@@ -8,7 +8,7 @@
 
 require('DamageLib')
 
-local insert, remove = table.insert, table.remove
+local insert, remove, contains, concat = table.insert, table.remove, table.contains, table.concat
 local Timer = Game.Timer
 local min, ceil = math.min, math.ceil
 
@@ -22,8 +22,8 @@ function BaseUlt2:__init()
     end
 
     self.SupportedMaps, self.SupportedChampions = {CRYSTAL_SCAR, TWISTED_TREELINE, SUMMONERS_RIFT}, {"Ashe", "Draven", "Ezreal", "Jinx", "Karthus", "Lux", "Gangplank", "Ziggs"}
-    if not table.contains(self.SupportedMaps, Game.mapID) then print("BaseUlt2 - Map not supported!") return end
-    if not table.contains(self.SupportedChampions, myHero.charName) then print("BaseUlt2 - Champion not supported!") print("Current supported champions are : " ..table.concat(self.SupportedChampions, ", ")) return end
+    if not contains(self.SupportedMaps, Game.mapID) then print("BaseUlt2 - Map not supported!") return end
+    if not contains(self.SupportedChampions, myHero.charName) then print("BaseUlt2 - Champion not supported!") print("Current supported champions are : " .. concat(self.SupportedChampions, ", ")) return end
 
     self:LoadData()
     self:LoadRecallTrackerMenu()
@@ -75,7 +75,7 @@ end
 function BaseUlt2:LoadBaseUltMenu()
     self.Menu:MenuElement({type = MENU, id = "TeamUlt", name = "TeamUlt"})
     for i, ally in pairs(self.Allies) do
-        if table.contains(self.SupportedChampions, ally.charName) then
+        if contains(self.SupportedChampions, ally.charName) then
           self.Menu.TeamUlt:MenuElement({id = ally.charName, name = "TeamUlt with "..ally.charName, value = false})
         end
     end
@@ -216,7 +216,7 @@ function BaseUlt2:Tick()
     for i, enemy in pairs(self.Enemies) do
         if enemy.valid and not enemy.dead and not self.Menu.BlackList[enemy.charName]:Value() and self:GetRecallData(enemy).isRecalling then
             for k, ally in pairs(self.Allies) do
-                if not table.contains(self.SupportedChampions, ally.charName) then goto continue end -- not supported for TeamUlt
+                if not contains(self.SupportedChampions, ally.charName) then goto continue end -- not supported for TeamUlt
                 if ally.pos:DistanceTo(self.EnemySpawnPos) > ally:GetSpellData(3).range then goto continue end
                 
                 if ally.valid and not ally.dead and self.Menu.TeamUlt[ally.charName]:Value() and self:CanUseUlt(ally) then
