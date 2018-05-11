@@ -28,3 +28,39 @@ local extLib = require 'extLib'
  	```lua
 	Callback.Add("Tick", OnProcessSpell)
 	```
+5. Now you're done and your custom function handles the extLib-function
+
+## Notes on functions
+- OnProcessSpell
+	returns
+	```lua
+	unit: the caster
+	...
+	spell: the spell object
+	.valid
+	.level
+	.name
+	.startPos -- Vector
+	.placementPos -- Vector
+	.target -- GameObject handle
+	.windup
+	.animation
+	.range
+	.mana
+	.width
+	.speed
+	.coneAngle
+	.coneDistance
+	.acceleration
+	.castFrame
+	.maxSpeed
+	.minSpeed
+	.spellWasCast
+	.isAutoAttack
+	.isCharging
+	.isChanneling
+	.startTime
+	.castEndTime
+	.endTime
+	.isStopped
+	```
