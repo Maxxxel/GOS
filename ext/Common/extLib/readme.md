@@ -15,11 +15,11 @@ local extLib = require 'extLib'
 3. Create a function to handle the desired extLib-function
   - OnProcessSpell example:
     ```lua
-    local function OnProcessSpell()
-        local unit, spell = extLib.OnProcessSpell()
+    	local function OnProcessSpell()
+		local unit, spell = extLib.OnProcessSpell()
 
-	      if unit and spell then
-	          print(unit.charName .. " is Casting " .. spell.name)
-	      end
-	  end
+		if unit and spell then
+			print(unit.charName .. " is Casting " .. spell.name)
+		end
+	end
     ```
