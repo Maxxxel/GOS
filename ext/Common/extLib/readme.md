@@ -13,7 +13,7 @@ Created by Maxxxel
 local extLib = require 'extLib'
 ```
 3. Create a function to handle the desired extLib-function
-  - OnProcessSpell example:
+	- OnProcessSpell example:
     ```lua
     local function OnProcessSpell()
 		local unit, spell = extLib.OnProcessSpell()
@@ -23,3 +23,8 @@ local extLib = require 'extLib'
 		end
 	end
     ```
+4. Add your custom function to some Event
+	- OnProcessSpell example:
+ 	```lua
+	Callback.Add("Tick", OnProcessSpell)
+	```
