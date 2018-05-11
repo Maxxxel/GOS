@@ -35,32 +35,32 @@ local extLib = require 'extLib'
 	returns
 	```lua
 	unit: the caster
-	...
+		...
 	spell: the spell object
-	.valid
-	.level
-	.name
-	.startPos -- Vector
-	.placementPos -- Vector
-	.target -- GameObject handle
-	.windup
-	.animation
-	.range
-	.mana
-	.width
-	.speed
-	.coneAngle
-	.coneDistance
-	.acceleration
-	.castFrame
-	.maxSpeed
-	.minSpeed
-	.spellWasCast
-	.isAutoAttack
-	.isCharging
-	.isChanneling
-	.startTime
-	.castEndTime
-	.endTime
-	.isStopped
+		.valid
+		.level
+		.name
+		.startPos -- Vector
+		.placementPos -- Vector
+		.target -- GameObject handle
+		.windup
+		.animation
+		.range
+		.mana
+		.width
+		.speed
+		.coneAngle
+		.coneDistance
+		.acceleration
+		.castFrame
+		.maxSpeed
+		.minSpeed
+		.spellWasCast
+		.isAutoAttack
+		.isCharging
+		.isChanneling
+		.startTime
+		.castEndTime
+		.endTime
+		.isStopped
 	```
