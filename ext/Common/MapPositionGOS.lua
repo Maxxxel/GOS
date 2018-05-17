@@ -87,10 +87,11 @@ if _G.MapPosition then return end
 	1.33 - added missing bushes
 	2.0 - better walls and fused with MapPosition
 	2.03 - fixed some errors
+        2.06 - performance increase for los
 --]]
 
 -- Dependencies ----------------------------------------------------------------
-local Version = 205
+local Version = 206
 local interval = 300 
 --[[
 	200: 64kb 28seconds
@@ -569,18 +570,18 @@ function los(x0, y0, x1, y1, callback)
 	local sx,sy,dx,dy
 
 	if x0 < x1 then
-		sx = 1
+		sx = 10
 		dx = x1 - x0
 	else
-		sx = -1
+		sx = -10
 		dx = x0 - x1
 	end
 
 	if y0 < y1 then
-		sy = 1
+		sy = 10
 		dy = y1 - y0
 	else
-		sy = -1
+		sy = -10
 		dy = y0 - y1
 	end
 
