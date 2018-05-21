@@ -1,5 +1,5 @@
 --[[
-		maxActivator v0.082
+		maxActivator v0.084
 		
 		by Maxxxel
 	
@@ -17,13 +17,14 @@
 			0.082 - Fixed AntiWard double Menu Entry
 			0.083 - Bugfix
 			0.084 - Bugfix (no item changes)
+			0.09 - Added gamsteron orb support, fixed shielding
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.084
+local version = 0.09
 
 local Timer = Game.Timer
 local sqrt, abs = math.sqrt, math.abs
@@ -131,14 +132,14 @@ local function GetDistance(A, B)
 	return sqrt(ABX * ABX + ABZ * ABZ)
 end
 
-class 'maxActivator'
-
-	function maxActivator:__init()
+local maxActivator = setmetatable({}, {
+	__call = function(self)
 		self:__loadTables()
 		self:__loadUnits()
 		self:__loadMenu()
 		self:__loadCallbacks()
 	end
+})
 
 	function maxActivator:__loadMenu()
 		self.menu = MenuElement({id = "maxActivator", name = "maxActivator v" .. version .. "", type = MENU})
@@ -407,25 +408,25 @@ class 'maxActivator'
 		}
 
 		self.ccNames = {
-			["Cripple"] = 3,
-			["Stun"] = 5,
-			["Silence"] = 7,
-			["Taunt"] = 8,
-			["Polymorph"] = 9,
-			["Slow"] = 10,
-			["Snare"] = 11,
-			["Sleep"] = 18,
-			["Nearsight"] = 19,
-			["Fear"] = 21,
-			["Charm"] = 22,
-			["Poison"] = 23,
-			["Suppression"] = 24,
-			["Blind"] = 25,
+			[3] = "Cripple",
+			[5] = "Stun",
+			[7] = "Silence",
+			[8] = "Taunt",
+			[9] = "Polymorph",
+			[10] = "Slow",
+			[11] = "Snare",
+			[18] = "Sleep",
+			[19] = "Nearsight",
+			[21] = "Fear",
+			[22] = "Charm",
+			[23] = "Poison",
+			[24] = "Suppression",
+			[25] = "Blind",
+			[28] = "Flee",
+			[30] = "Airborne",
+			[31] = "Disarm"
 			-- ["Shred"] = 27,
-			["Flee"] = 28,
 			-- ["Knockup"] = 29,
-			["Airborne"] = 30,
-			["Disarm"] = 31
 		}
 		
 		self.damgTarget = {}
@@ -515,16 +516,18 @@ class 'maxActivator'
 	end
 
 	function maxActivator:__OnDraw()
-		if self.menu.ward._d:Value() then
-			self:doWardDrawings()
-		end
+		if self.menu._se._e:Value() then
+			if self.menu.ward._d:Value() then
+				self:doWardDrawings()
+			end
 
-		if self.menu.anti._d:Value() then
-			self:doAntiDrawings()
-		end
-		
-		if self.menu._se._b:Value() then
-			Draw.Circle(Vector(Base), self.menu._se._r:Value())
+			if self.menu.anti._d:Value() then
+				self:doAntiDrawings()
+			end
+			
+			if self.menu._se._b:Value() then
+				Draw.Circle(Vector(Base), self.menu._se._r:Value())
+			end
 		end
 	end
 
@@ -535,7 +538,7 @@ class 'maxActivator'
 			end
 		end
 
-		return 0
+		return nil
 	end
 
 	function maxActivator:itemReady(id, ward, pot)
@@ -756,34 +759,41 @@ class 'maxActivator'
 		local qssMenu, mscMenu, mcrMenu = shldMenu["qss"], shldMenu["msc"], shldMenu["mcr"]
 
 		if qssMenu._e:Value() or mscMenu._e:Value() or mcrMenu._e:Value() then --Anti CC
-			if self:itemReady(3140) then
-				for ccName, ccType in pairs(self.ccNames) do
-					if qssMenu[ccName] and qssMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
-						self:castItem(myHero, 3140)
-					end
-				end
-			elseif self:itemReady(3139) then
-				for ccName, ccType in pairs(self.ccNames) do
-					if mscMenu[ccName] and mscMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
-						self:castItem(myHero, 3139)
-					end
-				end
-			elseif self:itemReady(3222) then
-				for i = 1, #self.Heroes.Allies do
-					local ally = self.Heroes.Allies[i]
+			if self:itemReady(3140) then --QSS
+				for i = 1, 31 do
+					local ccName = self.ccNames[i]
 
-					if ally.networkID ~= myHero.networkID and mcrMenu["help" .. ally.charName]:Value() then
-						for ccName, ccType in pairs(self.ccNames) do
-							if mcrMenu[ccName] and mcrMenu[ccName]:Value() and self:checkBuff(ally, "", ccType) then
-								self:castItem(ally, 3222, 650)
-							end
+					if ccName then
+						if qssMenu[ccName] and qssMenu[ccName]:Value() and self:checkBuff(myHero, "", i) then
+							self:castItem(myHero, 3140)
 						end
 					end
 				end
+			elseif self:itemReady(3139) then --Mercury
+				for i = 1, 31 do
+					local ccName = self.ccNames[i]
 
-				for ccName, ccType in pairs(self.ccNames) do
-					if mcrMenu[ccName] and mcrMenu[ccName]:Value() and self:checkBuff(myHero, "", ccType) then
-						self:castItem(myHero, 3222)
+					if ccName then
+						if mscMenu[ccName] and mscMenu[ccName]:Value() and self:checkBuff(myHero, "", i) then
+							self:castItem(myHero, 3139)
+						end
+					end
+				end
+			end
+
+			if self:itemReady(3222) then --Mikael
+				for i = 1, #self.Heroes.Allies do
+					local ally = self.Heroes.Allies[i]
+
+					ally = ally.networkID ~= myHero.networkID and mcrMenu["help" .. ally.charName]:Value() or myHero
+					for i = 1, 31 do
+						local ccName = self.ccNames[i]
+
+						if ccName then
+							if mcrMenu[ccName] and mcrMenu[ccName]:Value() and self:checkBuff(ally, "", i) then
+								self:castItem(ally, 3222, 650)
+							end
+						end
 					end
 				end
 			end
@@ -809,9 +819,10 @@ class 'maxActivator'
 		--Orb Target, Near Mouse, Near myHero
 		if mode == 1 then
 			target = 
+				_G.__gsoOrbwalker and __gsoTS:GetSelectedTarget() or
 				_G.EOWLoaded and _G.EOW:GetTarget() or 
 				_G.SDK and _G.SDK.Orbwalker:GetTarget() or 
-				_G.GOS and _G.GOS:GetTarget()
+				_G.GOS and _G.Orbwalker.Enabled:Value() and _G.GOS:GetTarget()
 		else
 			local nearest, range = nil, 99999
 
@@ -856,9 +867,10 @@ class 'maxActivator'
 
 	function maxActivator:isCombo()
 		local mode = 
+			_G.__gsoOrbwalker and _G.__gsoOrbwalker:GetMode() or
 			_G.EOWLoaded and _G.EOW:Mode() or
 			_G.SDK and (_G.SDK.Orbwalker.Modes[0] and "Combo" or _G.SDK.Orbwalker.Modes[1] and "Harass" or _G.SDK.Orbwalker.Modes[4] and "LastHit" or _G.SDK.Orbwalker.Modes[2] and "LaneClear" or "") or
-			_G.GOS and _G.GOS:GetMode() or ""
+			_G.GOS and _G.Orbwalker.Enabled:Value() and _G.GOS:GetMode() or ""
 
 		return mode == "Combo"
 	end
