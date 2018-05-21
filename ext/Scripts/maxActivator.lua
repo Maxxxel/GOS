@@ -1,6 +1,5 @@
 --[[
-		maxActivator v0.084
-		
+		maxActivator
 		by Maxxxel
 	
 	
