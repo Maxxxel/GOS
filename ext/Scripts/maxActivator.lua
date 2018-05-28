@@ -1,5 +1,6 @@
 --[[
-		maxActivator
+		maxActivator v0.084
+		
 		by Maxxxel
 	
 	
@@ -17,13 +18,14 @@
 			0.083 - Bugfix
 			0.084 - Bugfix (no item changes)
 			0.09 - Added gamsteron orb support, fixed shielding
+			0.091 - Disabled Cripple Buff
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.09
+local version = 0.091
 
 local Timer = Game.Timer
 local sqrt, abs = math.sqrt, math.abs
@@ -201,7 +203,7 @@ local maxActivator = setmetatable({}, {
 						-- end
 					elseif data.effect == "CC" then
 						self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
-						self.menu.shld[short]:MenuElement({id = "Cripple", name = "Clear Cripple", value = false})
+						-- self.menu.shld[short]:MenuElement({id = "Cripple", name = "Clear Cripple", value = false})
 						self.menu.shld[short]:MenuElement({id = "Charm", name = "Clear Charm", value = true})
 						self.menu.shld[short]:MenuElement({id = "Fear", name = "Clear Fear", value = true})
 						self.menu.shld[short]:MenuElement({id = "Flee", name = "Clear Flee", value = true})
@@ -407,7 +409,7 @@ local maxActivator = setmetatable({}, {
 		}
 
 		self.ccNames = {
-			[3] = "Cripple",
+			-- [3] = "Cripple",
 			[5] = "Stun",
 			[7] = "Silence",
 			[8] = "Taunt",
@@ -484,9 +486,15 @@ local maxActivator = setmetatable({}, {
 		-- end
 
 		-- for i = 0, 63 do
-		-- 	local buff = myHero:GetBuff(i)
+			-- local buff = myHero:GetBuff(i)
 
-		-- 	-- if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
+			-- if buff.count > 0 and buff.name ~= "" then 
+			-- 	print(buff.type)
+			-- 	print("\n")
+
+			-- end
+
+			-- if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
 		-- end
 
 		if self.menu._se._e:Value() and not myHero.dead then
