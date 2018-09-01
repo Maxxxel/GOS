@@ -1,5 +1,4 @@
 var https = require('follow-redirects').https;
-var outputName = "levelPresets.png";
 var url = "https://champion.gg";
 var champions = [
 	"Aatrox",
