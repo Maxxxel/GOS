@@ -1,7 +1,7 @@
 local levelPresets = {
-['Alistar']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+['Aatrox']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
 ['Ahri']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
@@ -11,41 +11,145 @@ local levelPresets = {
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['Aatrox']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+['Alistar']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Amumu']={
+  ['mostUsed']={'W','E','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Anivia']={
+  ['mostUsed']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Annie']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Ashe']={
+  ['mostUsed']={'W','Q','W','E','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'W','Q','W','Q','W','R','W','E','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['AurelionSol']={
+  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'W','Q','W','E','W','R','W','E','W','Q','R','Q','Q','Q','E','R','E','E'}
+},
+['Azir']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Bard']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['DrMundo']={
+['Blitzcrank']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['Evelynn']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Ekko']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Lucian']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'E','Q','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+['Brand']={
+  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
 },
 ['Braum']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['Lulu']={
-  ['mostUsed']={'E','Q','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'E','Q','W','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
+['Caitlyn']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Camille']={
+  ['mostUsed']={'Q','E','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'W','E','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Cassiopeia']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['ChoGath']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'Q','E','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Corki']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Darius']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Diana']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['DrMundo']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
 ['Draven']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','W','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['Kayle']={
+['Ekko']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Elise']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','Q','W','R','W','W','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Evelynn']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Ezreal']={
+  ['mostUsed']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','E','W','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Fiddlesticks']={
   ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+  ['highestRate']={'E','Q','W','E','Q','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Fiora']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Fizz']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'E','W','Q','W','E','R','E','E','E','W','R','W','W','Q','Q','R','Q','Q'}
+},
+['Galio']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Gangplank']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Garen']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','Q','E','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Gnar']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Gragas']={
+  ['mostUsed']={'W','E','Q','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Graves']={
+  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','E','W','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Hecarim']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Heimerdinger']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
 },
 ['Illaoi']={
   ['mostUsed']={'Q','W','E','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
@@ -55,73 +159,13 @@ local levelPresets = {
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['Amumu']={
-  ['mostUsed']={'W','E','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+['Ivern']={
+  ['mostUsed']={'Q','E','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['Jhin']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Jinx']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Karma']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Jayce']={
-  ['mostUsed']={'Q','E','W','Q','Q','W','Q','W','Q','W','Q','W','W','E','E','E','E','E'},
-  ['highestRate']={'Q','W','E','Q','Q','W','Q','W','Q','W','Q','W','W','E','E','E','E','E'}
-},
-['Gragas']={
-  ['mostUsed']={'W','E','Q','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Heimerdinger']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Leona']={
-  ['mostUsed']={'Q','E','W','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Kled']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Elise']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','E','Q','W','R','W','W','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['KaiSa']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['KogMaw']={
-  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
-  ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Hecarim']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Kayn']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','E','W','E','E','R','E','Q','Q','Q','R','Q','E','W','W','R','W','W'}
-},
-['Caitlyn']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Karthus']={
-  ['mostUsed']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Lissandra']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+['Janna']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'W','Q','E','W','W','R','E','E','E','E','R','W','W','Q','Q','R','Q','Q'}
 },
 ['JarvanIV']={
   ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
@@ -131,321 +175,389 @@ local levelPresets = {
   ['mostUsed']={'E','Q','W','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
   ['highestRate']={'E','Q','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['LeeSin']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','E','W','Q','R','Q','W','W','W','R','Q','Q','E','E','R','E','E'}
+['Jayce']={
+  ['mostUsed']={'Q','E','W','Q','Q','W','Q','W','Q','W','Q','W','W','E','E','E','E','E'},
+  ['highestRate']={'Q','W','E','Q','Q','W','Q','W','Q','W','Q','W','W','E','E','E','E','E'}
 },
-['Morgana']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','Q','E','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Kindred']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','E','W','W','R','W','Q','Q','Q','R','Q','W','E','E','R','E','E'}
-},
-['Diana']={
+['Jhin']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['LeBlanc']={
-  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
-  ['highestRate']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Bard']={
+['Jinx']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['KaiSa']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Kalista']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','Q','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Karma']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['Brand']={
-  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
-  ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['ChoGath']={
-  ['mostUsed']={'E','W','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'Q','E','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+['Karthus']={
+  ['mostUsed']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
 ['Kassadin']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','W','E','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
 },
-['Azir']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Varus']={
-  ['mostUsed']={'E','W','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'E','W','Q','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Pantheon']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Fiora']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Malphite']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
-},
 ['Katarina']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','E','W','Q','Q','R','E','E','E','E','R','Q','Q','W','W','R','W','W'}
 },
-['Taliyah']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Skarner']={
-  ['mostUsed']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
-},
-['Camille']={
-  ['mostUsed']={'Q','E','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'W','E','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
-},
-['Ryze']={
-  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','Q','E','E','W','W','W','W'},
-  ['highestRate']={'W','E','Q','Q','Q','R','E','E','E','E','R','Q','Q','Q','W','W','W','W'}
-},
-['Tristana']={
-  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'E','W','E','Q','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
-},
-['Xayah']={
-  ['mostUsed']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'W','E','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
-},
-['MissFortune']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'E','W','E','Q','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
-},
-['XinZhao']={
-  ['mostUsed']={'E','Q','W','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
-  ['highestRate']={'E','Q','W','E','Q','R','E','Q','E','E','R','Q','Q','W','W','R','W','W'}
-},
-['Lux']={
+['Kayle']={
   ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
 },
-['Teemo']={
-  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Fiddlesticks']={
-  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','E','Q','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Riven']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','E','R','E','E','E','W','R','W','W'}
-},
-['Nami']={
-  ['mostUsed']={'W','E','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
-  ['highestRate']={'W','E','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
-},
-['Urgot']={
+['Kayn']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+  ['highestRate']={'Q','E','W','E','E','R','E','Q','Q','Q','R','Q','E','W','W','R','W','W'}
 },
-['Quinn']={
-  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Twitch']={
-  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'E','W','E','Q','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
-},
-['Nautilus']={
-  ['mostUsed']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'W','Q','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
-},
-['VelKoz']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Zilean']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
-},
-['Taric']={
-  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'W','E','Q','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Vladimir']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['TahmKench']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Sion']={
+['Kennen']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Rakan']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'E','W','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
-},
-['Corki']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['TwistedFate']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Renekton']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Shaco']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'W','E','Q','Q','Q','R','E','E','E','E','R','Q','Q','W','W','R','W','W'}
-},
-['Udyr']={
-  ['mostUsed']={'Q','E','W','Q','Q','E','Q','E','Q','E','E','W','W','W','W','R','R','R'},
-  ['highestRate']={'Q','W','E','Q','Q','E','Q','E','Q','E','E','W','W','W','W','R','R','R'}
-},
-['Sivir']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
-},
-['Ziggs']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Tryndamere']={
-  ['mostUsed']={'E','Q','Q','W','Q','R','Q','E','Q','E','E','E','W','W','W','W','R','R'},
-  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','E','E','W','W','W','W','R','R'}
-},
-['Nidalee']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','E','Q','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Veigar']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['RekSai']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Shyvana']={
-  ['mostUsed']={'W','E','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
-  ['highestRate']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Rammus']={
-  ['mostUsed']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Zac']={
-  ['mostUsed']={'W','E','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'W','Q','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
-},
-['Xerath']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'E','Q','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
 ['KhaZix']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','W','E','W','Q','E','R','Q','Q','Q','R','W','W','W','E','R','E','E'}
 },
-['Sona']={
+['Kindred']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','W','W','R','W','Q','Q','Q','R','Q','W','E','E','R','E','E'}
+},
+['Kled']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','Q','W','E','R','Q','Q','Q','W','R','W','W','E','E','R','E','E'}
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['Anivia']={
-  ['mostUsed']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
-},
-['Cassiopeia']={
-  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
-},
-['Sejuani']={
-  ['mostUsed']={'E','W','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
-  ['highestRate']={'E','W','Q','Q','E','R','Q','E','E','W','R','W','E','Q','Q','R','W','W'}
-},
-['Rengar']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','W','E','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
-},
-['Ashe']={
-  ['mostUsed']={'W','Q','W','E','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
-  ['highestRate']={'W','Q','W','Q','W','R','W','E','W','Q','R','Q','Q','E','E','R','E','E'}
-},
-['Shen']={
-  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Poppy']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Vi']={
-  ['mostUsed']={'W','E','Q','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Zed']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
-},
-['Mordekaiser']={
-  ['mostUsed']={'E','W','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+['KogMaw']={
+  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
   ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
 },
-['Warwick']={
-  ['mostUsed']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
-  ['highestRate']={'Q','E','W','W','Q','R','W','W','W','Q','R','Q','Q','E','E','R','E','E'}
+['LeBlanc']={
+  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
 },
-['Vayne']={
+['LeeSin']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','W','Q','R','Q','Q','Q','W','R','W','W','E','E','R','E','E'}
+  ['highestRate']={'Q','W','E','W','Q','R','Q','Q','Q','E','R','E','E','E','W','R','W','W'}
 },
-['Swain']={
-  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+['Leona']={
+  ['mostUsed']={'Q','E','W','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Lissandra']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Lucian']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'E','Q','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Lulu']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'E','Q','W','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
+},
+['Lux']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Malphite']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Malzahar']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
 },
 ['Maokai']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','W','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['Olaf']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+['MasterYi']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['MissFortune']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'E','W','E','Q','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
+},
+['Mordekaiser']={
+  ['mostUsed']={'E','W','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Morgana']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
   ['highestRate']={'Q','W','Q','E','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['Darius']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
-  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+['Nami']={
+  ['mostUsed']={'W','E','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
+  ['highestRate']={'W','E','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
 },
-['Galio']={
-  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
-  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+['Nasus']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','Q','E','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Nautilus']={
+  ['mostUsed']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'W','Q','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
+},
+['Nidalee']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','E','Q','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
 },
 ['Nocturne']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
-['Volibear']={
-  ['mostUsed']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+['Nunu']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','E','W','E','Q','R','Q','E','Q','E','R','Q','E','W','W','R','W','W'}
+},
+['Olaf']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','Q','E','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Orianna']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Ornn']={
+  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Pantheon']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Poppy']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Pyke']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Quinn']={
+  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'E','Q','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Rakan']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'E','W','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
+},
+['Rammus']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['RekSai']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Renekton']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Rengar']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
+},
+['Riven']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','E','R','E','E','E','W','R','W','W'}
+},
+['Rumble']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Ryze']={
+  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','Q','E','E','W','W','W','W'},
+  ['highestRate']={'W','E','Q','Q','Q','R','E','E','E','E','R','Q','Q','Q','W','W','W','W'}
+},
+['Sejuani']={
+  ['mostUsed']={'E','W','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
+  ['highestRate']={'E','W','Q','Q','E','R','Q','E','E','W','R','W','E','Q','Q','R','W','W'}
+},
+['Shaco']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'W','E','Q','Q','Q','R','E','E','E','E','R','Q','Q','W','W','R','W','W'}
+},
+['Shen']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Shyvana']={
+  ['mostUsed']={'W','E','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
+  ['highestRate']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Singed']={
+  ['mostUsed']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Sion']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Sivir']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Skarner']={
+  ['mostUsed']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
+},
+['Sona']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','Q','W','E','R','Q','Q','Q','W','R','W','W','E','E','R','E','E'}
 },
 ['Soraka']={
   ['mostUsed']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
   ['highestRate']={'Q','W','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
 },
-['Janna']={
+['Swain']={
+  ['mostUsed']={'E','Q','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Syndra']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['TahmKench']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Taliyah']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Talon']={
+  ['mostUsed']={'W','Q','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'W','Q','E','W','W','R','Q','W','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Taric']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'W','E','Q','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Teemo']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Thresh']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Tristana']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','W','E','Q','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Trundle']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'E','Q','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Tryndamere']={
+  ['mostUsed']={'E','Q','Q','W','Q','R','Q','E','Q','E','E','E','W','W','W','W','R','R'},
+  ['highestRate']={'E','Q','W','Q','Q','R','Q','E','Q','E','E','E','W','W','W','W','R','R'}
+},
+['TwistedFate']={
+  ['mostUsed']={'W','Q','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'W','Q','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Twitch']={
+  ['mostUsed']={'E','W','Q','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','W','E','Q','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Udyr']={
+  ['mostUsed']={'Q','E','W','Q','Q','E','Q','E','Q','E','E','W','W','W','W','R','R','R'},
+  ['highestRate']={'Q','W','E','Q','Q','E','Q','E','Q','E','E','W','W','W','W','R','R','R'}
+},
+['Urgot']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Varus']={
   ['mostUsed']={'E','W','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
-  ['highestRate']={'W','Q','E','W','W','R','E','E','E','E','R','W','W','Q','Q','R','Q','Q'}
+  ['highestRate']={'E','W','Q','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Vayne']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','W','Q','R','Q','Q','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Veigar']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['VelKoz']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'Q','W','Q','E','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['Vi']={
+  ['mostUsed']={'W','E','Q','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Viktor']={
+  ['mostUsed']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'Q','E','E','W','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Vladimir']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','Q','W','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Volibear']={
+  ['mostUsed']={'W','E','Q','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'E','W','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
+},
+['Warwick']={
+  ['mostUsed']={'Q','W','E','W','W','R','W','Q','W','Q','R','Q','Q','E','E','R','E','E'},
+  ['highestRate']={'Q','E','W','W','Q','R','W','W','W','Q','R','Q','Q','E','E','R','E','E'}
+},
+['Wukong']={
+  ['mostUsed']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'},
+  ['highestRate']={'E','Q','W','E','E','R','E','Q','E','Q','R','Q','Q','W','W','R','W','W'}
+},
+['Xayah']={
+  ['mostUsed']={'Q','E','W','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'W','E','Q','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'}
+},
+['Xerath']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'},
+  ['highestRate']={'E','Q','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
+},
+['XinZhao']={
+  ['mostUsed']={'E','Q','W','W','W','R','W','E','W','E','R','E','E','Q','Q','R','Q','Q'},
+  ['highestRate']={'E','Q','W','E','Q','R','E','Q','E','E','R','Q','Q','W','W','R','W','W'}
+},
+['Yasuo']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','E','W','E','Q','R','Q','Q','Q','E','R','E','E','W','W','R','W','W'}
 },
 ['Yorick']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','E','W','Q','Q','R','Q','W','Q','W','R','W','W','E','E','R','E','E'}
 },
-['Pyke']={
-  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+['Zac']={
+  ['mostUsed']={'W','E','Q','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'},
+  ['highestRate']={'W','Q','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
+},
+['Zed']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
   ['highestRate']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Ziggs']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
+},
+['Zilean']={
+  ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','E','E','R','E','W','E','W','R','W','W','Q','Q','R','Q','Q'}
+},
+['Zoe']={
+  ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
+  ['highestRate']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'}
 },
 ['Zyra']={
   ['mostUsed']={'Q','W','E','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
