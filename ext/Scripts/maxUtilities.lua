@@ -1,114 +1,118 @@
 --[[
-		maxActivator v0.084
-		
-		by Maxxxel
+		maxUtilities
+		(by Maxxxel)
 	
 	
 		Changelog:
-			0.01 - Creation
-			0.02 - Restructured, Added Ward System
-			0.03 - Added Anti Ward/Stealth
-			0.04 - Added Anti CC
-			0.05 - 8.2 Changes to Support Items/Ward Items
-			0.06 - Fixed Anti-Stealth and Damage Modules
-			0.07 - Fixed Pot onDeath, added Base Debug Drawing, increased Base Range, Added Arcane Sweeper
-			0.08 - Fixed Pot Ammo, added new way of AA Detection, fixed Damage Items
-			0.081 - Bugfix
-			0.082 - Fixed AntiWard double Menu Entry
-			0.083 - Bugfix
-			0.084 - Bugfix (no item changes)
-			0.09 - Added gamsteron orb support, fixed shielding
-			0.091 - Disabled Cripple Buff
+			0.01 	- Creation
+			0.02 	- Restructured, Added Ward System
+			0.03 	- Added Anti Ward/Stealth
+			0.04 	- Added Anti CC
+			0.05 	- 8.2 Changes to Support Items/Ward Items
+			0.06 	- Fixed Anti-Stealth and Damage Modules
+			0.07 	- Fixed Pot onDeath, added self.base Debug Drawing, increased self.base Range, Added Arcane Sweeper
+			0.08 	- Fixed Pot Ammo, added new way of AA Detection, fixed Damage Items
+			0.081 	- Bugfix
+			0.082 	- Fixed AntiWard double Menu Entry
+			0.083 	- Bugfix
+			0.084 	- Bugfix (no item changes)
+			0.09 	- Added gamsteron orb support, fixed shielding
+			0.091 	- Disabled Cripple Buff
+			0.1 	- 8.17 + AutoUpdate + removed some Items + AutoLevel + Renaming + AntiAFK
 
 		To-Do:
 			-Special Items
 			-Summoners
 			-Shield Items
 --]]
-local version = 0.091
 
+local version = 0.1
+local _presetData
 local Timer = Game.Timer
+local Control = Control
 local sqrt, abs = math.sqrt, math.abs
 local MapID = Game.mapID
-local Base = 
-			MapID == TWISTED_TREELINE and myHero.team == 100 and {x=1076, y=150, z=7275} or myHero.team == 200 and {x=14350, y=151, z=7299} or
-			MapID == SUMMONERS_RIFT and myHero.team == 100 and {x=419,y=182,z=438} or myHero.team == 200 and {x=14303,y=172,z=14395} or
-			MapID == HOWLING_ABYSS and myHero.team == 100 and {x=971,y=-132,z=1180} or myHero.team == 200 and {x=11749,y=-131,z=11519} or
-			MapID == CRYSTAL_SCAR and {x = 0, y = 0, z = 0}
 
 local itemsIndex = {
 	[3060] = {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
-	-- [3069] = {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
-	-- [3092] = {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
+	[3069] = {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
+	[3092] = {name = "Frost Queen's Claim", 		type = "spcl", id = 3092, target = "self", effect = "Slow"},
 	[3050] = {name = "Zeke's Convergence", 			type = "spcl", id = 3050, target = "bind", effect = "Boost Ally"},
 	[3056] = {name = "Ohmwrecker", 					type = "spcl", id = 3056, target = "self", effect = "Stop Turrets"},
 	[3800] = {name = "Righteous Glory", 			type = "spcl", id = 3800, target = "self", effect = "Speed"},
 	[3512] = {name = "Zz'Rot Portal", 				type = "spcl", id = 3512, target = "spot", effect = "Portal"},
 	[3142] = {name = "Youmuu's Ghostblade", 		type = "spcl", id = 3142, target = "self", effect = "Speed"},
 	[3143] = {name = "Randuin's Omen", 				type = "spcl", id = 3143, target = "self", effect = "Slow"},
+	[0000] = {name = "Gargoyle Stoneplate", 		type = "defe", id = 0000, target = "self", effect = "Def Up"},
+	[0000] = {name = "Knight's Vow", 				type = "defe", id = 0000, target = "both", effect = "Def Up"},
+	[0000] = {name = "Shurelya's Reverie", 			type = "spcl", id = 0000, target = "both", effect = "Speed"},
+	[0000] = {name = "Zeke's Convergence",			type = "spcl", id = 0000, target = "both", effect = "Damage"},
+	[0000] = {name = "Twin Shadows", 				type = "defe", id = 0000, target = "self", effect = "Slow"},
+	[0000] = {name = "Redemption", 					type = "spcl", id = 0000, target = "both", effect = "Hybrid"},
 }
 
 local damageItems = {
-	["tia"] = {name = "Tiamat", id = 3077, range = 300},
-	["hyd"] = {name = "Ravenous Hydra", id = 3074, range = 300},
-	["tit"] = {name = "Titanic Hydra", id = 3748, range = 300},
-	["bot"] = {name = "Blade of the Ruined King", id = 3153, range = 600},
-	["bil"] = {name = "Bilgewater Cutlass", id = 3144, range = 600},
-	["pro"] = {name = "Hextech Protobelt-01", id = 3152, range = 800},
-	["glp"] = {name = "Hextech GLP-800", id = 3030, range = 800},
-	["gun"] = {name = "Hextech Gunblade", id = 3146, range = 700}
+	["tia"] = {name = "Tiamat", id = 3077, range = 300, icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/e/e3/Tiamat_item.png"},
+	["hyd"] = {name = "Ravenous Hydra", id = 3074, range = 300, icon = "https://vignette1.wikia.nocookie.net/leagueoflegends/images/e/e8/Ravenous_Hydra_item.png"},
+	["tit"] = {name = "Titanic Hydra", id = 3748, range = 300, icon = "https://vignette1.wikia.nocookie.net/leagueoflegends/images/2/22/Titanic_Hydra_item.png"},
+	["bot"] = {name = "Blade of the Ruined King", id = 3153, range = 600, icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/2/2f/Blade_of_the_Ruined_King_item.png"},
+	["bil"] = {name = "Bilgewater Cutlass", id = 3144, range = 600, icon = "https://vignette1.wikia.nocookie.net/leagueoflegends/images/4/44/Bilgewater_Cutlass_item.png"},
+	["pro"] = {name = "Hextech Protobelt-01", id = 3152, range = 800, icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/8/8d/Hextech_Protobelt-01_item.png"},
+	["glp"] = {name = "Hextech GLP-800", id = 3030, range = 800, icon = "https://vignette4.wikia.nocookie.net/leagueoflegends/images/c/c9/Hextech_GLP-800_item.png"},
+	["gun"] = {name = "Hextech Gunblade", id = 3146, range = 700, icon = "https://vignette4.wikia.nocookie.net/leagueoflegends/images/6/64/Hextech_Gunblade_item.png"},
 }
 
 local consumableItems = {
-	["bor"] = {name = "Biscuit of Rejuvenation", id = 2010, type = "", buffName = "ItemMiniRegenPotion"},
-	["hpp"] = {name = "Health Potion", id = 2003, type = "", buffName = "RegenerationPotion"},
-	["rfp"] = {name = "Refillable Potion", id = 2031, type = "", buffName = "ItemCrystalFlask"},
-	["hup"] = {name = "Hunter's Potion", id = 2032, type = "mph", buffName = "ItemCrystalFlaskJungle"},
-	["crp"] = {name = "Corrupting Potion", id = 2033, type = "mph", buffName = "ItemDarkCrystalFlask"},
-	["eos"] = {name = "Elixir of Sorcery", id = 2139, type = "mph", buffName = "ElixirOfSorcery"},
-	["eoi"] = {name = "Elixir of Iron", id = 2138, type = "", buffName = "ElixirOfIron"}
+	-- ["bor"] = {name = "Biscuit of Rejuvenation", id = 2010, type = "", buffName = "ItemMiniRegenPotion", icon = "https://vignette4.wikia.nocookie.net/leagueoflegends/images/0/01/Total_Biscuit_of_Rejuvenation_item.png"},
+	["hpp"] = {name = "Health Potion", id = 2003, type = "", buffName = "RegenerationPotion", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/1/13/Health_Potion_item.png"},
+	["rfp"] = {name = "Refillable Potion", id = 2031, type = "", buffName = "ItemCrystalFlask", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/7/7f/Refillable_Potion_item.png"},
+	["hup"] = {name = "Hunter's Potion", id = 2032, type = "mph", buffName = "ItemCrystalFlaskJungle", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/6/63/Hunter%27s_Potion_item.png"},
+	["crp"] = {name = "Corrupting Potion", id = 2033, type = "mph", buffName = "ItemDarkCrystalFlask", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/8/87/Corrupting_Potion_item.png"},
+	["eos"] = {name = "Elixir of Sorcery", id = 2139, type = "mph", buffName = "ElixirOfSorcery", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/27/Elixir_of_Sorcery_item.png"},
+	["eoi"] = {name = "Elixir of Iron", id = 2138, type = "", buffName = "ElixirOfIron", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/6/65/Elixir_of_Iron_item.png"},
 }
 
 local wardItems = {
-	["wrt"] = {name = "Warding Totem", 		id = 3340, range = 600},
-	["eof"] = {name = "Frostfang", 		id = 3098, range = 600},
-	["eow"] = {name = "Remnant of the Watchers", id = 3092, range = 600},
-	["frf"] = {name = "Nomad's Medallion", 		id = 3096, range = 600},
-	["roa"] = {name = "Remnant of the Ascended", id = 3069, range = 600},
-	["tab"] = {name = "Targon's Brace", 		id = 3097, range = 600},
-	["frf"] = {name = "Remnant of the Aspect", 	id = 3401, range = 600},
-	["ctw"] = {name = "Control Ward", 		id = 2055, range = 600},
-	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000}
+	["wrt"] = {name = "Warding Totem", 		id = 3340, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/e/e2/Warding_Totem_item.png"},
+	["eof"] = {name = "Eye of Frost", 		id = 3098, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/26/Eye_of_Frost_item.png"},
+	["eow"] = {name = "Eye of the Watchers", id = 3092, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/1/18/Eye_of_the_Watchers_item.png"},
+	["frf"] = {name = "Nomad's Eye", 		id = 3096, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/a/a8/Nomad%27s_Eye_item.png"},
+	["roa"] = {name = "Eye of the Ascension", id = 3069, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/b/b4/Eye_of_Ascension_item.png"},
+	["tab"] = {name = "Celestial Eye", 		id = 3097, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/29/Celestial_Eye_item.png"},
+	["frf"] = {name = "Eye of the Aspect", 	id = 3401, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/6/64/Eye_of_the_Aspect_item.png"},
+	["ctw"] = {name = "Control Ward", 		id = 2055, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/1/1b/Control_Ward_item.png"},
+	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/7/75/Farsight_Alteration_item.png"}
 }
 
 local shieldItems = {
 	-- ["stw"] = {name = "Stopwatch", 				id = 2420, target = "self", effect = "Stasis"},
 	-- ["zhg"] = {name = "Zhonya's Hourglass", 	id = 3157, target = "self", effect = "Stasis"},
 	-- ["eon"] = {name = "Edge of Night", 			id = 3814, target = "self", effect = "Spell Shield"}, to Situational
-	["qss"] = {name = "Quicksilver Sash", 		id = 3140, target = "self", effect = "CC"},
-	["msc"] = {name = "Mercurial Scimittar", 	id = 3139, target = "self", effect = "CC"},
-	["mcr"] = {name = "Mikael's Crucible", 		id = 3222, target = "unit", range = 0650, effect = "CC"},
+	["qss"] = {name = "Quicksilver Sash", 		id = 3140, target = "self", effect = "CC", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/f/f9/Quicksilver_Sash_item.png"},
+	["msc"] = {name = "Mercurial Scimittar", 	id = 3139, target = "self", effect = "CC", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/0/0a/Mercurial_Scimitar_item.png"},
+	["mcr"] = {name = "Mikael's Crucible", 		id = 3222, target = "unit", range = 0650, effect = "CC", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/d/de/Mikael%27s_Crucible_item.png"},
 	-- ["lis"] = {name = "Locket of the Iron Solari", id = 3190, target = "unit", range = 0700, effect = "Shield"},
-	-- ["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},
+	-- ["fom"] = {name = "Face of the Mountain", 	id = 3401, target = "unit", range = 1100, effect = "Shield"},4
+	-- Seraphs Embrace
 }
 
-local sweepModRange = {
-	500, 500, 500,
-	800, 800, 800,
-	1100, 1100, 1100,
-	1400, 1400, 1400,
-	1700, 1700, 1700,
-	2000, 2000, 2000
-}
+-- local sweepModRange = {
+-- 	500, 500, 500,
+-- 	800, 800, 800,
+-- 	1100, 1100, 1100,
+-- 	1400, 1400, 1400,
+-- 	1700, 1700, 1700,
+-- 	2000, 2000, 2000
+-- }
 
-local sweepModRadius = {
-	450, 450, 450,
-	475, 475, 475,
-	500, 500, 500,
-	525, 525, 525,
-	550, 550, 550,
-	575, 575, 575
-}
+-- local sweepModRadius = {
+-- 	450, 450, 450,
+-- 	475, 475, 475,
+-- 	500, 500, 500,
+-- 	525, 525, 525,
+-- 	550, 550, 550,
+-- 	575, 575, 575
+-- }
 
 local oracleModRadius = {
 	660, 660, 660, 660, 660, 660, 660, 660, 660, 660,
@@ -119,10 +123,22 @@ local oracleModRadius = {
 
 local antiWardItems = {
 	-- ["swe"] = {name = "Sweeping Lens", id = 3341, range = -1, radius = -1},
-	["orc"] = {name = "Oracle Lens", id = 3364, range = 0000, radius = -2},
-	["ctw"] = {name = "Control Ward", id = 2055, range = 600, radius = 600},
-	["hts"] = {name = "Arcane Sweeper", id = 3348, range = 800, radius = 375}
+	["orc"] = {name = "Oracle Lens", id = 3364, range = 0000, radius = -2, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/c/c2/Oracle_Lens_item.png"},
+	["ctw"] = {name = "Control Ward", id = 2055, range = 600, radius = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/1/1b/Control_Ward_item.png"},
+	-- ["hts"] = {name = "Arcane Sweeper", id = 3348, range = 800, radius = 375, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/8/8d/Hextech_Sweeper_item.png"},
 }
+
+local function ReadFile(path, fileName)
+	local file = io.open(path .. fileName, "r")
+	if not file then return false end
+	local result = file:read()
+	file:close()
+	return result
+end
+
+if ReadFile(COMMON_PATH, 'levelPresets.lua') then
+	_presetData = require 'levelPresets'
+end
 
 local function GetDistance(A, B)
 	local A = A.pos or A
@@ -133,7 +149,7 @@ local function GetDistance(A, B)
 	return sqrt(ABX * ABX + ABZ * ABZ)
 end
 
-local maxActivator = setmetatable({}, {
+local maxUtilities = setmetatable({}, {
 	__call = function(self)
 		self:__loadTables()
 		self:__loadUnits()
@@ -142,23 +158,23 @@ local maxActivator = setmetatable({}, {
 	end
 })
 
-	function maxActivator:__loadMenu()
-		self.menu = MenuElement({id = "maxActivator", name = "maxActivator v" .. version .. "", type = MENU})
+	function maxUtilities:__loadMenu()
+		self.menu = MenuElement({id = "maxUtilities", name = " maxUtilities v" .. version .. "", type = MENU, leftIcon = "http://img4host.net/upload//021635045b8bf518531d2.png"})
 			self.menu:MenuElement({id = "ward", name = "Ward", type = MENU})
 				self.menu.ward:MenuElement({id = "_e", name = "Enable Ward", value = true})
 				self.menu.ward:MenuElement({id = "_m", name = "Warding Mode", value = 1, drop = {"Auto", "Mouse Hover"}})
 				self.menu.ward:MenuElement({id = "_d", name = "Draw Spots", value = true})
 				self.menu.ward:MenuElement({id = "info", name = "+++ ITEMS +++", type = SPACE})
 				for short, data in pairs(wardItems) do
-					self.menu.ward:MenuElement({id = short, name = data.name, value = true})
+					self.menu.ward:MenuElement({id = short, name = data.name, value = true, leftIcon = data.icon})
 				end
 
-			self.menu:MenuElement({id = "anti", 	name = "Anti-Ward", type = MENU})
+			self.menu:MenuElement({id = "anti", 	name = " Anti-Ward", type = MENU, leftIcon = "https://i.warosu.org/data/jp/img/0094/62/1343505303426.png"})
 				self.menu.anti:MenuElement({id = "_e", 	name = "Enable Anti-Ward", value = true})
 				self.menu.anti:MenuElement({id = "_d", 	name = "Draw Enemy Wards", value = true})
 				self.menu.anti:MenuElement({id = "info", name = "+++ ITEMS +++", type = SPACE})
 				for short, data in pairs(antiWardItems) do
-					self.menu.anti:MenuElement({id = short, name = data.name, value = true})
+					self.menu.anti:MenuElement({id = short, name = data.name, value = true, leftIcon = data.icon})
 				end
 				for unit in pairs(self.antiWardUnits) do
 					for i = 1, #self.Heroes.Enemies do
@@ -173,16 +189,16 @@ local maxActivator = setmetatable({}, {
 							self.menu.anti:MenuElement({id = unit, name = "Reveal " .. unit, type = MENU})
 
 							for short, data in pairs(antiWardItems) do
-								self.menu.anti[unit]:MenuElement({id = short, name = data.name, value = true})
+								self.menu.anti[unit]:MenuElement({id = short, name = data.name, value = true, leftIcon = data.icon})
 							end
 						end
 					end
 				end
 
-			self.menu:MenuElement({id = "shld", 	name = "Shield", type = MENU})
+			self.menu:MenuElement({id = "shld", 	name = " Shield", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/theavengersmovie/images/3/37/Cap_shield.png"})
 				self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
 				for short, data in pairs(shieldItems) do
-					self.menu.shld:MenuElement({id = short, name = data.name, type = MENU})
+					self.menu.shld:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
 					self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
 
 					if data.effect == "Stasis" then
@@ -239,20 +255,20 @@ local maxActivator = setmetatable({}, {
 					end
 				end
 
-			self.menu:MenuElement({id = "damg", 	name = "Damage", type = MENU})
+			self.menu:MenuElement({id = "damg", 	name = " Damage", type = MENU, leftIcon = "https://www.freepngimg.com/thumb/sword/8-sword-png-image-thumb.png"})
 				self.menu.damg:MenuElement({id = "_e", 	name = "Enable Damage", value = true})
 				for short, data in pairs(damageItems) do
-					self.menu.damg:MenuElement({id = short, name = data.name, type = MENU})
+					self.menu.damg:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
 					self.menu.damg[short]:MenuElement({id = "_e", name = "Enable", value = true})
 					self.menu.damg[short]:MenuElement({id = "_c", name = "Only on Combo", value = true})
 					self.menu.damg[short]:MenuElement({id = "mode", name = "Mode", value = 3, drop = {"Before Attack", "After Attack", "Always"}})
 					self.menu.damg[short]:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
 				end
 
-			self.menu:MenuElement({id = "cnsm", 	name = "Consume", type = MENU})
+			self.menu:MenuElement({id = "cnsm", 	name = " Consume", type = MENU, leftIcon = "https://www.freepngimg.com/thumb/beer/48-beer-png-image-thumb.png"})
 				self.menu.cnsm:MenuElement({id = "_e", 	name = "Enable Consume", value = true})
 				for short, data in pairs(consumableItems) do
-					self.menu.cnsm:MenuElement({id = short, name = data.name, type = MENU})
+					self.menu.cnsm:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
 					self.menu.cnsm[short]:MenuElement({id = "_e", name = "Enable", value = true})
 					self.menu.cnsm[short]:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
 
@@ -262,7 +278,7 @@ local maxActivator = setmetatable({}, {
 					end
 				end
 
-			self.menu:MenuElement({id = "spcl", 	name = "Special", type = MENU})
+			self.menu:MenuElement({id = "spcl", 	name = " Special", type = MENU, leftIcon = "http://www.toxicfamily.de/wp-content/selfprog/pics/Special.png"})
 				-- self.menu.spcl:MenuElement({id = "_e", 	name = "Enable Special", value = true})
 				-- {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
 				-- {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
@@ -274,7 +290,7 @@ local maxActivator = setmetatable({}, {
 				-- {name = "Youmuu's Ghostblade", 		type = "spcl", id = 3142, target = "self", effect = "Speed"},
 				-- {name = "Randuin's Omen", 				type = "spcl", id = 3143, target = "self", effect = "Slow"},
 
-			self.menu:MenuElement({id = "summs", 	name = "Summoner", type = MENU})
+			self.menu:MenuElement({id = "summs", 	name = " Summoner", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/yugioh/images/9/9b/BAM-Destroy_Spell.png"})
 				-- self.menu.summs:MenuElement({id = "_e", 	name = "Enable Summoner", value = true})
 				-- Heal
 				-- Barrier
@@ -283,18 +299,24 @@ local maxActivator = setmetatable({}, {
 				-- Ignite
 				-- Smite
 
-			self.menu:MenuElement({id = "_se", 		name = "Settings", type = MENU})
+			self:doAutoLevelMenu()
+
+			self.menu:MenuElement({id = "aafk", 	name = " Anti-AFK", type = MENU, leftIcon = "https://archive-media-1.nyafuu.org/bant/image/1496/34/1496346507181.png"})
+				self.menu.aafk:MenuElement({id = "_e", name = "Enabled", value = true})
+
+			self.menu:MenuElement({id = "_se", 		name = " Settings", type = MENU, leftIcon = "http://icons.iconarchive.com/icons/dtafalonso/android-lollipop/256/Settings-icon.png"})
 				self.menu._se:MenuElement({id = "_e", 	name = "Global Enable", value = true})
 				self.menu._se:MenuElement({id = "_b", 	name = "DebugBase", value = false})
 				self.menu._se:MenuElement({id = "_r", 	name = "No Pots Range", value = 1000, min = 0, max = 2000, step = 100})
 	end
 
-	function maxActivator:__loadCallbacks()
+	function maxUtilities:__loadCallbacks()
 		Callback.Add("Tick", function() self:__OnTick() end)
 		Callback.Add("Draw", function() self:__OnDraw() end)
+		Callback.Add("WndMsg", function(...) self:antiAFKDetect(...) end)
 	end
 
-	function maxActivator:__loadTables()
+	function maxUtilities:__loadTables()
 		self.itemAmmoStorage = {
 			[2031] = {maxStorage = 2, savedStorage = 0},
 			[2032] = {maxStorage = 5, savedStorage = 0},
@@ -435,9 +457,19 @@ local maxActivator = setmetatable({}, {
 		self.state = 0
 		self.AAHitIn = 0
 		self.NextAAIn = 0
+		self.lastAction = Timer()
+
+		for i = 1, Game.ObjectCount() do
+	        local obj = Game.Object(i)
+	        
+	        if obj.isAlly and obj.type == Obj_AI_SpawnPoint then
+	            self.base = obj.pos
+	            break
+	        end
+		end
 	end
 
-	function maxActivator:__loadUnits()
+	function maxUtilities:__loadUnits()
 		for i = 1, Game.HeroCount() do
 			local unit = Game.Hero(i)
 
@@ -449,7 +481,7 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:__OnTick()
+	function maxUtilities:__OnTick()
 		if #self.itemKey == 0 then
 			self.itemKey = {
 				HK_ITEM_1,
@@ -519,10 +551,18 @@ local maxActivator = setmetatable({}, {
 			if self.menu.shld._e:Value() then
 				self:doShieldLogic()
 			end
+			--Auto-Level
+			if self.menu.al.on:Value() then
+				self:doAutoLevelLogic()
+			end
+			--Anti-AFK
+			if self.menu.aafk._e:Value() then
+				self:doAntiAFKLogic()
+			end
 		end
 	end
 
-	function maxActivator:__OnDraw()
+	function maxUtilities:__OnDraw()
 		if self.menu._se._e:Value() then
 			if self.menu.ward._d:Value() then
 				self:doWardDrawings()
@@ -533,12 +573,12 @@ local maxActivator = setmetatable({}, {
 			end
 			
 			if self.menu._se._b:Value() then
-				Draw.Circle(Vector(Base), self.menu._se._r:Value())
+				Draw.Circle(self.base, self.menu._se._r:Value())
 			end
 		end
 	end
 
-	function maxActivator:__getSlot(id)
+	function maxUtilities:__getSlot(id)
 		for i = 6, 12 do
 			if myHero:GetItemData(i).itemID == id then
 				return i
@@ -548,7 +588,7 @@ local maxActivator = setmetatable({}, {
 		return nil
 	end
 
-	function maxActivator:itemReady(id, ward, pot)
+	function maxUtilities:itemReady(id, ward, pot)
 		local slot = self:__getSlot(id)
 
 		if slot then
@@ -579,7 +619,7 @@ local maxActivator = setmetatable({}, {
 		return false
 	end
 
-	function maxActivator:AAState()
+	function maxUtilities:AAState()
 		local as = myHero.activeSpell
 		local ad = myHero.attackData
 
@@ -608,7 +648,7 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:castItem(unit, id, range)
+	function maxUtilities:castItem(unit, id, range)
 		if unit == myHero or GetDistance(myHero, unit) <= range then
 			local keyIndex = self:__getSlot(id) - 5
 			local key = self.itemKey[keyIndex]
@@ -623,15 +663,15 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:getPercentHP(unit)
+	function maxUtilities:getPercentHP(unit)
 		return unit.health * 100 / unit.maxHealth
 	end
 
-	function maxActivator:getPercentMP(unit)
+	function maxUtilities:getPercentMP(unit)
 		return unit.mana * 100 / unit.maxMana
 	end
 
-	function maxActivator:checkBuff(unit, name, _type)
+	function maxUtilities:checkBuff(unit, name, _type)
 		for i = 0, 63 do
 			local buff = unit:GetBuff(i)
 
@@ -641,7 +681,7 @@ local maxActivator = setmetatable({}, {
 		return false
 	end
 --==================== WARD MODULE ====================--
-	function maxActivator:doWardLogic()
+	function maxUtilities:doWardLogic()
 		local mode = self.menu.ward._m:Value()
 		local readyWard = nil
 
@@ -667,7 +707,7 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:doWardDrawings()
+	function maxUtilities:doWardDrawings()
 		for i = 1, #self.wards.preSpots do
 			local wardSpot = Vector(self.wards.preSpots[i]):To2D()
 
@@ -677,7 +717,7 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:getNearesetWardToPos(pos)
+	function maxUtilities:getNearesetWardToPos(pos)
 		local closest, distance = nil, 999999
 
 		for i = 1, Game.WardCount() do
@@ -696,8 +736,8 @@ local maxActivator = setmetatable({}, {
 		return closest, distance
 	end
 --=====================================================--
---==================== ANTI WARD MODULE ====================--
-	function maxActivator:doAntiLogic()
+--==================== ANTI WARD MODULE ===============--
+	function maxUtilities:doAntiLogic()
 		for i = 1, Game.WardCount() do
 			local ward = Game.Ward(i)
 
@@ -750,7 +790,7 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:doAntiDrawings()
+	function maxUtilities:doAntiDrawings()
 		for i = 1, Game.WardCount() do
 			local ward = Game.Ward(i)
 
@@ -759,9 +799,9 @@ local maxActivator = setmetatable({}, {
 			end
 		end
 	end
---==========================================================--
---==================== SHIELD MODULE ====================--
-	function maxActivator:doShieldLogic()
+--=====================================================--
+--==================== SHIELD MODULE ==================--
+	function maxUtilities:doShieldLogic()
 		local shldMenu = self.menu.shld
 		local qssMenu, mscMenu, mcrMenu = shldMenu["qss"], shldMenu["msc"], shldMenu["mcr"]
 
@@ -806,14 +846,18 @@ local maxActivator = setmetatable({}, {
 			end
 		end
 	end
---=======================================================--
---==================== DAMAGE MODULE ====================--
-	function maxActivator:doDamageLogic()
+--=====================================================--
+--==================== DAMAGE MODULE ==================--
+	function maxUtilities:doDamageLogic()
 		local damgMenu = self.menu.damg
 		local combo = self:isCombo()
 
 		for short, data in pairs(damageItems) do
-			local target = self:itemReady(data.id) and damgMenu[short]._e:Value() and not (damgMenu[short]._c:Value() and not combo) and self:getDamgMode(damgMenu[short].mode:Value()) and self:getDamgTarget(damgMenu[short].target:Value())
+			local target = self:itemReady(data.id) and 
+				damgMenu[short]._e:Value() and 
+				not (damgMenu[short]._c:Value() and not combo) and 
+				self:getDamgMode(damgMenu[short].mode:Value()) and 
+				self:getDamgTarget(damgMenu[short].target:Value())
 
 			if target then
 				self:castItem(target, data.id, data.range)
@@ -821,12 +865,12 @@ local maxActivator = setmetatable({}, {
 		end
 	end
 
-	function maxActivator:getDamgTarget(mode)
+	function maxUtilities:getDamgTarget(mode)
 		local target = nil
 		--Orb Target, Near Mouse, Near myHero
 		if mode == 1 then
 			target = 
-				_G.__gsoOrbwalker and __gsoTS:GetSelectedTarget() or
+				_G.gsoSDK and _G.gsoSDK.TargetSelector:GetComboTarget() or
 				_G.EOWLoaded and _G.EOW:GetTarget() or 
 				_G.SDK and _G.SDK.Orbwalker:GetTarget() or 
 				_G.GOS and _G.Orbwalker.Enabled:Value() and _G.GOS:GetTarget()
@@ -855,14 +899,17 @@ local maxActivator = setmetatable({}, {
 		return target and not target.dead and target.health > 0 and target.valid and target.isTargetable and target
 	end
 
-	function maxActivator:getDamgMode(mode)
+	function maxUtilities:getDamgMode(mode)
 		if mode == 3 then return true end
 
 		local state = false
 		local Access = self.state
 
 		if mode == 1 then
-			state = Access == 0
+			state = Access == 0 
+			or _G.gsoSDK and _G.gsoSDK.Orbwalker:CanAttack()
+			or _G.SDK and _G.SDK.Orbwalker:CanAttack()
+			or _G.GOS:CanAttack()
 		elseif mode == 2 then
 			state = Access == 2 or Access == 3
 		else
@@ -872,19 +919,19 @@ local maxActivator = setmetatable({}, {
 		return state
 	end
 
-	function maxActivator:isCombo()
+	function maxUtilities:isCombo()
 		local mode = 
-			_G.__gsoOrbwalker and _G.__gsoOrbwalker:GetMode() or
+			_G.gsoSDK and _G.gsoSDK.Orbwalker:GetMode() or
 			_G.EOWLoaded and _G.EOW:Mode() or
 			_G.SDK and (_G.SDK.Orbwalker.Modes[0] and "Combo" or _G.SDK.Orbwalker.Modes[1] and "Harass" or _G.SDK.Orbwalker.Modes[4] and "LastHit" or _G.SDK.Orbwalker.Modes[2] and "LaneClear" or "") or
 			_G.GOS and _G.Orbwalker.Enabled:Value() and _G.GOS:GetMode() or ""
 
 		return mode == "Combo"
 	end
---=======================================================--
---==================== CONSUMABLE MODULE ====================--
-	function maxActivator:doConsumLogic()
-		if GetDistance(myHero, Base) > self.menu._se._r:Value() then
+--=====================================================--
+--==================== CONSUMABLE MODULE ==============--
+	function maxUtilities:doConsumLogic()
+		if GetDistance(myHero, self.base) > self.menu._se._r:Value() then
 			local cnsmMenu = self.menu.cnsm
 
 			for short, data in pairs(consumableItems) do
@@ -908,11 +955,123 @@ local maxActivator = setmetatable({}, {
 			end
 		end
 	end
---===========================================================--
---==================== SPECIAL MODULE ====================--
---========================================================--
---==================== SUMMONER MODULE ====================--
---=========================================================--
+--=====================================================--
+--==================== SPECIAL MODULE =================--
+--=====================================================--
+--==================== SUMMONER MODULE ================--
+--=====================================================--
+--==================== AUTO-LEVEL MODULE ==============--
+	function maxUtilities:doAutoLevelLogic()
+		local actualLevel = myHero.levelData.lvl
+		local levelPoints = myHero.levelData.lvlPts
 
-maxActivator()
-print("maxActivator v" .. version .. " loaded.")
+		if levelPoints > 0 and not self.waitToLevel then
+			self.waitToLevel = true
+			local mode = self.menu.al.wt:Value() == 1 and "mostUsed" or "highestRate"
+			local spellToLevel = self.autoLevelPresets[mode][actualLevel]
+			local key = self.keyTranslation[spellToLevel]
+
+			DelayAction(function()
+				Control.KeyDown(HK_LUS)
+				Control.KeyDown(key)
+				Control.KeyUp(key)
+				Control.KeyUp(HK_LUS)
+
+				DelayAction(function()
+					self.waitToLevel = false
+				end, .1)
+			end, self.menu.al.wt:Value())
+		end
+	end
+
+	function maxUtilities:doAutoLevelMenu()
+		self:getChampionPreset()
+		local list = {"NO LEVEL DATA"}
+
+		self.menu:MenuElement({id = "al", name = " Auto Level", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/fossilfighters/images/5/5b/LevelUP.png"})
+		self.menu.al:MenuElement({id = "on", name = "Enabled", value = true})
+		self.menu.al:MenuElement({id = "wt", name = "Wait time [s]", value = 2, min = 0 , max = 10, step = .5})
+
+		if not self.autoLevelPresets then 
+			print("No Auto-Level presets found for " .. myHero.charName)
+			self.menu.al.on:Value(false)
+		else
+			list = {"most Used: ", "highest Winrate: "}
+
+			for i = 1, 18 do
+				list[1] = list[1] .. self.autoLevelPresets['mostUsed'][i]
+				list[2] = list[2] .. self.autoLevelPresets['highestRate'][i]
+			end
+		end
+
+		self.menu.al:MenuElement({id = "mo", name = " ", value = 1, drop = list})
+	end
+
+	function maxUtilities:getChampionPreset()
+		self.autoLevelPresets = nil
+		local tbl = _presetData[1]
+		local Name = myHero.charName:lower()
+
+		for name, data in pairs(tbl) do
+			if name:lower():find(Name) then
+				self.autoLevelPresets = data
+				break
+			end
+		end
+
+		self.keyTranslation = {["Q"] = HK_Q, ["W"] = HK_W, ["E"] = HK_E, ["R"] = HK_R}
+		_presetData = nil
+
+		local byteCheck = string.char(HK_Q)
+
+		if byteCheck ~= "Q" then
+			print("maxUtilities: Using non-default Hotkeys, please re-check your lol and GoS Hotkeys if you experience problems.")
+		end
+	end
+--=====================================================--
+--==================== ANTI-AFK Module ================--
+	function maxUtilities:doAntiAFKLogic()
+		if Timer() - self.lastAction > 20 then
+			local pos = myHero.pos
+			Control.Move(pos.x + 20, pos.y, pos.z + 20)
+		end
+	end
+
+	function maxUtilities:antiAFKDetect(a, b)
+		if b == 2 then
+			self.lastAction = Timer()
+		end
+	end
+--=====================================================--
+--==================== AUTO-UPDATE ====================--
+	local function DownloadFile(url, path, fileName)
+	    DownloadFileAsync(url, path .. fileName, function() end)
+	    while not FileExist(path .. fileName) do end
+	end
+
+	local function AutoUpdate()
+	    DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Scripts/maxUtilities.version", COMMON_PATH, "maxUtilities.version")
+	    DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Common/levelPresets.version", COMMON_PATH, "levelPresets.version")
+
+	    local newVersionScript = tonumber(ReadFile(COMMON_PATH, "maxUtilities.version"))
+	    local newVersionLevels = tonumber(ReadFile(COMMON_PATH, "levelPresets.version"))
+
+	    if not _presetData or newVersionLevels > _presetData[2] then
+	        DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Common/levelPresets.lua", COMMON_PATH, "levelPresets.lua")
+	        print("maxUtilities: Updated Auto-Level presets to " .. newVersionLevels .. ". Please Reload with 2x F6")
+	    end
+
+	    if newVersionScript > version then
+	        DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Scripts/maxUtilities.lua", SCRIPT_PATH, "maxUtilities.lua")
+	        print("maxUtilities: Updated to " .. newVersionScript .. ". Please Reload with 2x F6")
+	    else
+	        print("maxUtilities: No Updates Found (" ..version .. ")")
+	    end
+	end
+--=====================================================--
+
+AutoUpdate()
+
+DelayAction(function()
+	maxUtilities()
+end, 1)
