@@ -19,6 +19,7 @@
 			0.09 	- Added gamsteron orb support, fixed shielding
 			0.091 	- Disabled Cripple Buff
 			0.1 	- 8.17 + AutoUpdate + removed some Items + AutoLevel + Renaming + AntiAFK
+			0.11 	- Added Cleptomancy, Improved AutoLevel
 
 		To-Do:
 			-Special Items
@@ -26,7 +27,7 @@
 			-Shield Items
 --]]
 
-local version = 0.1
+local version = 0.11
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -63,13 +64,18 @@ local damageItems = {
 }
 
 local consumableItems = {
-	-- ["bor"] = {name = "Biscuit of Rejuvenation", id = 2010, type = "", buffName = "ItemMiniRegenPotion", icon = "https://vignette4.wikia.nocookie.net/leagueoflegends/images/0/01/Total_Biscuit_of_Rejuvenation_item.png"},
+	["bor"] = {name = "Total Biscuit of Everlasting Will", id = 2010, type = "mph", buffName = "Item2010", icon = "https://d1u5p3l4wpay3k.cloudfront.net/lolesports_gamepedia_en/d/df/Total_Biscuit_of_Everlasting_Will.png"},
 	["hpp"] = {name = "Health Potion", id = 2003, type = "", buffName = "RegenerationPotion", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/1/13/Health_Potion_item.png"},
 	["rfp"] = {name = "Refillable Potion", id = 2031, type = "", buffName = "ItemCrystalFlask", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/7/7f/Refillable_Potion_item.png"},
 	["hup"] = {name = "Hunter's Potion", id = 2032, type = "mph", buffName = "ItemCrystalFlaskJungle", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/6/63/Hunter%27s_Potion_item.png"},
 	["crp"] = {name = "Corrupting Potion", id = 2033, type = "mph", buffName = "ItemDarkCrystalFlask", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/8/87/Corrupting_Potion_item.png"},
-	["eos"] = {name = "Elixir of Sorcery", id = 2139, type = "mph", buffName = "ElixirOfSorcery", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/27/Elixir_of_Sorcery_item.png"},
+	-- ["eos"] = {name = "Elixir of Sorcery", id = 2139, type = "mph", buffName = "ElixirOfSorcery", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/27/Elixir_of_Sorcery_item.png"},
 	["eoi"] = {name = "Elixir of Iron", id = 2138, type = "", buffName = "ElixirOfIron", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/6/65/Elixir_of_Iron_item.png"},
+	["map"] = {name = "Mana Potion (Cleptomancy)", id = 2004, type = "man", buffName = "FlaskOfCrystalWater", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/1/1d/Mana_Potion_item.png"},
+	["sly"] = {name = "Sly Sack of Gold (Cleptomancy)", id = 2319, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/4/48/Sly_Sack_of_Gold_item.png"},
+	["pil"] = {name = "Pilfered Health Potion (Cleptomancy)", id = 2061, type = "", buffName = "LootedRegenerationPotion", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/a/a9/Pilfered_Health_Potion_item.png"},
+	["tra"] = {name = "Travelsize Elixir of Iron (Cleptomancy)", id = 2058, type = "", buffName = "TravelSizeElixirOfIron", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/d/d6/Travel_Size_Elixir_of_Iron_item.png"},
+	["eos"] = {name = "Elixir of Skill (Cleptomancy)", id = 2011, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/3/31/Ichor_of_Illumination_item.png"}
 }
 
 local wardItems = {
@@ -81,7 +87,9 @@ local wardItems = {
 	["tab"] = {name = "Celestial Eye", 		id = 3097, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/29/Celestial_Eye_item.png"},
 	["frf"] = {name = "Eye of the Aspect", 	id = 3401, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/6/64/Eye_of_the_Aspect_item.png"},
 	["ctw"] = {name = "Control Ward", 		id = 2055, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/1/1b/Control_Ward_item.png"},
-	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/7/75/Farsight_Alteration_item.png"}
+	["fsg"] = {name = "Farsight Alteration", id = 3363, range = 4000, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/7/75/Farsight_Alteration_item.png"},
+	["pil"] = {name = "Pilfered Stealth Ward (Cleptomancy)", id = 2056, range = 600, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/d/d1/Stealth_Ward_%28Item%29_item.png"},
+	["pee"] = {name = "Peering Farsight Ward (Cleptomancy)", id = 2057, range = 2000, icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/7/75/Farsight_Alteration_item.png"}
 }
 
 local shieldItems = {
@@ -160,7 +168,7 @@ local maxUtilities = setmetatable({}, {
 
 	function maxUtilities:__loadMenu()
 		self.menu = MenuElement({id = "maxUtilities", name = " maxUtilities v" .. version .. "", type = MENU, leftIcon = "http://img4host.net/upload//021635045b8bf518531d2.png"})
-			self.menu:MenuElement({id = "ward", name = "Ward", type = MENU})
+			self.menu:MenuElement({id = "ward", name = "Ward", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/0/0a/Classic_Ward.png"})
 				self.menu.ward:MenuElement({id = "_e", name = "Enable Ward", value = true})
 				self.menu.ward:MenuElement({id = "_m", name = "Warding Mode", value = 1, drop = {"Auto", "Mouse Hover"}})
 				self.menu.ward:MenuElement({id = "_d", name = "Draw Spots", value = true})
@@ -269,12 +277,24 @@ local maxUtilities = setmetatable({}, {
 				self.menu.cnsm:MenuElement({id = "_e", 	name = "Enable Consume", value = true})
 				for short, data in pairs(consumableItems) do
 					self.menu.cnsm:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
-					self.menu.cnsm[short]:MenuElement({id = "_e", name = "Enable", value = true})
-					self.menu.cnsm[short]:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
+					local t = data.type
 
-					if data.type == "mph" then
-						self.menu.cnsm[short]:MenuElement({id = "swi", name = "---------------->", value = 1, drop = {"Ignore Mana", "AND", "OR"}})
-						self.menu.cnsm[short]:MenuElement({id = "man", name = "Minimum MP %", value = 50, min = 0, max = 100, step = 1})
+					if t then
+						self.menu.cnsm[short]:MenuElement({id = "_e", name = "Enable", value = true})
+						
+						if t == "mph" or t == "" then
+							self.menu.cnsm[short]:MenuElement({id = "min", name = "Minimum HP %", value = 50, min = 0, max = 100, step = 1})
+						end
+
+						if t == "mph" or t == "man" then
+							if t == "mph" then
+								self.menu.cnsm[short]:MenuElement({id = "swi", name = "---------------->", value = 1, drop = {"Ignore Mana", "AND", "OR"}})
+							end
+
+							self.menu.cnsm[short]:MenuElement({id = "man", name = "Minimum MP %", value = 50, min = 0, max = 100, step = 1})
+						end
+					else
+						self.menu.cnsm[short]:MenuElement({id = "_e", name = "AutoUse", value = true})
 					end
 				end
 
@@ -498,12 +518,10 @@ local maxUtilities = setmetatable({}, {
 		-- 	local itemID = myHero:GetItemData(i)
 
 		-- 	if itemID.itemID ~= 0 then 
-		-- 		-- print(itemID)
-		-- 		-- print("\n")
-		-- 		-- print("\n")
-		-- 		-- print("\n")
-		-- 		-- print("\n")
-		-- 		-- print("\n")
+		-- 		print(itemID)
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
 		-- 	end
 		-- 	local item = myHero:GetSpellData(i)
 		-- 	if item.name ~= "" and item.name ~= "BaseSpell" then
@@ -518,15 +536,15 @@ local maxUtilities = setmetatable({}, {
 		-- end
 
 		-- for i = 0, 63 do
-			-- local buff = myHero:GetBuff(i)
+		-- 	local buff = myHero:GetBuff(i)
 
-			-- if buff.count > 0 and buff.name ~= "" then 
-			-- 	print(buff.type)
-			-- 	print("\n")
+		-- 	if buff.count > 0 and buff.name ~= "" then 
+		-- 		print(buff.name)
+		-- 		-- print(buff.type)
+		-- 		-- print("\n")
+		-- 	end
 
-			-- end
-
-			-- if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
+		-- 	if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
 		-- end
 
 		if self.menu._se._e:Value() and not myHero.dead then
@@ -596,16 +614,17 @@ local maxUtilities = setmetatable({}, {
 
 			if cd then
 				if ward then
-					local wardNum = myHero:GetSpellData(slot).ammo
+					local wardNum = myHero:GetItemData(slot).stacks --id ~= 2057 and myHero:GetSpellData(slot).ammo or 
 
 					return wardNum ~= 0 and wardNum < 10
 				elseif pot then
 					if not self.itemAmmoStorage[id] then return true end
+					local potNum = id ~= 2061 and myHero:GetItemData(slot).ammo or myHero:GetItemData(slot).stacks
+
 					if self.itemAmmoStorage[id].savedStorage == 0 then
-						self.itemAmmoStorage[id].savedStorage = myHero:GetItemData(slot).ammo
+						self.itemAmmoStorage[id].savedStorage = potNum
 					end
 
-					local potNum = myHero:GetItemData(slot).ammo
 					local saved = self.itemAmmoStorage[id].savedStorage
 					local num = abs(saved - potNum - self.itemAmmoStorage[id].maxStorage) 
 
@@ -648,8 +667,8 @@ local maxUtilities = setmetatable({}, {
 		end
 	end
 
-	function maxUtilities:castItem(unit, id, range)
-		if unit == myHero or GetDistance(myHero, unit) <= range then
+	function maxUtilities:castItem(unit, id, range, checked)
+		if checked or unit == myHero or GetDistance(myHero, unit) <= range then
 			local keyIndex = self:__getSlot(id) - 5
 			local key = self.itemKey[keyIndex]
 
@@ -683,24 +702,19 @@ local maxUtilities = setmetatable({}, {
 --==================== WARD MODULE ====================--
 	function maxUtilities:doWardLogic()
 		local mode = self.menu.ward._m:Value()
-		local readyWard = nil
 
 		for short, data in pairs(wardItems) do
 			if self:itemReady(data.id, true) and self.menu.ward[short]:Value() then
-				readyWard = data
-			end
-		end
+				for i = 1, #self.wards.preSpots do
+					local ward = Vector(self.wards.preSpots[i])
 
-		if readyWard then
-			for i = 1, #self.wards.preSpots do
-				local ward = Vector(self.wards.preSpots[i])
+					if ward:To2D().onScreen and GetDistance(ward, (mode == 1 and myHero or mousePos)) <= (mode == 1 and data.range or 100) then
+						local c, d = self:getNearesetWardToPos(ward)
 
-				if ward:To2D().onScreen and GetDistance(ward, (mode == 1 and myHero or mousePos)) <= (mode == 1 and readyWard.range or 100) then
-					local c, d = self:getNearesetWardToPos(ward)
-
-					if not (c and d < 600) and not (self.lastWard and Timer() - self.lastWard < 1) then
-						self.lastWard = Timer()
-						self:castItem(ward, readyWard.id, readyWard.range)
+						if not (c and d < 600)  then
+							self.lastWard = Timer()
+							self:castItem(ward, data.id, data.range, true)
+						end
 					end
 				end
 			end
@@ -947,7 +961,11 @@ local maxUtilities = setmetatable({}, {
 							if (B == 1 and A) or (B == 2 and A and C) or (B == 3 and (A or C)) then
 								self:castItem(myHero, data.id)
 							end
-						elseif self:getPercentHP(myHero) <= cnsmMenu[short].min:Value() then
+						elseif data.type == "man" and self:getPercentMP(myHero) <= cnsmMenu[short].man:Value() then
+							self:castItem(myHero, data.id)
+						elseif data.type == "" and self:getPercentHP(myHero) <= cnsmMenu[short].min:Value() then
+							self:castItem(myHero, data.id)
+						elseif not data.type then
 							self:castItem(myHero, data.id)
 						end
 					end
@@ -962,25 +980,66 @@ local maxUtilities = setmetatable({}, {
 --=====================================================--
 --==================== AUTO-LEVEL MODULE ==============--
 	function maxUtilities:doAutoLevelLogic()
-		local actualLevel = myHero.levelData.lvl
-		local levelPoints = myHero.levelData.lvlPts
+		if not self.levelUP then
+			local actualLevel = myHero.levelData.lvl
+			local levelPoints = myHero.levelData.lvlPts
 
-		if levelPoints > 0 and not self.waitToLevel then
-			self.waitToLevel = true
+			if actualLevel == 18 and levelPoints == 0 then return end
+
 			local mode = self.menu.al.wt:Value() == 1 and "mostUsed" or "highestRate"
-			local spellToLevel = self.autoLevelPresets[mode][actualLevel]
-			local key = self.keyTranslation[spellToLevel]
+			local skillingOrder = self.autoLevelPresets[mode]
+			local QL, WL, EL, RL = 0, 0, 0, 0
+			local Delay = self.menu.al.wt:Value()
 
-			DelayAction(function()
-				Control.KeyDown(HK_LUS)
-				Control.KeyDown(key)
-				Control.KeyUp(key)
-				Control.KeyUp(HK_LUS)
+			if levelPoints > 0 then
+				for i = 1, actualLevel do
+					if skillingOrder[i] == "Q" then 		--Q
+						QL = QL + 1
+					elseif skillingOrder[i] == "W" then		--W
+						WL = WL + 1
+					elseif skillingOrder[i] == "E" then 	--E
+						EL = EL + 1
+					elseif skillingOrder[i] == "R" then		--R
+						RL = RL + 1
+					end
+				end
 
-				DelayAction(function()
-					self.waitToLevel = false
-				end, .1)
-			end, self.menu.al.wt:Value())
+				local diffR = myHero:GetSpellData(_R).level - RL < 0
+				local diffs = {
+					[HK_Q] = myHero:GetSpellData(_Q).level - QL, 
+					[HK_W] = myHero:GetSpellData(_W).level - WL, 
+					[HK_E] = myHero:GetSpellData(_E).level - EL
+				}
+
+				local lowest = 0
+				local spellToLevel
+
+				if diffR then
+					spellToLevel = HK_R
+				else
+					for spell, missLevel in pairs(diffs) do
+						if missLevel < lowest then
+							missLevel = lowest
+							spellToLevel = spell
+						end
+					end
+				end
+
+				if spellToLevel then
+					self.levelUP = true
+
+					DelayAction(function()
+						Control.KeyDown(HK_LUS)
+						Control.KeyDown(spellToLevel)
+						Control.KeyUp(spellToLevel)
+						Control.KeyUp(HK_LUS)
+
+						DelayAction(function()
+							self.levelUP = false
+						end, .25)
+					end, Delay)
+				end
+			end
 		end
 	end
 
