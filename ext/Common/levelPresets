@@ -1,3 +1,4 @@
+local version = 0.01
 local levelPresets = {
 ['Aatrox']={
   ['mostUsed']={'Q','E','W','Q','Q','R','Q','E','Q','E','R','E','E','W','W','R','W','W'},
