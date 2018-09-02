@@ -566,4 +566,4 @@ local levelPresets = {
 },
 }
 
-return levelPresets
+return {levelPresets, version}
