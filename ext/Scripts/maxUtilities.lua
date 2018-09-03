@@ -21,6 +21,7 @@
 			0.1 	- 8.17 + AutoUpdate + removed some Items + AutoLevel + Renaming + AntiAFK
 			0.11 	- Little Bugfix
 			0.12 	- Smaller Bug Fixes, new Menu Icons, Disabled Anti-CC (GoS Bugs), Improved Auto-Level, Anti-AFK Timer Menu, Added DrawCircleHack
+			0.13 	- HotFix for Download Issue
 
 		To-Do:
 			-Summoners including Auto-Smite
@@ -29,7 +30,7 @@
 			-AntiAFK Timer Menu (lazy)
 --]]
 
-local version = 0.12
+local version = 0.13
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -1138,19 +1139,20 @@ local maxUtilities = setmetatable({}, {
 	    if not _presetData or newVersionLevels > _presetData[2] then
 	        DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Common/levelPresets.lua", COMMON_PATH, "levelPresets.lua")
 	        print("maxUtilities: Updated Auto-Level presets to " .. newVersionLevels .. ". Please Reload with 2x F6")
+	        return false
 	    end
 
 	    if newVersionScript > version then
 	        DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Scripts/maxUtilities.lua", SCRIPT_PATH, "maxUtilities.lua")
 	        print("maxUtilities: Updated to " .. newVersionScript .. ". Please Reload with 2x F6")
+	        return false
 	    else
 	        print("maxUtilities: No Updates Found (" ..version .. ")")
+	        return true
 	    end
 	end
 --=====================================================--
 
-AutoUpdate()
-
-DelayAction(function()
+if AutoUpdate() then
 	maxUtilities()
-end, 1)
+end
