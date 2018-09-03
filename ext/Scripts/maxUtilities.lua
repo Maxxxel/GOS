@@ -19,15 +19,17 @@
 			0.09 	- Added gamsteron orb support, fixed shielding
 			0.091 	- Disabled Cripple Buff
 			0.1 	- 8.17 + AutoUpdate + removed some Items + AutoLevel + Renaming + AntiAFK
-			0.11 	- Added Cleptomancy, Improved AutoLevel
+			0.11 	- Little Bugfix
+			0.12 	- Smaller Bug Fixes, new Menu Icons, Disabled Anti-CC (GoS Bugs), Improved Auto-Level, Anti-AFK Timer Menu, Added DrawCircleHack
 
 		To-Do:
+			-Summoners including Auto-Smite
 			-Special Items
-			-Summoners
-			-Shield Items
+			-More Shield Items
+			-AntiAFK Timer Menu (lazy)
 --]]
 
-local version = 0.11
+local version = 0.12
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -64,7 +66,7 @@ local damageItems = {
 }
 
 local consumableItems = {
-	["bor"] = {name = "Total Biscuit of Everlasting Will", id = 2010, type = "mph", buffName = "Item2010", icon = "https://d1u5p3l4wpay3k.cloudfront.net/lolesports_gamepedia_en/d/df/Total_Biscuit_of_Everlasting_Will.png"},
+	["bor"] = {name = "Total Biscuit of Everlasting Will", id = 2010, type = "mph", buffName = "Item2010", icon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/1/10/Total_Biscuit_of_Everlasting_Will_item.png"},
 	["hpp"] = {name = "Health Potion", id = 2003, type = "", buffName = "RegenerationPotion", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/1/13/Health_Potion_item.png"},
 	["rfp"] = {name = "Refillable Potion", id = 2031, type = "", buffName = "ItemCrystalFlask", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/7/7f/Refillable_Potion_item.png"},
 	["hup"] = {name = "Hunter's Potion", id = 2032, type = "mph", buffName = "ItemCrystalFlaskJungle", icon = "https://vignette2.wikia.nocookie.net/leagueoflegends/images/6/63/Hunter%27s_Potion_item.png"},
@@ -168,7 +170,7 @@ local maxUtilities = setmetatable({}, {
 
 	function maxUtilities:__loadMenu()
 		self.menu = MenuElement({id = "maxUtilities", name = " maxUtilities v" .. version .. "", type = MENU, leftIcon = "http://img4host.net/upload//021635045b8bf518531d2.png"})
-			self.menu:MenuElement({id = "ward", name = "Ward", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/0/0a/Classic_Ward.png"})
+			self.menu:MenuElement({id = "ward", 	name = " 1. Ward", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/0/0a/Classic_Ward.png"})
 				self.menu.ward:MenuElement({id = "_e", name = "Enable Ward", value = true})
 				self.menu.ward:MenuElement({id = "_m", name = "Warding Mode", value = 1, drop = {"Auto", "Mouse Hover"}})
 				self.menu.ward:MenuElement({id = "_d", name = "Draw Spots", value = true})
@@ -177,7 +179,7 @@ local maxUtilities = setmetatable({}, {
 					self.menu.ward:MenuElement({id = short, name = data.name, value = true, leftIcon = data.icon})
 				end
 
-			self.menu:MenuElement({id = "anti", 	name = " Anti-Ward", type = MENU, leftIcon = "https://i.warosu.org/data/jp/img/0094/62/1343505303426.png"})
+			self.menu:MenuElement({id = "anti", 	name = " 2. Anti-Ward", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/0/05/Vision_Ward_item.png"})
 				self.menu.anti:MenuElement({id = "_e", 	name = "Enable Anti-Ward", value = true})
 				self.menu.anti:MenuElement({id = "_d", 	name = "Draw Enemy Wards", value = true})
 				self.menu.anti:MenuElement({id = "info", name = "+++ ITEMS +++", type = SPACE})
@@ -203,67 +205,67 @@ local maxUtilities = setmetatable({}, {
 					end
 				end
 
-			self.menu:MenuElement({id = "shld", 	name = " Shield", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/theavengersmovie/images/3/37/Cap_shield.png"})
-				self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
-				for short, data in pairs(shieldItems) do
-					self.menu.shld:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
-					self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
+			self.menu:MenuElement({id = "shld", 	name = " 3. Shield (DISABLED - GOS BUG)", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/theavengersmovie/images/3/37/Cap_shield.png"})
+				-- self.menu.shld:MenuElement({id = "_e", 	name = "Enable Shield", value = true})
+				-- for short, data in pairs(shieldItems) do
+				-- 	self.menu.shld:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
+				-- 	self.menu.shld[short]:MenuElement({id = "_e", name = "Enable", value = true})
 
-					if data.effect == "Stasis" then
-						-- self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
-					elseif data.effect == "Shield" then
-						-- self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
+				-- 	if data.effect == "Stasis" then
+				-- 		-- self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
+				-- 	elseif data.effect == "Shield" then
+				-- 		-- self.menu.shld[short]:MenuElement({id = "hp", name = "If HP will drop below (%)", value = 10, min = 0, max = 100, step = 1})
 						
-						-- for i = 1, #self.Heroes.Allies do
-						-- 	if i == 1 then
-						-- 		self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
-						-- 	end
+				-- 		-- for i = 1, #self.Heroes.Allies do
+				-- 		-- 	if i == 1 then
+				-- 		-- 		self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
+				-- 		-- 	end
 
-						-- 	local ally = self.Heroes.Allies[i]
+				-- 		-- 	local ally = self.Heroes.Allies[i]
 
-						-- 	if ally.networkID ~= myHero.networkID then
-						-- 		self.menu.shld[short]:MenuElement({id = "ahp", name = "Help " .. ally.charName .. "?", value = true})
-						-- 	end
-						-- end
-					elseif data.effect == "CC" then
-						self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
-						-- self.menu.shld[short]:MenuElement({id = "Cripple", name = "Clear Cripple", value = false})
-						self.menu.shld[short]:MenuElement({id = "Charm", name = "Clear Charm", value = true})
-						self.menu.shld[short]:MenuElement({id = "Fear", name = "Clear Fear", value = true})
-						self.menu.shld[short]:MenuElement({id = "Flee", name = "Clear Flee", value = true})
-						self.menu.shld[short]:MenuElement({id = "Taunt", name = "Clear Taunt", value = true})
-						self.menu.shld[short]:MenuElement({id = "Snare", name = "Clear Root/Snare", value = true})
-						self.menu.shld[short]:MenuElement({id = "Polymorph", name = "Clear Polymorph", value = true})
-						self.menu.shld[short]:MenuElement({id = "Silence", name = "Clear Silence", value = true})
-						self.menu.shld[short]:MenuElement({id = "Sleep", name = "Clear Sleep", value = true})
-						self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
-						self.menu.shld[short]:MenuElement({id = "Stun", name = "Clear Stun", value = true})
-						self.menu.shld[short]:MenuElement({id = "Poison", name = "Clear Poison", value = true})
-						self.menu.shld[short]:MenuElement({id = "Disarm", name = "Clear Disarm", value = true})
+				-- 		-- 	if ally.networkID ~= myHero.networkID then
+				-- 		-- 		self.menu.shld[short]:MenuElement({id = "ahp", name = "Help " .. ally.charName .. "?", value = true})
+				-- 		-- 	end
+				-- 		-- end
+				-- 	elseif data.effect == "CC" then
+				-- 		self.menu.shld[short]:MenuElement({id = "Airborne", name = "Clear Airborne", value = true})
+				-- 		-- self.menu.shld[short]:MenuElement({id = "Cripple", name = "Clear Cripple", value = false})
+				-- 		self.menu.shld[short]:MenuElement({id = "Charm", name = "Clear Charm", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Fear", name = "Clear Fear", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Flee", name = "Clear Flee", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Taunt", name = "Clear Taunt", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Snare", name = "Clear Root/Snare", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Polymorph", name = "Clear Polymorph", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Silence", name = "Clear Silence", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Sleep", name = "Clear Sleep", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Slow", name = "Clear Slow", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Stun", name = "Clear Stun", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Poison", name = "Clear Poison", value = true})
+				-- 		self.menu.shld[short]:MenuElement({id = "Disarm", name = "Clear Disarm", value = true})
 
-						if short ~= "mcr" then
-							self.menu.shld[short]:MenuElement({id = "Blind", name = "Clear Blind", value = true})
-							self.menu.shld[short]:MenuElement({id = "Nearsight", name = "Clear Nearsight", value = true})
-							self.menu.shld[short]:MenuElement({id = "Suppression", name = "Clear Suppression", value = true})
-						end
+				-- 		if short ~= "mcr" then
+				-- 			self.menu.shld[short]:MenuElement({id = "Blind", name = "Clear Blind", value = true})
+				-- 			self.menu.shld[short]:MenuElement({id = "Nearsight", name = "Clear Nearsight", value = true})
+				-- 			self.menu.shld[short]:MenuElement({id = "Suppression", name = "Clear Suppression", value = true})
+				-- 		end
 
-						if short == "mcr" then
-							for i = 1, #self.Heroes.Allies do
-								if i == 1 and #self.Heroes.Allies > 1 then
-									self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
-								end
+				-- 		if short == "mcr" then
+				-- 			for i = 1, #self.Heroes.Allies do
+				-- 				if i == 1 and #self.Heroes.Allies > 1 then
+				-- 					self.menu.shld[short]:MenuElement({id = "info", name = "+++ ALLIES +++", type = SPACE})
+				-- 				end
 
-								local ally = self.Heroes.Allies[i]
+				-- 				local ally = self.Heroes.Allies[i]
 
-								if ally.networkID ~= myHero.networkID then
-									self.menu.shld[short]:MenuElement({id = "help" .. ally.charName, name = "Help: " .. ally.charName .. "?", value = true})
-								end
-							end
-						end
-					end
-				end
+				-- 				if ally.networkID ~= myHero.networkID then
+				-- 					self.menu.shld[short]:MenuElement({id = "help" .. ally.charName, name = "Help: " .. ally.charName .. "?", value = true})
+				-- 				end
+				-- 			end
+				-- 		end
+				-- 	end
+				-- end
 
-			self.menu:MenuElement({id = "damg", 	name = " Damage", type = MENU, leftIcon = "https://www.freepngimg.com/thumb/sword/8-sword-png-image-thumb.png"})
+			self.menu:MenuElement({id = "damg", 	name = " 4. Damage", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/a/aa/Ace_in_the_Hole.png"})
 				self.menu.damg:MenuElement({id = "_e", 	name = "Enable Damage", value = true})
 				for short, data in pairs(damageItems) do
 					self.menu.damg:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
@@ -273,7 +275,7 @@ local maxUtilities = setmetatable({}, {
 					self.menu.damg[short]:MenuElement({id = "target", name = "Target", value = 2, drop = {"Orb Target", "Near Mouse", "Near myHero"}})
 				end
 
-			self.menu:MenuElement({id = "cnsm", 	name = " Consume", type = MENU, leftIcon = "https://www.freepngimg.com/thumb/beer/48-beer-png-image-thumb.png"})
+			self.menu:MenuElement({id = "cnsm", 	name = " 5. Consume", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/3/3d/Ahri_Lore_2.png"})
 				self.menu.cnsm:MenuElement({id = "_e", 	name = "Enable Consume", value = true})
 				for short, data in pairs(consumableItems) do
 					self.menu.cnsm:MenuElement({id = short, name = data.name, type = MENU, leftIcon = data.icon})
@@ -298,7 +300,7 @@ local maxUtilities = setmetatable({}, {
 					end
 				end
 
-			self.menu:MenuElement({id = "spcl", 	name = " Special", type = MENU, leftIcon = "http://www.toxicfamily.de/wp-content/selfprog/pics/Special.png"})
+			self.menu:MenuElement({id = "spcl", 	name = " 6. Special", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/b/b9/Amplifying_Tome_item.png"})
 				-- self.menu.spcl:MenuElement({id = "_e", 	name = "Enable Special", value = true})
 				-- {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
 				-- {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
@@ -310,7 +312,7 @@ local maxUtilities = setmetatable({}, {
 				-- {name = "Youmuu's Ghostblade", 		type = "spcl", id = 3142, target = "self", effect = "Speed"},
 				-- {name = "Randuin's Omen", 				type = "spcl", id = 3143, target = "self", effect = "Slow"},
 
-			self.menu:MenuElement({id = "summs", 	name = " Summoner", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/yugioh/images/9/9b/BAM-Destroy_Spell.png"})
+			self.menu:MenuElement({id = "summs", 	name = " 7. Summoner", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/yugioh/images/9/9b/BAM-Destroy_Spell.png"})
 				-- self.menu.summs:MenuElement({id = "_e", 	name = "Enable Summoner", value = true})
 				-- Heal
 				-- Barrier
@@ -321,13 +323,15 @@ local maxUtilities = setmetatable({}, {
 
 			self:doAutoLevelMenu()
 
-			self.menu:MenuElement({id = "aafk", 	name = " Anti-AFK", type = MENU, leftIcon = "https://archive-media-1.nyafuu.org/bant/image/1496/34/1496346507181.png"})
+			self.menu:MenuElement({id = "aafk", 	name = " 9. Anti-AFK", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/2/20/Amumu_Almost-PromKingCircle.png"})
 				self.menu.aafk:MenuElement({id = "_e", name = "Enabled", value = true})
+				self.menu.aafk:MenuElement({id = "_t", name = "AFK-Time till move [s]", value = 30, min = 30, max = 100, step = 1})
 
-			self.menu:MenuElement({id = "_se", 		name = " Settings", type = MENU, leftIcon = "http://icons.iconarchive.com/icons/dtafalonso/android-lollipop/256/Settings-icon.png"})
+			self.menu:MenuElement({id = "_se", 		name = " 10. Settings", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/d/dc/April_Fools_2015_Welcome_to_Planet_Urf.png"})
 				self.menu._se:MenuElement({id = "_e", 	name = "Global Enable", value = true})
 				self.menu._se:MenuElement({id = "_b", 	name = "DebugBase", value = false})
 				self.menu._se:MenuElement({id = "_r", 	name = "No Pots Range", value = 1000, min = 0, max = 2000, step = 100})
+				self.menu._se:MenuElement({id = "_h", 	name = "GoS DrawCircle Quality Hack", value = _G.drawCircleQuality, min = 4, max = 64, step = 1})
 	end
 
 	function maxUtilities:__loadCallbacks()
@@ -337,6 +341,8 @@ local maxUtilities = setmetatable({}, {
 	end
 
 	function maxUtilities:__loadTables()
+		self.buffs = {}
+
 		self.itemAmmoStorage = {
 			[2031] = {maxStorage = 2, savedStorage = 0},
 			[2032] = {maxStorage = 5, savedStorage = 0},
@@ -539,12 +545,9 @@ local maxUtilities = setmetatable({}, {
 		-- 	local buff = myHero:GetBuff(i)
 
 		-- 	if buff.count > 0 and buff.name ~= "" then 
-		-- 		print(buff.name)
-		-- 		-- print(buff.type)
-		-- 		-- print("\n")
+		-- 		if not a then a = true print(buff) end
+		-- 		self.buffs[#self.buffs + 1] = buff
 		-- 	end
-
-		-- 	if buff.count > 0 and buff.name ~= "" and buff.name == "frostquestdisplay" then print((buff.expireTime - buff.duration) / 10 * 2) print("\n") print("\n") print("\n") print("\n") print("\n") end
 		-- end
 
 		if self.menu._se._e:Value() and not myHero.dead then
@@ -566,9 +569,9 @@ local maxUtilities = setmetatable({}, {
 				self:doAntiLogic()
 			end
 			--Shield Stuff
-			if self.menu.shld._e:Value() then
-				self:doShieldLogic()
-			end
+			-- if self.menu.shld._e:Value() then
+			-- 	self:doShieldLogic()
+			-- end
 			--Auto-Level
 			if self.menu.al.on:Value() then
 				self:doAutoLevelLogic()
@@ -582,6 +585,8 @@ local maxUtilities = setmetatable({}, {
 
 	function maxUtilities:__OnDraw()
 		if self.menu._se._e:Value() then
+			_G.drawCircleQuality = self.menu._se._h:Value()
+
 			if self.menu.ward._d:Value() then
 				self:doWardDrawings()
 			end
@@ -592,6 +597,16 @@ local maxUtilities = setmetatable({}, {
 			
 			if self.menu._se._b:Value() then
 				Draw.Circle(self.base, self.menu._se._r:Value())
+
+				if #self.buffs > 0 then
+					for i = 1, #self.buffs do
+						local b = self.buffs[i]
+
+						Draw.Text(b.name .. ", " .. b.type,myHero.pos2D.x, myHero.pos2D.y + i * 15)
+					end
+
+					self.buffs = {}
+				end
 			end
 		end
 	end
@@ -986,12 +1001,12 @@ local maxUtilities = setmetatable({}, {
 
 			if actualLevel == 18 and levelPoints == 0 then return end
 
-			local mode = self.menu.al.wt:Value() == 1 and "mostUsed" or "highestRate"
-			local skillingOrder = self.autoLevelPresets[mode]
-			local QL, WL, EL, RL = 0, 0, 0, 0
-			local Delay = self.menu.al.wt:Value()
-
 			if levelPoints > 0 then
+				local mode = self.menu.al.wt:Value() == 1 and "mostUsed" or "highestRate"
+				local skillingOrder = self.autoLevelPresets[mode]
+				local QL, WL, EL, RL = 0, 0, 0, myHero.charName == "Karma" and 1 or 0
+				local Delay = self.menu.al.wt:Value()
+				--Check which level the spell should have
 				for i = 1, actualLevel do
 					if skillingOrder[i] == "Q" then 		--Q
 						QL = QL + 1
@@ -1005,33 +1020,38 @@ local maxUtilities = setmetatable({}, {
 				end
 
 				local diffR = myHero:GetSpellData(_R).level - RL < 0
-				local diffs = {
-					[HK_Q] = myHero:GetSpellData(_Q).level - QL, 
-					[HK_W] = myHero:GetSpellData(_W).level - WL, 
-					[HK_E] = myHero:GetSpellData(_E).level - EL
-				}
+				local lowest = 99
+				local spell
+				local lowHK_Q = myHero:GetSpellData(_Q).level - QL
+				local lowHK_W = myHero:GetSpellData(_W).level - WL
+				local lowHK_E = myHero:GetSpellData(_E).level - EL
 
-				local lowest = 0
-				local spellToLevel
-
-				if diffR then
-					spellToLevel = HK_R
-				else
-					for spell, missLevel in pairs(diffs) do
-						if missLevel < lowest then
-							missLevel = lowest
-							spellToLevel = spell
-						end
-					end
+				if lowHK_Q < lowest then
+					lowest = lowHK_Q
+					spell = HK_Q
 				end
 
-				if spellToLevel then
+				if lowHK_W < lowest then
+					lowest = lowHK_W
+					spell = HK_W
+				end
+
+				if lowHK_E < lowest then
+					lowest = lowHK_E
+					spell = HK_E
+				end
+
+				if diffR then
+					spell = HK_R
+				end
+
+				if spell then
 					self.levelUP = true
 
 					DelayAction(function()
 						Control.KeyDown(HK_LUS)
-						Control.KeyDown(spellToLevel)
-						Control.KeyUp(spellToLevel)
+						Control.KeyDown(spell)
+						Control.KeyUp(spell)
 						Control.KeyUp(HK_LUS)
 
 						DelayAction(function()
@@ -1047,7 +1067,7 @@ local maxUtilities = setmetatable({}, {
 		self:getChampionPreset()
 		local list = {"NO LEVEL DATA"}
 
-		self.menu:MenuElement({id = "al", name = " Auto Level", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/fossilfighters/images/5/5b/LevelUP.png"})
+		self.menu:MenuElement({id = "al", name = " 8. Auto Level", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/fossilfighters/images/5/5b/LevelUP.png"})
 		self.menu.al:MenuElement({id = "on", name = "Enabled", value = true})
 		self.menu.al:MenuElement({id = "wt", name = "Wait time [s]", value = 2, min = 0 , max = 10, step = .5})
 
@@ -1090,7 +1110,7 @@ local maxUtilities = setmetatable({}, {
 --=====================================================--
 --==================== ANTI-AFK Module ================--
 	function maxUtilities:doAntiAFKLogic()
-		if Timer() - self.lastAction > 20 then
+		if Timer() - self.lastAction > self.menu.aafk._t:Value() then
 			local pos = myHero.pos
 			Control.Move(pos.x + 20, pos.y, pos.z + 20)
 		end
