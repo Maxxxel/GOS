@@ -22,6 +22,7 @@
 			0.11 	- Little Bugfix
 			0.12 	- Smaller Bug Fixes, new Menu Icons, Disabled Anti-CC (GoS Bugs), Improved Auto-Level, Anti-AFK Timer Menu, Added DrawCircleHack
 			0.13 	- HotFix for Download Issue
+			0.14 	- HotFix for AutoLevel
 
 		To-Do:
 			-Summoners including Auto-Smite
@@ -30,7 +31,7 @@
 			-AntiAFK Timer Menu (lazy)
 --]]
 
-local version = 0.13
+local version = 0.14
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -1003,7 +1004,8 @@ local maxUtilities = setmetatable({}, {
 			if actualLevel == 18 and levelPoints == 0 then return end
 
 			if levelPoints > 0 then
-				local mode = self.menu.al.wt:Value() == 1 and "mostUsed" or "highestRate"
+				local mode = self.menu.al.mo:Value() == 1 and "mostUsed" or "highestRate"
+
 				local skillingOrder = self.autoLevelPresets[mode]
 				local QL, WL, EL, RL = 0, 0, 0, myHero.charName == "Karma" and 1 or 0
 				local Delay = self.menu.al.wt:Value()
@@ -1046,7 +1048,7 @@ local maxUtilities = setmetatable({}, {
 					spell = HK_R
 				end
 
-				if spell then
+				if spell then print("LevelUP: " .. string.char(spell))
 					self.levelUP = true
 
 					DelayAction(function()
