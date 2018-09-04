@@ -31,7 +31,7 @@
 			-AntiAFK Timer Menu (lazy)
 --]]
 
-local version = 0.141
+local version = 0.142
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -1051,7 +1051,7 @@ local maxUtilities = setmetatable({}, {
 					spell = HK_R
 				end
 
-				if spell then print("LevelUP: " .. string.char(spell))
+				if spell then
 					self.levelUP = true
 
 					DelayAction(function()
