@@ -31,7 +31,7 @@
 			-AntiAFK Timer Menu (lazy)
 --]]
 
-local version = 0.14
+local version = 0.141
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -526,20 +526,20 @@ local maxUtilities = setmetatable({}, {
 		-- 	local itemID = myHero:GetItemData(i)
 
 		-- 	if itemID.itemID ~= 0 then 
-		-- 		print(itemID)
-		-- 		print("\n")
-		-- 		print("\n")
-		-- 		print("\n")
+		-- 		-- print(itemID)
+		-- 		-- print("\n")
+		-- 		-- print("\n")
+		-- 		-- print("\n")
 		-- 	end
 		-- 	local item = myHero:GetSpellData(i)
 		-- 	if item.name ~= "" and item.name ~= "BaseSpell" then
-		-- 		-- print(item.name .. " | " .. item.ammo)
-		-- 		-- print(item)
-		-- 		-- print("\n")
-		-- 		-- print("\n")
-		-- 		-- print("\n")
-		-- 		-- print("\n")
-		-- 		-- print("\n")
+		-- 		print(item.name .. " | " .. item.ammo)
+		-- 		print(item)
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
+		-- 		print("\n")
 		-- 	end
 		-- end
 
@@ -631,7 +631,7 @@ local maxUtilities = setmetatable({}, {
 
 			if cd then
 				if ward then
-					local wardNum = myHero:GetItemData(slot).stacks --id ~= 2057 and myHero:GetSpellData(slot).ammo or 
+					local wardNum = id == 3340 and myHero:GetSpellData(slot).ammo or myHero:GetItemData(slot).stacks --id ~= 2057 and myHero:GetSpellData(slot).ammo or 
 
 					return wardNum ~= 0 and wardNum < 10
 				elseif pot then
@@ -720,17 +720,20 @@ local maxUtilities = setmetatable({}, {
 	function maxUtilities:doWardLogic()
 		local mode = self.menu.ward._m:Value()
 
-		for short, data in pairs(wardItems) do
-			if self:itemReady(data.id, true) and self.menu.ward[short]:Value() then
-				for i = 1, #self.wards.preSpots do
-					local ward = Vector(self.wards.preSpots[i])
+		if not (self.lastWard and Timer() - self.lastWard < 2) then 
+			for short, data in pairs(wardItems) do
+				if self:itemReady(data.id, true) and self.menu.ward[short]:Value() then
+					for i = 1, #self.wards.preSpots do
+						local ward = Vector(self.wards.preSpots[i])
 
-					if ward:To2D().onScreen and GetDistance(ward, (mode == 1 and myHero or mousePos)) <= (mode == 1 and data.range or 100) then
-						local c, d = self:getNearesetWardToPos(ward)
+						if ward:To2D().onScreen and GetDistance(ward, (mode == 1 and myHero or mousePos)) <= (mode == 1 and data.range or 100) then
+							local c, d = self:getNearesetWardToPos(ward)
 
-						if not (c and d < 600)  then
-							self.lastWard = Timer()
-							self:castItem(ward, data.id, data.range, true)
+							if not (c and d < 600) then
+								self.lastWard = Timer()
+								self:castItem(ward, data.id, data.range, true)
+								return
+							end
 						end
 					end
 				end
