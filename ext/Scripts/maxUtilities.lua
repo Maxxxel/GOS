@@ -23,6 +23,7 @@
 			0.12 	- Smaller Bug Fixes, new Menu Icons, Disabled Anti-CC (GoS Bugs), Improved Auto-Level, Anti-AFK Timer Menu, Added DrawCircleHack
 			0.13 	- HotFix for Download Issue
 			0.14 	- HotFix for AutoLevel
+			0.15 	- Fixed API for latest gsoOrbwalker, changed some AA detection features
 
 		To-Do:
 			-Summoners including Auto-Smite
@@ -31,7 +32,7 @@
 			-AntiAFK Timer Menu (lazy)
 --]]
 
-local version = 0.142
+local version = 0.15
 local _presetData
 local Timer = Game.Timer
 local Control = Control
@@ -302,7 +303,7 @@ local maxUtilities = setmetatable({}, {
 					end
 				end
 
-			self.menu:MenuElement({id = "spcl", 	name = " 6. Special", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/b/b9/Amplifying_Tome_item.png"})
+			self.menu:MenuElement({id = "spcl", 	name = " 6. Special (NOT IMPLEMENTED)", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/leagueoflegends/images/b/b9/Amplifying_Tome_item.png"})
 				-- self.menu.spcl:MenuElement({id = "_e", 	name = "Enable Special", value = true})
 				-- {name = "Banner of Command", 			type = "spcl", id = 3060, target = "unit", effect = "Boost Minion"},
 				-- {name = "Talisman of Ascension", 		type = "spcl", id = 3069, target = "self", effect = "Speed"},
@@ -314,7 +315,7 @@ local maxUtilities = setmetatable({}, {
 				-- {name = "Youmuu's Ghostblade", 		type = "spcl", id = 3142, target = "self", effect = "Speed"},
 				-- {name = "Randuin's Omen", 				type = "spcl", id = 3143, target = "self", effect = "Slow"},
 
-			self.menu:MenuElement({id = "summs", 	name = " 7. Summoner", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/yugioh/images/9/9b/BAM-Destroy_Spell.png"})
+			self.menu:MenuElement({id = "summs", 	name = " 7. Summoner (NOT IMPLEMENTED)", type = MENU, leftIcon = "https://vignette.wikia.nocookie.net/yugioh/images/9/9b/BAM-Destroy_Spell.png"})
 				-- self.menu.summs:MenuElement({id = "_e", 	name = "Enable Summoner", value = true})
 				-- Heal
 				-- Barrier
@@ -552,7 +553,7 @@ local maxUtilities = setmetatable({}, {
 		-- 	end
 		-- end
 
-		if self.menu._se._e:Value() and not myHero.dead then
+		if Game.IsOnTop and self.menu._se._e:Value() and not myHero.dead then
 			--Ward Stuff
 			if self.menu.ward._e:Value() then
 				self:doWardLogic()
@@ -662,7 +663,7 @@ local maxUtilities = setmetatable({}, {
 		if as.valid and not myHero.isChanneling then
 			if self.state == 0 then
 				self.NextAAIn = Timer() + as.animation
-				self.AAHitIn = as.windup + Timer() + ad.attackDelayOffsetPercent
+				self.AAHitIn = as.windup + Timer()
 				self.state = 1
 			elseif self.AAHitIn - Timer() < 0 and self.state == 1 then
 				self.state = 2
@@ -904,7 +905,6 @@ local maxUtilities = setmetatable({}, {
 		--Orb Target, Near Mouse, Near myHero
 		if mode == 1 then
 			target = 
-				_G.gsoSDK and _G.gsoSDK.TargetSelector:GetComboTarget() or
 				_G.EOWLoaded and _G.EOW:GetTarget() or 
 				_G.SDK and _G.SDK.Orbwalker:GetTarget() or 
 				_G.GOS and _G.Orbwalker.Enabled:Value() and _G.GOS:GetTarget()
@@ -941,11 +941,10 @@ local maxUtilities = setmetatable({}, {
 
 		if mode == 1 then
 			state = Access == 0 
-			or _G.gsoSDK and _G.gsoSDK.Orbwalker:CanAttack()
 			or _G.SDK and _G.SDK.Orbwalker:CanAttack()
 			or _G.GOS:CanAttack()
 		elseif mode == 2 then
-			state = Access == 2 or Access == 3
+			state = Access == 2 or (Access == 3 and self.NextAAIn - Timer() - 0.01 > 0.7)
 		else
 			state = true
 		end
@@ -955,7 +954,6 @@ local maxUtilities = setmetatable({}, {
 
 	function maxUtilities:isCombo()
 		local mode = 
-			_G.gsoSDK and _G.gsoSDK.Orbwalker:GetMode() or
 			_G.EOWLoaded and _G.EOW:Mode() or
 			_G.SDK and (_G.SDK.Orbwalker.Modes[0] and "Combo" or _G.SDK.Orbwalker.Modes[1] and "Harass" or _G.SDK.Orbwalker.Modes[4] and "LastHit" or _G.SDK.Orbwalker.Modes[2] and "LaneClear" or "") or
 			_G.GOS and _G.Orbwalker.Enabled:Value() and _G.GOS:GetMode() or ""
