@@ -1,9 +1,8 @@
 if myHero.charName ~= 'Anivia' then return end
-if not _G.GamsteronOrbwalkerLoaded then print("You need Gamsteron Orbwalker") return end
-
 require '2DGeometry'
+require 'PremiumPrediction'
 
-local version = 0.1
+local version = 0.2
 local Timer = Game.Timer
 local SpellLetters = {[1] = "Q1", [2] = "Q2", [3] = "W", [4] = "E", [5] = "R1", [6] = "R2"}
 local rem = table.remove
@@ -49,10 +48,6 @@ local function DownloadFile(url, path, fileName)
     while not FileExist(path .. fileName) do end
 end
 
-if ReadFile(COMMON_PATH, 'PremiumPrediction.lua') then
-	require 'PremiumPrediction'
-end
-
 local function CalcMagicalDamage(source, target, amount)
 	local mr = target.magicResist
 	local value = 100 / (100 + (mr * (source.magicPenPercent + 1)) - source.magicPen)
@@ -94,6 +89,11 @@ function Anivia:init()
 end
 
 function Anivia:onTick()
+	if not self.unitsLoaded then
+		self:loadUnits()
+		return
+	end
+
 	self:QHandler()
 	self:QStunHandler()
 	self:EHandler()
@@ -106,6 +106,26 @@ function Anivia:onTick()
 end
 
 function Anivia:onDraw()
+	for i = 1, #self.Enemies do
+		local unit = self.Enemies[i]
+
+		for i = 0, unit.buffCount do
+			local buff = unit:GetBuff(i)
+
+	        if buff.count > 0 then
+	            Draw.Text(
+		            "type: " .. tostring(buff.type) .. " | " ..
+					"name: " .. tostring(buff.name) .. " | " ..
+					"startTime: " .. tostring(buff.startTime) .. " | " ..
+					"expireTime: " .. tostring(buff.expireTime) .. " | " ..
+					"duration: " .. tostring(buff.duration) .. " | " ..
+					"stacks: " .. tostring(buff.stacks) .. " | " ..
+					"count: " .. tostring(buff.count), 
+				unit.pos2D.x, unit.pos2D.y + i * 20)
+	        end
+		end
+	end
+
 	if not myHero.dead and self.Menu.Draw.Enabled:Value() then
 		for spell = 1, 6, 1 do
 			local Active = 
@@ -143,19 +163,6 @@ function Anivia:onDraw()
 		-- 		end
 		-- 	end
 		-- end
-	end
-end
-
-function Anivia:onLoad()
-	local c = 0
-
-	for i = 1, Game.HeroCount() do
-		local hero = Game.Hero(i)
-
-		if hero.team ~= myHero.team then
-			c = c + 1
-			self.Enemies[c] = hero
-		end
 	end
 end
 
@@ -306,16 +313,25 @@ function Anivia:loadVariables()
 	self.RTimer = nil
 
 	self.lastAATargets = {}
-	self.lastFarmTargets = {}
 end
 
 function Anivia:loadCallbacks()
+	Callback.Add("Tick", function() Anivia:onSpellCast() end)
 	Callback.Add("Tick", function() Anivia:onTick() end)
 	Callback.Add("Draw", function() Anivia:onDraw() end)
-	Callback.Add("Load", function() Anivia:onLoad() end)
-	Callback.Add("Tick", function() Anivia:onSpellCast() end)
 end
 
+function Anivia:loadUnits()
+	for i = 1, Game.HeroCount() do
+		local hero = Game.Hero(i)
+
+		if hero.team ~= myHero.team then
+			self.Enemies[#self.Enemies + 1] = hero
+		end
+	end
+
+	if #self.Enemies > 0 then self.unitsLoaded = true end
+end
 ----------------------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------------------------------------------------------
 
@@ -357,54 +373,16 @@ function Anivia:getEnemyHeroes(range, pos)
 	return _temp
 end
 
-function Anivia:isFreezedByQ(unit, time)
-	local p = unit.pos
-	local id = p.x .. p.y .. p.z
-	local a = self.stunned[id]
-	local timeLeft = a and a - (time or 0) - Timer() or 0
+function Anivia:isFreezed(unit, time)
+	for i = 0, unit.buffCount do
+		local buff = unit:GetBuff(i)
 
-	-- if a then
-	-- 	Draw.Text("Time left: " .. timeLeft, unit.pos2D.x, unit.pos2D.y)
-	-- end
-
-	if timeLeft <= 0 and a then
-		self.stunned[id] = nil
-
-		if time < 0 then return timeLeft end
-		return 0
-	end
-
-	return timeLeft
-end
-
-function Anivia:isFreezedByR(unit, time)
-	if self.R then
-		local t = self:getRDuration()
-
-		if t == 1.5 and unit.pos:DistanceTo(self.R.pos) <= self.Spells.R.width(1.5) then
-			self.stunned[unit.networkID] = Timer() + 2
+		if buff.count > 0 and buff.name == "aniviaiced" then
+			return not time and buff.duration or buff.duration - time > 0
 		end
 	end
 
-	local a = self.stunned[unit.networkID]
-	local timeLeft = a and a - (time or 0) - Timer() or 0
-
-	-- if a then
-	-- 	Draw.Text("Time left: " .. timeLeft, unit.pos2D.x, unit.pos2D.y)
-	-- end
-
-	if timeLeft <= 0 and a then
-		self.stunned[unit.networkID] = nil
-		return false
-	end
-
-	return timeLeft
-end
-
-function Anivia:isFreezed(unit, time)
-	local q, r = self:isFreezedByQ(unit, time) or 0, self:isFreezedByR(unit, time) or 0 --time or false
-
-	return (q > 0 or r > 0) and max(q, r)
+	return not time and 0 or nil
 end
 
 function Anivia:willBeFreezed(unit, time, rate)
@@ -568,19 +546,21 @@ function Anivia:Combo()
 		if canQ2 then
 			self:timeQProc(target)
 
-			if canR and RMode == 3 and self:isFreezedByQ(target) > 0 then
+			if canR and RMode == 3 and self:isFreezed(target) > 0 then
 				self:castR(target)
 			end
 		end
 
 		if canE then
 			self:setAttack(false)
+
 			local hitTime = (dist + myHero.boundingRadius + target.boundingRadius - Spells.E.width) / Spells.E.speed
 			local Freeze = EMode == 3 and (self:isFreezed(target, hitTime) or self:willBeFreezed(target, hitTime, 75))
 
 			if EMode == 1 or Freeze then
 				CastSpell(HK_E, target)
 			end
+
 			self:setAttack(true)
 		end
 
@@ -591,7 +571,7 @@ function Anivia:Combo()
 		end
 
 		if canR then 
-			if RMode == 1 or (RMode == 3 and (self:isFreezedByQ(target, -3) > 0 or dist < 400)) then
+			if RMode == 1 or (RMode == 3 and (self:isFreezed(target) > 0 or dist < 400)) then
 				self:castR(target)
 			end
 		end
@@ -658,7 +638,7 @@ function Anivia:Harass()
 		end
 
 		if canR then 
-			if RMode == 1 or (RMode == 3 and (self:isFreezedByQ(target, -3) > 0 or dist < 400)) then
+			if RMode == 1 or (RMode == 3 and (self:isFreezedByQ(target) > 0 or dist < 400)) then
 				self:castR(target)
 			end
 		end
@@ -670,7 +650,7 @@ function Anivia:Harass()
 end
 
 function Anivia:Farm()
-	if not (self:getMode() == "lastHit" or self:getMode() == "LaneClear") then self.lastAATargets = {} self.lastFarmTargets = {} return end
+	if not (self:getMode() == "lastHit" or self:getMode() == "LaneClear") then self.lastAATargets = {} return end
 	local manaPercent = myHero.mana * 100 / myHero.maxMana
 	if manaPercent < 10 then return end
 	
@@ -743,7 +723,7 @@ function Anivia:Farm()
 
 			for i = 1, #farmMinions do
 				local minion = farmMinions[i]
-				local isBad = self.lastAATargets[minion.networkID] or self.lastFarmTargets[minion.networkID]
+				local isBad = self.lastAATargets[minion.networkID]
 
 				if not isBad or (not self:canAttack() and _G.SDK.Orbwalker.AttackEndTime - Timer() < .5) then
 					local hp = minion.health
@@ -753,21 +733,17 @@ function Anivia:Farm()
 					if mode ~= 3 and R and hp < CalcMagicalDamage(myHero, minion, rDMG) then
 						rCount = rCount + 1
 						rKills[rCount] = minion
-						self.lastFarmTargets[minion.networkID] = true
 					else --if not killable by R we can check other spells
 						if mode ~= 3 and Q then
 							local QDMG = CalcMagicalDamage(myHero, minion, qDMG)
-
 							if hp < QDMG then
 								qCount = qCount + 1
 								qKills[qCount] = minion
 								q2Count = q2Count + 1
 								q2Kills[q2Count] = minion
-								self.lastFarmTargets[minion.networkID] = true
 							elseif hp < QDMG * 2 then
 								q2Count = q2Count + 1
 								q2Kills[q2Count] = minion
-								self.lastFarmTargets[minion.networkID] = true
 							end
 						end
 
@@ -780,7 +756,6 @@ function Anivia:Farm()
 								local dmgE = CalcMagicalDamage(myHero, minion, eDMG * multi)
 
 								if dmgE > hp then
-									self.lastFarmTargets[minion.networkID] = true
 									CastSpell(HK_E, minion)
 								end
 							end
@@ -800,7 +775,7 @@ function Anivia:Farm()
 			end
 
 			if Q then
-				if qCount > menu.Q.Hits:Value() or (mode == 3 and #farmMinions > 0) then
+				if q2Count > menu.Q.Hits:Value() or (mode == 3 and #farmMinions > 0) then
 					local pos = self:getCombinedAOEPos(mode == 3 and farmMinions or q2Kills, spells.Q.width, spells.Q.radius, spells.Q.range)
 
 					if pos and #pos.inCircle + #pos.inLine >= menu.Q.Hits:Value() then
@@ -1222,50 +1197,6 @@ function Anivia:getTarget(range)
 	return nil
 end
 
-function Anivia:GenerateWallVector(pos)
-	local WallDisplacement = self.Spells.W.width()
-	local HeroToWallVector = (pos - myHero.pos):Normalized()
-	local RotatedVec1 = HeroToWallVector:Perpendicular()
-	local RotatedVec2 = HeroToWallVector:Perpendicular2()
-	local EndPoint1 = pos + RotatedVec1 * WallDisplacement
-	local EndPoint2 = pos + RotatedVec2 * WallDisplacement
-	local DiffVector = (EndPoint2 - EndPoint1):Normalized()
-
-	return EndPoint1, EndPoint2, DiffVector
-end
-
-function Anivia:GetWallCollision(Target)
-	local TargetDestination, HitChance = VP:GetPredictedPos(Target, 0.500, math.huge, myHero, false)
-	local TargetDestination2, HitChance2 = VP:GetPredictedPos(Target, 0.250, math.huge, myHero, false)
-	local TargetWaypoints = VP:GetCurrentWayPoints(Target)
-	local Destination1 = TargetWaypoints[#TargetWaypoints]
-	local Destination2 = TargetWaypoints[1]
-	local Destination13D = {x=Destination1.x, y=myHero.y, z=Destination1.y}
-	if TargetDestination ~= nil and HitChance >= 2 and HitChance2 >= 2 and GetDistance(Destination1, Destination2) > 100 then 
-		if GetDistance(TargetDestination, Target) > 5 then
-			local UnitVector = Vector(Vector(TargetDestination) - Vector(Target)):normalized()
-			Endpoint1, Endpoint2, Diffunitvector = GenerateWallVector(Destination13D)
-			local DisplacedVector = Vector(Target) + Vector(Vector(Destination13D) - Vector(Target)):normalized()*((Target.ms)*0.25 + Config.Extras.WallDistance)
-			local angle = UnitVector:angle(Diffunitvector)
-			if angle ~= nil then
-				--print('Angle Generated!' .. tostring(angle*57.2957795))
-				if angle*57.2957795 < 105 and angle*57.2957795 > 75 and GetDistance(DisplacedVector, myHero) < SpellW.Range and (WReady or CurrentWall) and QReady and QObject == nil then
-					CastSpell(_W, DisplacedVector.x, DisplacedVector.z)
-					local QTravelTime = GetDistance(myHero, DisplacedVector)/SpellQ.Speed 
-					local WallTime = GetDistance(Target, DisplacedVector)/Target.ms + 0.080
-					local DiffTime = QTravelTime - WallTime
-					if DiffTime >= 0 then
-						local QPosition = Vector(DisplacedVector) + Diffunitvector*(DiffTime*Target.ms*0.60)
-						CastSpell(_Q, QPosition.x, QPosition.z)
-					else
-						CastSpell(_Q, DisplacedVector.x, DisplacedVector.z)
-					end
-				end
-			end
-		end
-	end
-end
-
 local function AutoUpdate()
 	-- Get PremiumPrediction
 	local PP = ReadFile(COMMON_PATH, "PremiumPrediction.lua")
@@ -1291,5 +1222,11 @@ local function AutoUpdate()
 end
 
 if AutoUpdate() then
-	Anivia()
+	DelayAction(function()
+		if not _G.GamsteronOrbwalkerLoaded then print("You need Gamsteron Orbwalker") return end
+		Anivia()
+	end, 1)
+else
+	Anivia = nil
+	return
 end
