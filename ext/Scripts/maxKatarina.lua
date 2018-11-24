@@ -393,7 +393,7 @@ function Katarina:loadMenu()
 	self.Menu:MenuElement({id = "Hotkeys", 		name = "8. Special Keys", type = MENU})
 		self.Menu.Hotkeys:MenuElement({id = "AutoJump", name = "1. Jump to nearest Enemy", key = string.byte("E")})
 		self.Menu.Hotkeys:MenuElement({id = "WallJump", name = "2. Small Wall Jump", key = string.byte("T")})
-		self.Menu.Hotkeys:MenuElement({id = "DamageCalc", name = "3. Perform a damage Calc at mousePos", key = string.byte("U")})
+		-- self.Menu.Hotkeys:MenuElement({id = "DamageCalc", name = "3. Perform a damage Calc at mousePos", key = string.byte("U")})
 	self.Menu:MenuElement({id = "Escape", 		name = "9. Escape", type = MENU})
 		self.Menu.Escape:MenuElement({id = "Enabled", name = "1. Tower Escape", value = true})
 		self.Menu.Escape:MenuElement({id = "MinRange", name = "Escape from tower if range <=", value = 875, min = 0, max = 875, step = 25})
@@ -683,9 +683,9 @@ function Katarina:GFX()
 					end
 				end
 
-				if self.Menu.Hotkeys.DamageCalc:Value() then
-					Draw.Circle(mousePos, 25, 5, Colors[4])
-				end
+				-- if self.Menu.Hotkeys.DamageCalc:Value() then
+				-- 	Draw.Circle(mousePos, 25, 5, Colors[4])
+				-- end
 			end
 		end
 	end
