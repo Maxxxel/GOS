@@ -1,4 +1,4 @@
-local version = 0.01
+local version = 0.02
 local author = "Maxxxel"
 
 if myHero.charName ~= "Katarina" then return end
@@ -10,6 +10,7 @@ local Move = Control.Move
 local Cast = Control.CastSpell
 local table = table
 local rem = table.remove
+local insert = table.insert
 local concat = table.concat
 local math = math
 local max = math.max
@@ -39,6 +40,20 @@ local Colors = {
 	[7] = Draw.Color(255, 255, 0, 255),
 	[8] = Draw.Color(255, 0, 255, 255)
 }
+local damagePriorities = {
+	["AttackClose"] = 0,
+	["Attack"] = 1,
+	["Jump"] = 2,
+	["ComboJumpR"] = 3,
+	["ComboJumpI"] = 4,
+	["ComboJumpQ"] = 5
+}
+-- WORK IN PROGRESS!!!
+-- local wallJumpPositions = {
+-- 	{7262,7174,6424,6774}, --x
+-- 	{52,58,49,49}, --y
+-- 	{5900,5612,5208,5208}  --z
+-- }
 
 local Katarina = setmetatable({}, {
 	__call = function(self)
@@ -122,15 +137,67 @@ Dagger.list = {}
 Dagger.ids = {}
 Dagger.__index = Dagger
 
+function Dagger:getDamageType(unit)
+	local distance = self.pos:DistanceTo(unit.pos) - 150
+	--To close
+	if distance <= 150 then
+		return "AttackClose"
+	end
+	--AA
+	if distance <= myHero.range + myHero.boundingRadius + unit.boundingRadius then
+		return "Attack"
+	end
+	--Spin DMG
+	if distance <= Katarina.Spells.W.damageRadius then
+		return "Jump"
+	end
+	--E --> Double Jump
+	-- if distance <= Katarina.Spells.E.range - myHero.boundingRadius then
+	-- 	return "DoubleJump"
+	-- end
+	--R
+	if distance <= Katarina.Spells.R.range then
+		return "ComboJumpR"
+	end
+	--I
+	if Ignite and distance <= Katarina.Spells.Ignite.range then
+		return "ComboJumpI"
+	end
+	--Q
+	if distance <= Katarina.Spells.Q.range then
+		return "ComboJumpQ"
+	end
+	--Out of range
+	return
+end
+
+function Dagger:getJumpSpot(unit, damageType)
+	damageType = damageType or self:getDamageType(unit)
+	if not damageType then return end
+
+	if damageType == "AttackClose" then
+		local range = self.pos:DistanceTo(unit.pos) - 150
+		
+		return self.pos:Extended(unit.pos, range)
+	else
+		return self.pos:Extended(unit.pos, 150)
+	end
+end
+
+function Dagger:getDaggers()
+	return self.list
+end
+
 function Dagger:timeTillLand()
 	return self.castTime - time() + self.landingTime
 end
 
 function Dagger:isDropped()
 	if self.dropped then return true end
+
 	local timer = self:timeTillLand()
 
-	if timer <= 0 then
+	if timer <= 0 and timer >= -4 then
 		self.dropped = true
 		return true
 	end
@@ -138,138 +205,28 @@ function Dagger:isDropped()
 	return false
 end
 
-function Dagger:getClosestSpot(unit, override)
-	local closestDagger = override and override[1] or self:getClosestDagger(unit)
-
-	if closestDagger then
-		local pos = closestDagger.obj or closestDagger
-		local daggerType = override and override[2] or closestDagger:getDamageType(unit)
-
-		if daggerType == "All" then
-			return pos.pos
-		elseif daggerType == "Attack" then
-			return pos.pos - (pos.pos - unit.pos):Normalized() * 140
-		-- elseif daggerType == "Walk" then
-		-- 	return pos.pos - (pos.pos - unit.pos):Normalized() * (140 + myHero.boundingRadius), daggerType
-		-- elseif daggerType == "Jump" then
-		-- 	return pos.pos - (pos.pos - unit.pos):Normalized() * (140 + myHero.boundingRadius), daggerType
-		else
-			return pos.pos - (pos.pos - unit.pos):Normalized() * (140 + myHero.boundingRadius)
-		end
-	end
+function Dagger:getRemainingTime()
+	return self:isDropped() and (self.duration - (time() - self.castTime) + self.landingTime) or self.duration
 end
 
-function Dagger:getDamageType(unit, unit2, noDagger)
-	if not unit then return "None" end
-
-	local isDmgDoing = noDagger or self:isDropped()
-	local o = noDagger and unit2.pos or self.obj.pos
-	local distance = unit.pos:DistanceTo(o)
-	local closest = 140 + unit.boundingRadius
-	--Inside
-	local inside = closest >= distance --and isDmgDoing
-	if inside then return "All" end
-	--Jump for DaggerDmg + AA after E on its edge
-	local attackable = closest + myHero.boundingRadius + myHero.range >= distance --and isDmgDoing
-	if attackable then return "Attack" end
-	--Jump for DaggerDmg after E on its edge
-	local jumpable = closest + 275 >= distance
-	if jumpable then return "Jump" end
-	if unit2 then return "None" end
-	--Jump for DaggerDmg after walking to its edge
-	-- local walkable = closest + 275 + myHero.boundingRadius >= distance
-	-- if walkable then return "Walk" end
-
-	return "None"
+function Dagger:isDead()
+	return not self.obj or self.obj.name == "" or self.obj.networkID == 0 or self.obj.networkID ~= self.id or self:getRemainingTime() <= 0
 end
 
-function Dagger:getClosestDagger(unit1, unit2)
-	local retDagger = nil
-	local dMax = 999999
-	local Daggers = self:getDaggers()
+function Dagger:checkOnTick()
+	if #self.list > 0 then
+		for i = 1, #self.list do
+			local _dagger = self.list[i]
 
-	for i = 1, #Daggers do
-		local _Dagger = Daggers[i]
-
-		if unit2 then
-			local d1 = unit1.pos:DistanceTo(_Dagger.obj)
-			local d2 = unit2.pos:DistanceTo(_Dagger.obj)
-			local d = d1 + d2
-
-			if d <= dMax then
-				dMax = d
-				retDagger = _Dagger
-			end
-		else
-			local d = unit1.pos:DistanceTo(_Dagger.obj)
-
-			if d <= dMax then
-				dMax = d
-				retDagger = _Dagger
+			if _dagger and _dagger:isDead() then
+				_dagger:delete()
 			end
 		end
 	end
-
-	return retDagger
 end
 
-function Dagger:getDaggers()
-	return self.list
-end
-
-function Dagger:getDaggersInRange(unit, range)
-	local Daggers = self:getDaggers()
-	local retDaggers = {}
-	local retCount = 0
-
-	for i = 1, #Daggers do
-		local _Dagger = Daggers[i]
-
-		if unit.pos:DistanceTo(_Dagger.obj.pos) <= range then
-			retCount = retCount + 1
-			retDaggers[retCount] = _Dagger
-		end
-	end
-
-	return retDaggers
-end
-
-function Dagger:isCloserThanMe(unit, obj)
-	local o = obj or self.obj
-	local daggerToUnit = o.pos:DistanceTo(unit.pos) - Katarina.Spells.W.procRadius
-	local daggerToMe = o.distance - Katarina.Spells.W.procRadius
-	local unitToMe = unit.distance
-	local goodOne = daggerToMe <= Katarina.Spells.E.range and unitToMe >= Katarina.Spells.E.range
-
-	return goodOne and daggerToUnit <= Katarina.Spells.R.range and "comboJumpR" or  
-		   goodOne and daggerToUnit <= Katarina.Spells.Ignite.range and "comboJumpI" or 
-		   goodOne and daggerToUnit <= Katarina.Spells.Q.range and "comboJumpQ" or 
-		   "None"
-end
-
-function Dagger:getKSDaggers(unit)
-	local _Daggers = {}
-	local count = 0
-	local list = self.list
-
-	for i = 1, #list do
-		local _Dagger = list[i]
-		local dmgType = _Dagger:getDamageType(unit)
-
-		if dmgType == "None" then
-			dmgType = _Dagger:isCloserThanMe(unit)
-		end
-
-		if dmgType ~= "None" and _Dagger.obj.distance - Katarina.Spells.W.procRadius < Katarina.Spells.E.range then
-			count = count + 1
-			_Daggers[count] = {_Dagger, dmgType, "dagger"}
-		end
-	end
-
-	return _Daggers
-end
-
-function Dagger:delete(num)
+function Dagger:delete()
+	local num = self.ids[self.id]
 	rem(self.list, num)
 	self.ids[self.id] = nil
 end
@@ -278,70 +235,64 @@ local function newDagger(obj)
 	local ID = obj.networkID
 
 	if not Dagger.ids[ID] then
-		Dagger.ids[ID] = true
-
 		local proxy = {
 			landingTime = 1,
 			dropped = false,
 			castTime = time(),
 			duration = 4,
 			obj = obj,
-			width = 150,
-			lookout = 0,
 			id = ID,
-			typeOf = 'Dagger'
+			isDagger = true,
+			pos = obj.pos
 		}
-		proxy.pos = proxy.obj.pos
-		proxy.remainingTime = function()
-			return self:isDropped() and (self.duration - (time() - self.castTime + self.landingTime)) or 999
-		end
 
 		local _Dagger = setmetatable(proxy, Dagger)
-		Dagger.list[#Dagger.list + 1] = _Dagger
+		insert(Dagger.list, _Dagger)
+		Dagger.ids[ID] = #Dagger.list
 
 		return true
 	end
 
 	return false
 end
---=== Start of Orbwalker Class ===--
-local kataOrbwalker = {}  
-
+--=== Start of Orbwalker Functions ===-- 
 local function setOrbwalkerSettings()
-	kataOrbwalker.Move = function(self, pos)
+	local _orbwalker = {}
+
+	_orbwalker.Move = function(self, pos)
 		_G.SDK.Orbwalker:MoveToPos(pos)
 	end
 
-	kataOrbwalker.Attack = function(self, unit)
+	_orbwalker.Attack = function(self, unit)
 		_G.SDK.Orbwalker:Attack(unit)
 	end
 
-	kataOrbwalker.setMovement = function(self, bool)
+	_orbwalker.setMovement = function(self, bool)
 		_G.SDK.Orbwalker.MovementEnabled = bool
 	end
 
-	kataOrbwalker.setAttack = function(self, bool)
+	_orbwalker.setAttack = function(self, bool)
 		_G.SDK.Orbwalker.AttackEnabled = bool
 	end
 
-	kataOrbwalker.setTarget = function(self, unit)
+	_orbwalker.setTarget = function(self, unit)
 		_G.SDK.OrbwalkerMenu.ts.selected.enable:Value(true)
 		_G.SDK.TargetSelector.SelectedTarget = unit
 	end
 
-	kataOrbwalker.canAttack = function(self)
+	_orbwalker.canAttack = function(self)
 		return _G.SDK.Orbwalker:CanAttack()
 	end
 
-	kataOrbwalker.canMove = function(self)
+	_orbwalker.canMove = function(self)
 		return _G.SDK.Orbwalker:CanMove()
 	end
 
-	kataOrbwalker.isAttacking = function(self)
+	_orbwalker.isAttacking = function(self)
 		return _G.SDK.Orbwalker:IsAutoAttacking()
 	end
 
-	kataOrbwalker.getMode = function(self)
+	_orbwalker.getMode = function(self)
 		for i = 0, 4 do
 			if _G.SDK.Orbwalker.Modes[i] then
 				return orbModes[i]
@@ -351,21 +302,21 @@ local function setOrbwalkerSettings()
 		return ""
 	end
 
-	kataOrbwalker.getTarget = function(self, range, type)
+	_orbwalker.getTarget = function(self, range, type)
 		local unit = _G.SDK.TargetSelector:GetTarget(range)
 
 		return unit
 	end
 
-	kataOrbwalker.isForcedTarget = function(self, unit)
+	_orbwalker.isForcedTarget = function(self, unit)
 		return _G.SDK.TargetSelector.SelectedTarget and _G.SDK.TargetSelector.SelectedTarget.networkID == unit.networkID
 	end
+
+	return _orbwalker
 end
 
 local function newOrbwalker()
-	setOrbwalkerSettings()
-
-	return kataOrbwalker
+	return setOrbwalkerSettings()
 end
 --=== Start of Katarina Class ===--
 function Katarina:init()
@@ -373,6 +324,7 @@ function Katarina:init()
 	if not self:loadTables() then return end
 	self:loadMenu()
 	self:loadCallbacks()
+	self:loadTowers()
 end
 
 function Katarina:loadMenu()
@@ -438,13 +390,21 @@ function Katarina:loadMenu()
 		self.Menu.Options:MenuElement({id = "QDetectionrate", name = "3. Q Detection Rate", value = .3, min = 0, max = .5, step = .05})
 		self.Menu.Options:MenuElement({id = "RStop", name = "4. Stop R if no enemy in range", true})
 		self.Menu.Options:MenuElement({id = "RCancel", name = "5. Stop R if KS possible", true})
-	self.Menu:MenuElement({id = "Hotkeys", name = "8. Special Keys", type = MENU})
+	self.Menu:MenuElement({id = "Hotkeys", 		name = "8. Special Keys", type = MENU})
 		self.Menu.Hotkeys:MenuElement({id = "AutoJump", name = "1. Jump to nearest Enemy", key = string.byte("E")})
 		self.Menu.Hotkeys:MenuElement({id = "WallJump", name = "2. Small Wall Jump", key = string.byte("T")})
+		self.Menu.Hotkeys:MenuElement({id = "DamageCalc", name = "3. Perform a damage Calc at mousePos", key = string.byte("U")})
+	self.Menu:MenuElement({id = "Escape", 		name = "9. Escape", type = MENU})
+		self.Menu.Escape:MenuElement({id = "Enabled", name = "1. Tower Escape", value = true})
+		self.Menu.Escape:MenuElement({id = "MinRange", name = "Escape from tower if range <=", value = 875, min = 0, max = 875, step = 25})
+		self.Menu.Escape:MenuElement({id = "MinEnemy", name = "(AND if #Enemies <=", value = 0, min = 0, max = 5, step = 1})
+		self.Menu.Escape:MenuElement({id = "Switch", name = "=============>", value = 2, drop = {"AND", "OR"}})
+		self.Menu.Escape:MenuElement({id = "MinHealth", name = "if %HP <=)", value = 25, min = 0, max = 100, step = 1})
 end
 
 function Katarina:loadCallbacks()
 	Callback.Add("Tick", function() Katarina:Main() end)
+	Callback.Add("Tick", function() Dagger:checkOnTick() end)
 	Callback.Add("Draw", function() Katarina:GFX() end)
 	Callback.Add("WndMsg", function(a, b) Katarina:Cast(a, b) end)
 end
@@ -456,8 +416,10 @@ function Katarina:loadTables()
 	self.Daggers = Dagger
 	self.isKillstealing = false
 
+	self.Towers = {}
 	self.Enemies = {}
 	self.Allies = {}
+	self.Heroes = {}
 	self:loadUnits()
 	self.killstealTable = {}
 	self.Spells = {}
@@ -489,8 +451,9 @@ function Katarina:loadTables()
 	}
 	self.Spells.W = {
 		lastCast = 0,
-		procRadius = 140, --distance to myHero's boundingRadius
-		damageRadius = 300, --around myHero
+		procRadius = 140, -- distance to myHero's boundingRadius
+		damageRadius = 340, -- around myHero
+		jumpRange = 150, -- 0-150 for Daggers + boundingRadius for Daggers
 		ready = function()
 			local spell = myHero:GetSpellData(1)
 			return spell.level > 0 and spell.currentCd == 0
@@ -567,14 +530,29 @@ function Katarina:loadTables()
 	return true
 end
 
+function Katarina:loadTowers()
+	local c = 0
+
+	for i = 1, Game.TurretCount() do
+		local t = Game.Turret(i)
+
+		if t.team ~= myHero.team then
+			c = c + 1
+			self.Towers[c] = t
+		end
+	end
+end
+
 function Katarina:loadUnits()
 	for i = 1, Game.HeroCount() do
 		local hero = Game.Hero(i)
 
 		if hero.team == myHero.team and hero.networkID ~= myHero.networkID then
 			self.Allies[#self.Allies + 1] = hero
+			self.Heroes[#self.Heroes + 1] = hero
 		elseif hero.team ~= myHero.team then
 			self.Enemies[#self.Enemies + 1] = hero
+			self.Heroes[#self.Heroes + 1] = hero
 		end
 	end
 
@@ -589,10 +567,9 @@ function Katarina:Main()
 	end
 	--Check the Orbwalker for next Actions
 	self.mode = not self.isKillstealing and self.Orbwalker:getMode()
-
 	--get Combos for units
 	self:getCombos()
-
+	--other modes
 	if self.mode == "Harass" then --Harass
 		self:Harass()
 	elseif self.mode == "LastHit" then --Farm
@@ -605,7 +582,6 @@ function Katarina:Main()
 	self:WallJump()
 	--Dagger Management
 	self:qDetect()
-	self:daggerAliveCheck()
 	--R
 	if self:isUltying() then
 		self:RStop()
@@ -614,10 +590,41 @@ function Katarina:Main()
 	else
 		self.Orbwalker:setAttack(true)
 		self.Orbwalker:setMovement(true)
-	end 
+	end
+	--Escape
+	self:Escape()
 end
 
 function Katarina:GFX()
+	-- WORK IN PROGRESS!!!
+	-- for i = 1, #wallJumpPositions[1] do
+	-- 	local pos = Vector(wallJumpPositions[1][i], wallJumpPositions[2][i], wallJumpPositions[3][i])
+	-- 	local d = myHero.pos:DistanceTo(pos)
+		
+	-- 	if d < 50 then
+	-- 		Draw.Circle(pos, 40, Colors[2])
+			
+	-- 		local even = i % 2 == 0
+	-- 		local endPoint = even and 
+	-- 			pos:Extended(Vector(wallJumpPositions[1][i - 1], wallJumpPositions[2][i - 1], wallJumpPositions[3][i - 1]), 140) or
+	-- 			pos:Extended(Vector(wallJumpPositions[1][i + 1], wallJumpPositions[2][i + 1], wallJumpPositions[3][i + 1]), 140)
+
+	-- 		if self.Spells.W.ready() then
+	-- 			Cast(HK_W)
+	-- 		end
+
+	-- 		local c = 0
+	-- 		while self.Spells.E.ready() do
+	-- 			Cast(HK_E, endPoint)
+	-- 			c = c + 1
+	-- 			if c == 20 then break end
+	-- 		end
+	-- 	else
+	-- 		Draw.Circle(pos, 40, Colors[4])
+	-- 	end
+	-- end
+	-- Draw.Text(myHero.pos.x .." , " .. myHero.pos.y .." , " .. myHero.pos.z, myHero.pos:To2D())
+	
 	if not myHero.dead then
 		if self.Menu.Draw.Enabled:Value() then
 			if self.Menu.Draw.Debug:Value() then
@@ -637,14 +644,15 @@ function Katarina:GFX()
 						Ignite: ]] .. tostring(t.Ignite) .. "\n"..[[
 						Dagger: ]] .. tostring(t.Dagger) .. "\n"..[[
 						Time: ]] .. (time() - t.created) .. "\n"..[[
-						Type: ]] .. tostring(t.is) .. "\n"..[[
+						Type: ]] .. tostring(t.type) .. "\n"..[[
 						DMG: ]] .. (t.totalDamage or 0) .. [[
 						]]
 						, enemy.pos2D.x + 50, enemy.pos2D.y - 80)
 
 						if t.jump then
-							local p = t.jump[1].pos:To2D()
+							local p = t.jump:To2D()
 							Draw.Line(enemy.pos2D.x, enemy.pos2D.y, p.x, p.y)
+							Draw.Circle(t.jumpPos, 50)
 						end
 					end
 				end
@@ -662,6 +670,67 @@ function Katarina:GFX()
 						Draw.Circle(myHero.pos, Active, Width, Color)
 					end
 				end
+
+				if self.Menu.Draw.MissingHP:Value() then
+					for i = 1, #self.Enemies do
+						local enemy = self.Enemies[i]
+
+						if enemy.valid and enemy.pos2D.onScreen then
+							local kt = self.killstealTable[enemy.networkID] or {totalDamage = 0}
+
+							Draw.Text(not kt.killable and floor((enemy.health - kt.totalDamage) * 100 / enemy.maxHealth) .. "%" or "Killable", enemy.pos2D.x + 20, enemy.pos2D.y - 100)
+						end
+					end
+				end
+
+				if self.Menu.Hotkeys.DamageCalc:Value() then
+					Draw.Circle(mousePos, 25, 5, Colors[4])
+				end
+			end
+		end
+	end
+end
+
+function Katarina:Escape()
+	local menuAccess = self.Menu.Escape
+
+	if menuAccess.Enabled:Value() and self.Spells.E.ready() then
+		local tTower = nil
+		local tRange = 999999
+
+		for i = 1, #self.Towers do
+			local Tower = self.Towers[i]
+
+			if Tower.pos2D.onScreen and Tower.targetID == myHero.networkID then 
+				tTower = Tower 
+				tRange = Tower.distance
+				break
+			end
+		end
+
+		if tTower then
+			local range = menuAccess.MinRange:Value()
+			local numEnemies = menuAccess.MinEnemy:Value()
+			local minHP = menuAccess.MinHealth:Value()
+			local cond = menuAccess.Switch:Value()
+
+			if tTower.distance <= range then
+				local a = #self:getHeroesInRange(myHero, 400, true) <= numEnemies
+				local b = (myHero.health * 100 / myHero.maxHealth) <= minHP
+
+				if (cond == 1 and a and b) or (cond == 2 and (a or b)) then
+					local x = self:getBestDaggerToMyHero(myHero, self.Spells.E.range)
+
+					if x and x.pos:DistanceTo(tTower.pos) >= 875 then
+						self:castE(x)
+					else
+						local y = self:getBestUnitToMyHero(myHero, self.Spells.E.range)
+
+						if y and y.pos:DistanceTo(tTower.pos) >= 875 then
+							self:castE(y)
+						end
+					end
+				end
 			end
 		end
 	end
@@ -669,10 +738,12 @@ end
 
 function Katarina:RStop()
 	if self.Menu.Options.RStop:Value() then
-		local enemies = #self:getHeroesInRange(myHero, self.Spells.R.range, false, true)
+		local enemies = #self:getHeroesInRange(myHero, self.Spells.R.range, true)
 
 		if enemies == 0 then
-			Move(myHero.pos)
+			Move(mousePos)
+			self.Orbwalker:setAttack(true)
+			self.Orbwalker:setMovement(true)
 		end
 	end
 end
@@ -743,22 +814,6 @@ function Katarina:qDetect()
 	end
 end
 
-function Katarina:daggerAliveCheck()
-	local Daggers = self.Daggers:getDaggers()
-
-	if #Daggers > 0 then
-		for i = 1, #Daggers do
-			local _Dagger = Daggers[i]
-
-			if _Dagger then
-				if _Dagger.obj.name == "" then
-					_Dagger:delete(i)
-				end
-			end
-		end
-	end
-end
-
 function Katarina:Cast(msg, wParam)
 	if wParam == 50 and msg >= 256 then
 		if self.Spells.W.ready() then
@@ -800,210 +855,140 @@ function Katarina:goodTarget(unit)
 	return unit and unit.valid and not unit.dead and unit.visible and unit.health > 0 and unit.pos2D.onScreen
 end
 
-function Katarina:getKSJumpSpots(unit, Q, R, I)
+function Katarina:analyzeSituation(unit, A, Q, W, E, R, I) --if spell isReady
 	local tableAccess = self.Spells
-	local maxRange = 
-		Q and tableAccess.Q.range or
-		R and tableAccess.R.range or
-		I and tableAccess.Ignite.range
+	local aRange = myHero.range + myHero.boundingRadius + unit.boundingRadius
+	local rangeToUnit = E and (Q and tableAccess.Q.range or R and tableAccess.R.range or I and tableAccess.Ignite.range or aRange) --nil if we cant jump
+	local bestTarget, targetType, targetPriority
+	local situation = {}
+	local distance = unit.distance
 
-	if unit and maxRange then
-		return self:getJumpSpots(unit, maxRange, nil, true)
-	end
+	local aState = A and (distance < aRange and 1 or 2)
+	local qState = Q and (distance < tableAccess.Q.range and 1 or 2)
+	local wState = W and (distance < tableAccess.W.damageRadius and 1 or 2)
+	local eState = E and distance < tableAccess.E.range and 1
+	local rState = R and (distance < tableAccess.R.range and 1 or 2)
+	local iState = I and (distance < tableAccess.Ignite.range and 1 or 2)
 
-	return {}
-end
+	local bestSituation
 
-function Katarina:analyzeSituation(unit, A, Q, W, E, R, I)
-	local _Daggers = self.Daggers:getKSDaggers(unit)
-	local Others = E and self:getKSJumpSpots(unit, Q, R, I) or {}
-	local list = mergeTables(Others, _Daggers)
-	local dist = unit.distance
-	local tableAccess = self.Spells
-	local aaDagger, wDagger, situation = nil, nil, {}
-	local _q, _w, _e, _r, _i = Q and dist < tableAccess.Q.range and 1, W and dist < tableAccess.W.damageRadius + myHero.boundingRadius and 1, E and dist < tableAccess.E.range and 1, R and dist < tableAccess.R.range and 1, I and dist < tableAccess.Ignite.range and 1
-	local best, prio, notTheBest = nil, 9
-
-	if #list > 0 and E then
-		for i = 1, #list do
-			local Data = list[i]
-			local dmgType = Data[2]
-			local willBe = Data[4]
-
-			if dmgType == "All" then
-				local d = Data[3] == "dagger"
-
-				situation = {jump = Data, AA = A and 2, W = _w or W and 2, Q = _q or Q and 2, Dagger = d and 1, E = 1, R = _r or R and 2, Ignite = I and 2, is = dmgType}
-				aaDagger = d
-				wDagger = d
-
-				if prio == 1 or (d and best) then 
-					local betterJumpTarget = closestPoint(situation.jump, best.jump, unit)
-					situation.jump = betterJumpTarget
-					best = situation
-				elseif prio > 1 then
-					prio = 1
-					best = situation
-				end
-
-				notTheBest = _e and situation.jump[3] == "unit"
-			elseif dmgType == "Attack" then
-				local d = Data[3] == "dagger"
-
-				situation = {jump = Data, AA = A and 2, W = _w or W and 2, Q = _q or Q and 2, Dagger = d and 1, E = _e, R = _r or R and 2, Ignite = I and 2, is = dmgType}
-				aaDagger = d
-				wDagger = d
-
-				if prio == 2 or (d and best) then
-					local betterJumpTarget = closestPoint(situation.jump, best.jump, unit)
-					situation.jump = betterJumpTarget
-					best = situation
-				elseif prio > 2 then
-					prio = 2
-					best = situation
-				end
-
-				notTheBest = _e and situation.jump[3] == "unit"
-			elseif dmgType == "Jump" then
-				local d = Data[3] == "dagger"
-				
-				situation = {jump = Data, Q = _q or Q and 2, Dagger = d and 1, E = _e, R = _r or R and 2, Ignite = I and 2, is = dmgType}
-				wDagger = d
-
-				if prio == 3 or (d and best) then
-					local betterJumpTarget = closestPoint(situation.jump, best.jump, unit)
-					situation.jump = betterJumpTarget
-					best = situation
-				elseif prio > 3 then
-					prio = 3
-					best = situation
-				end
-
-				notTheBest = _e and situation.jump[3] == "unit"
-			elseif dmgType == "comboJumpR" then
-				situation = {jump = Data, Q = Q and 2, W = _w or W and 2, R = R and 2, Ignite = I and 2, is = dmgType}
-
-				if prio == 4 then
-					local betterJumpTarget = closestPoint(situation.jump, best.jump, unit)
-					situation.jump = betterJumpTarget
-					best = situation
-				elseif prio > 4 then
-					prio = 4
-					best = situation
-				end
-			elseif dmgType == "comboJumpI" then
-				situation = {jump = Data, Q = Q and 2, Ignite = I and 2, is = dmgType}
-
-				if prio == 5 then
-					local betterJumpTarget = closestPoint(situation.jump, best.jump, unit)
-					situation.jump = betterJumpTarget
-					best = situation
-				elseif prio > 5 then
-					prio = 5
-					best = situation
-				end
-			elseif dmgType == "comboJumpQ" then
-				situation = {jump = Data, Q = Q and 2, is = dmgType}
-
-				if prio == 6 then
-					local betterJumpTarget = closestPoint(situation.jump, best.jump, unit)
-					situation.jump = betterJumpTarget
-					best = situation
-				elseif prio > 6 then
-					prio = 6
-					best = situation
-				end
-			-- else
-			-- 	print("Debug: unpredicted dmgType->"..dmgType)
+	if rangeToUnit then
+		bestTarget, targetType, targetPriority = self:getBestDaggerToMyHero(unit, rangeToUnit)
+		--If there is no Dagger or no AA-Dagger, we check also for units we can jump to
+		if targetPriority > 2 or distance > tableAccess.E.range then
+			local bestUnit, unitType, unitPriority = self:getBestUnitToMyHero(unit, rangeToUnit)
+			
+			if unitPriority < targetPriority then
+				bestTarget, targetType, targetPriority = bestUnit, unitType, unitPriority
 			end
+		end
+
+		if bestTarget then
+			if targetType == "AttackClose" then --Dagger
+				bestSituation = bestTarget.isDagger
+				situation.jump = bestTarget.pos
+				situation.jumpPos = bestTarget.isDagger and bestTarget:getJumpSpot(unit, targetType) or self:getJumpSpot(bestTarget, unit)
+				situation.Dagger = bestTarget.isDagger and bestTarget
+				situation.AA = aState
+				situation.Q = qState
+				situation.W = wState
+				situation.E = eState
+				situation.R = rState
+				situation.Ignite = iState
+				situation.type = targetType
+			elseif targetType == "Attack" then --Dagger
+				bestSituation = bestTarget.isDagger
+				situation.jump = bestTarget.pos
+				situation.jumpPos = bestTarget.isDagger and bestTarget:getJumpSpot(unit, targetType) or self:getJumpSpot(bestTarget, unit)
+				situation.Dagger = bestTarget.isDagger and bestTarget
+				situation.AA = aState
+				situation.Q = qState
+				situation.W = wState
+				situation.E = eState
+				situation.R = rState
+				situation.Ignite = iState
+				situation.type = targetType
+			elseif targetType == "Jump" then --Dagger
+				bestSituation = bestTarget.isDagger
+				situation.jump = bestTarget.pos
+				situation.jumpPos = bestTarget.isDagger and bestTarget:getJumpSpot(unit, targetType) or self:getJumpSpot(bestTarget, unit)
+				situation.Dagger = bestTarget.isDagger and bestTarget
+				situation.AA = false
+				situation.Q = qState
+				situation.W = qState
+				situation.E = eState
+				situation.R = rState
+				situation.Ignite = iState
+				situation.type = targetType
+			elseif targetType == "ComboJumpR" then --Dagger or Unit
+				situation.jump = bestTarget.pos
+				situation.jumpPos = bestTarget.isDagger and bestTarget:getJumpSpot(unit, targetType) or self:getJumpSpot(bestTarget, unit)
+				situation.Dagger = bestTarget.isDagger and bestTarget
+				situation.AA = false
+				situation.Q = qState
+				situation.W = wState
+				situation.E = false
+				situation.R = rState
+				situation.Ignite = iState
+				situation.type = targetType
+			elseif targetType == "ComboJumpI" then --Dagger or Unit
+				situation.jump = bestTarget.pos
+				situation.jumpPos = bestTarget.isDagger and bestTarget:getJumpSpot(unit, targetType) or self:getJumpSpot(bestTarget, unit)
+				situation.Dagger = bestTarget.isDagger and bestTarget
+				situation.AA = false
+				situation.Q = qState
+				situation.W = wState
+				situation.E = false
+				situation.R = false
+				situation.Ignite = iState
+				situation.type = targetType
+			elseif targetType == "ComboJumpQ" then --Dagger or Unit
+				situation.jump = bestTarget.pos
+				situation.jumpPos = bestTarget.isDagger and bestTarget:getJumpSpot(unit, targetType) or self:getJumpSpot(bestTarget, unit)
+				situation.Dagger = bestTarget.isDagger and bestTarget
+				situation.AA = false
+				situation.Q = qState
+				situation.W = wState
+				situation.E = false
+				situation.R = false
+				situation.Ignite = false
+				situation.type = targetType
+			end
+
+			if bestSituation then return situation end
 		end
 	end
 
-	if best and not notTheBest then return best end
-
-	if tableAccess.AA.inRange(unit) then
-		situation = {
-			AA = A and 1, 
-			Q = _q, 
-			W = _w,
-			E = _e, 
-			R = _r, 
-			Ignite = _i}
-	elseif  _w then
-		situation = {
-			Jump = E and unit, 
-			AA = A and E and 2, 
-			Q = _q, 
-			W = _w,
-			E = _e, 
-			R = 1, 
-			Ignite = _i}
-	elseif 	_r then
-		situation = {
-			Jump = E and unit, 
-			AA = A and E and 2, 
-			Q = _q, 
-			W = W and E and 2,
-			E = _e, 
-			R = 1, 
-			Ignite = _i}
-	elseif 	_i then
-		situation = {
-			Jump = E and unit, 
-			AA = A and E and 2, 
-			Q = _q, 
-			W = W and E and 2,
-			E = _e, 
-			R = R and E and 2, 
-			Ignite = 1}
-	elseif 	_q then
-		situation = {
-			Jump = E and unit, 
-			AA = A and E and 2, 
-			Q = 1, 
-			W = W and E and 2,
-			E = _e, 
-			R = R and E and 2, 
-			Ignite = I and E and 2}
-	elseif 	_e then
-		situation = {
-			Jump = E and unit,
-			AA = A and E and 2,
-			Q = Q and E and 2,
-			W = W and E and 2,
-			E = _e,
-			R = R and E and 2,
-			Ignite = I and E and 2
-		}
+	if distance < tableAccess.E.range then
+		situation.jump = eState == 1 and unit.pos
+		situation.jumpPos = situation.jump
+		situation.AA = aState == 2 and eState == 1 and 2 or aState == 1 and 1
+		situation.Q = qState == 2 and eState == 1 and 2 or qState == 1 and 1
+		situation.W = wState == 2 and eState == 1 and 2 or wState == 1 and 1
+		situation.E = eState
+		situation.R = rState == 2 and eState == 1 and 2 or rState == 1 and 1
+		situation.Ignite = iState == 2 and eState == 1 and 2 or iState == 1 and 1
 	end
 
 	return situation
 end
 
-function Katarina:getJumpPos(pos, target)
-	if target then --jump on pos to get in target range
-		return Dagger:getClosestSpot(pos, target)
-	else --jump directly on target (behind/front?)
-		return pos
-	end
-end
-
 function Katarina:getRCastPos(unit, combo)
 	if not combo.jump then
-		if combo.E == 1 then --in E Range jump on the target
-			return self:getJumpPos(unit)
-		else --E not ready, we need to cast from here
+		if combo.E == 1 then
+			return unit.pos
+		else
 			return myHero.pos
 		end
 	else
-		return self:getJumpPos(unit, combo.jump)
+		return combo.jumpPos
 	end
 end
 
 function Katarina:calcDamage(combo, unit, Q, E, R, I)
 	local tPD, tMD, tTD = 0, 0, 0
-	local dagger = 0
 	local tableAccess = self.Spells
+	local canJump = E and combo.jump
 
 	if combo.AA then
 		tPD = tPD + tableAccess.AA.rawDamage()
@@ -1014,13 +999,13 @@ function Katarina:calcDamage(combo, unit, Q, E, R, I)
 	end
 
 	if combo.Dagger and E then
-		dagger = CalcMagicalDamage(myHero, unit, tableAccess.W.rawDamage())
+		tMD = tMD + tableAccess.W.rawDamage()
 	end
 
 	if combo.E and E then
 		local D = combo.jump and combo.jump[3] and combo.jump[2]
 
-		if not D or (D == "All" or D == "Attack") then
+		if not D or (D == "AttackClose" or D == "Attack") then
 			tMD = tMD + tableAccess.E.rawDamage()
 		end
 	end
@@ -1041,8 +1026,7 @@ function Katarina:calcDamage(combo, unit, Q, E, R, I)
 	local totalDamage = CalcPhysicalDamage(myHero, unit, tPD) + CalcMagicalDamage(myHero, unit, tMD) + tTD
 	combo.totalDamage = totalDamage
 
-	if totalDamage > unit.health then return true, false end
-	if totalDamage + dagger > unit.health then return true, true end
+	if totalDamage > unit.health then return true end
 
 	return false
 end
@@ -1051,7 +1035,7 @@ function Katarina:getCombos()
 	local tableAccess = self.Spells
 	local Q, W, E, R, I, A = tableAccess.Q.ready(), tableAccess.W.ready(), tableAccess.E.ready(), tableAccess.R.ready(), tableAccess.Ignite.ready(), self.Orbwalker:canAttack()
 	
-	if Q or E or R or I then
+	if Q or E or R or I or A or W then
 		local rTime = self.Menu.Options.recalcTime:Value()
 
 		for i = 1, #self.Enemies do
@@ -1068,11 +1052,14 @@ function Katarina:getCombos()
 				if tbl then
 					local ksMenu = self.Menu.Killsteal
 					local ksQ, ksE, ksR, ksI = ksMenu.Q:Value(), ksMenu.E:Value(), ksMenu.R:Value(), ksMenu.I:Value()
-					local comboCanKill, killNeedDaggerDmg = (ksMenu.Enabled:Value() and self:calcDamage(tbl, enemy, ksQ, ksE, ksR, ksI))
+					local comboCanKill = ksMenu.Enabled:Value() and self:calcDamage(tbl, enemy, ksQ, ksE, ksR, ksI)
+					self.killstealTable[enemy.networkID].killable = comboCanKill
 
 					if comboCanKill and not (self:isUltying() and not self.Menu.Options.RCancel:Value()) then
-						self:Killsteal(enemy, tbl, ksQ, ksE, ksR, ksI, killNeedDaggerDmg)
+						self.isKillstealing = true
+						self:Killsteal(enemy, tbl, ksQ, ksE, ksR, ksI)
 					elseif not self:isUltying() then
+						self.isKillstealing = false
 						if self.mode == "Combo" and not self:isUltying() then
 							self:Combo(enemy, tbl)
 						end
@@ -1105,6 +1092,16 @@ function Katarina:getWCast(useW, modeW, comboW)
 	end
 end
 
+function Katarina:getRCast(target, menu)
+	local HP = menu.HPOn:Value()
+	local AOE = menu.AOEOn:Value()
+
+	local a =  HP and (target.health * 100 / target.maxHealth) <= menu.HP:Value()
+	local b = AOE and #self:getHeroesInRange(target, self.Spells.R.range, true) + 1 >= menu.AOE:Value()
+
+	return a or b
+end
+
 function Katarina:Combo(target, combo)
 	local menuAccess = self.Menu.Combo
 	local Q, W, E, R = menuAccess.Q.Enabled:Value(), menuAccess.W.Enabled:Value(), menuAccess.E.Enabled:Value(), menuAccess.R.Enabled:Value()
@@ -1112,36 +1109,33 @@ function Katarina:Combo(target, combo)
 	if Q or W or E or R then
 		if E and not self.Spells.Q.pressed then
 			local m2 = menuAccess.E.Mode2:Value()
-			local m3 = menuAccess.W.Mode:Value()
-			local m4 = menuAccess.R.Mode:Value()
+			local m3 = W and menuAccess.W.Mode:Value()
+			local m4 = R and menuAccess.R.Mode:Value()
+			local m5 = R and menuAccess.R
 
 			if m2 ~= 3 then
 				if m2 == 1 and combo.E then --direct Cast + AA(?)
 					local whenCastW = self:getWCast(W, m3, combo.W)
-					local whenCastR = R and combo.R and m4 == 1 and whenCastW
+					local whenCastR = R and combo.R and self:getRCast(target, m5) and m4 == 1 and whenCastW
 
 					self:castE(target, combo.AA, whenCastW, whenCastR, combo.AA == 1 and menuAccess.E.AA:Value())
 					combo.E = nil
 				elseif m2 == 2 then
-					if combo.jump then
-						if combo.Dagger and combo.jump[1]:isDropped() then
+					if combo.jump and (damagePriorities[combo.type] or 9) <= 2 then
+						if combo.Dagger and combo.Dagger:isDropped() then
 							local m = menuAccess.E.Mode:Value()
 
 							if m == 1 or (m == 2 and combo.AA) then
-								local pos = self:getJumpPos(target, combo.jump)
+								local whenCastW = self:getWCast(W, m3, combo.W)
+								local whenCastR = R and combo.R and self:getRCast(target, m5) and m4 == 1 and whenCastW
 
-								if pos then --jump on dagger + AA(?)
-									local whenCastW = self:getWCast(W, m3, combo.W)
-									local whenCastR = R and combo.R and m4 == 1 and whenCastW
-
-									self:castE(pos, combo.AA, whenCastW, whenCastR, combo.AA == 1 and menuAccess.E.AA:Value())
-									combo.E = nil
-								end
+								self:castE(combo.jumpPos, combo.AA, whenCastW, whenCastR, combo.AA == 1 and menuAccess.E.AA:Value())
+								combo.E = nil
 							end
 						end
 					elseif combo.E and self.Orbwalker:isForcedTarget(target) then --direct cast + AA(?)
 						local whenCastW = self:getWCast(W, m3, combo.W)
-						local whenCastR = R and combo.R and m4 == 1 and whenCastW
+						local whenCastR = R and combo.R and self:getRCast(target, m5) and m4 == 1 and whenCastW
 
 						self:castE(target, combo.AA, whenCastW, whenCastR, combo.AA == 1 and menuAccess.E.AA:Value())
 						combo.E = nil
@@ -1149,11 +1143,14 @@ function Katarina:Combo(target, combo)
 				end
 			end
 
-			if combo.E == 1 and 
-				not (((combo.Q or self.Spells.Q.readyIn() < 2) and Q) or ((combo.R or self.Spells.R.readyIn() < 2) and R) or ((combo.W or self.Spells.W.readyIn() < 2) and W)) and 
-				not (combo.jump or self:qCasted(.2)) and 
-				not combo.AA and self.Spells.AA.inRange(target) and menuAccess.E.AR:Value() then
-				self:castE(target, true)
+			if combo.E == 1 then
+				local spellStates = ((combo.Q or self.Spells.Q.readyIn() < 2) and Q) or ((combo.R or self.Spells.R.readyIn() < 2) and R) or ((combo.W or self.Spells.W.readyIn() < 2) and W)
+				local daggerOrQ = combo.Dagger or self:qCasted(.2)
+				local canAAReset = menuAccess.E.AR:Value() and not combo.AA and self.Spells.AA.inRange(target)
+
+				if not spellStates and not daggerOrQ and canAAReset then
+					self:castE(target, true)
+				end
 			end
 		elseif combo.AA == 1 and self.Orbwalker:canAttack() then
 			self.Orbwalker:Attack(target)
@@ -1180,7 +1177,7 @@ function Katarina:Combo(target, combo)
 		if R and combo.R == 1 then
 			local m = menuAccess.R.Mode:Value()
 
-			if not ((Q and combo.Q) or (W and combo.W) or (E and combo.E)) and m ~= 1 then
+			if not ((Q and combo.Q) or (W and combo.W) or (E and combo.E)) and m ~= 1 and self:getRCast(target, m5) then
 				if m == 2 then
 					if self:wCasted() and self.Spells.W.lastCastPos:DistanceTo(myHero.pos) <= 270 + 140 + myHero.boundingRadius then
 						self:castR()
@@ -1212,19 +1209,10 @@ function Katarina:Harass()
 			local target = self.Orbwalker:getTarget(Spells.E.range)
 
 			if target then
-				local Ds = self.Daggers:getKSDaggers(target)
+				local dagger, dType, dPrio = self:getBestDaggerToMyHero(target, Spells.E.range)
 
-				for i = 1, #Ds do
-					local type = Ds[i][2]
-
-					if type == "Attack" or type == "Jump" or type == "All" then
-						local pos = Ds[i]
-						local jp = self:getJumpPos(target, pos)
-
-						if jp and pos[1]:isDropped() then
-							self:castE(jp, false, menuAccess.WAfter:Value() and 2)
-						end
-					end
+				if dagger and dPrio <= 2 and dagger:isDropped() then
+					self:castE(dagger:getJumpSpot(target, dType), false, menuAccess.WAfter:Value() and 2)
 				end
 			end
 		end
@@ -1266,13 +1254,13 @@ function Katarina:Farm()
 			elseif Mode == 2 or (Mode == 3 and Spells.E.ready() and not Spells.Q.ready()) then
 				local minHits = menuAccess.MinHits:Value()
 				local kills = menuAccess.Kills:Value()
-				local _daggers = self.Daggers:getDaggersInRange(myHero, Spells.E.range)
+				local _daggers = self:getDaggersInRange(myHero, Spells.E.range)
 				local bestDagger = nil
 				local bestHits = 0
 
 				for i = 1, #_daggers do
 					local _dagger = _daggers[i]
-					local farmMinions = _dagger:isDropped() and self:getMinionsInRange(_dagger.obj, Spells.W.damageRadius + 50) or {}
+					local farmMinions = _dagger:isDropped() and self:getMinionsInRange(_dagger, Spells.W.damageRadius) or {}
 
 					if #farmMinions < minHits then break end
 
@@ -1292,12 +1280,12 @@ function Katarina:Farm()
 
 						if d > bestHits and d >= minHits then
 							bestHits = d
-							bestDagger = _dagger.obj
+							bestDagger = _dagger
 						end
 					else
 						if #farmMinions > bestHits then
 							bestHits = #farmMinions
-							bestDagger = _dagger.obj
+							bestDagger = _dagger
 						end
 					end
 				end
@@ -1312,7 +1300,7 @@ function Katarina:Farm()
 				local bestDagger = nil
 
 				if Spells.Q.ready() then
-					local farmMinions = self:getMinionsInRange(myHero, Spells.E.range - 350, false, true)
+					local farmMinions = self:getMinionsInRange(myHero, Spells.E.range - 350)
 
 					for i = 1, #farmMinions do
 						local minion = farmMinions[i]
@@ -1336,7 +1324,7 @@ function Katarina:Farm()
 					for i = 1, #killableMinions.Q do
 						local qTarget = killableMinions.Q[i]
 						local endPos = qTarget.pos:Shortened(myHero.pos, 350)
-						local hits = self:getMinionsInRange(endPos, Spells.W.damageRadius + 50)
+						local hits = self:getMinionsInRange(endPos, Spells.W.damageRadius)
 
 						if #hits < minHits then break end
 
@@ -1415,17 +1403,17 @@ function Katarina:Clear()
 			elseif Mode == 3 or (Mode == 4 and Spells.E.ready() and not Spells.Q.ready()) then
 				local minHits = menuAccess.MinHits:Value()
 				local wAfter = menuAccess.WAfter:Value()
-				local _daggers = self.Daggers:getDaggersInRange(myHero, Spells.E.range)
+				local _daggers = self:getDaggersInRange(myHero, Spells.E.range)
 				local bestDagger = nil
 				local bestHits = 0
 
 				for i = 1, #_daggers do
 					local _dagger = _daggers[i]
-					local farmMinions = _dagger:isDropped() and self:getMinionsInRange(_dagger.obj, Spells.W.damageRadius + 50) or {}
+					local farmMinions = _dagger:isDropped() and self:getMinionsInRange(_dagger, Spells.W.damageRadius) or {}
 
 					if #farmMinions < minHits then break end
 
-					local pos = self:getCircularAOEPos(farmMinions, Spells.W.damageRadius, _dagger.obj)
+					local pos = self:getCircularAOEPos(farmMinions, Spells.W.damageRadius, _dagger)
 
 					if pos and pos[2] > minHits and minHits > bestHits then
 						bestHits = minHits
@@ -1447,7 +1435,7 @@ function Katarina:Clear()
 					for i = 1, #farmMinions do
 						local qTarget = farmMinions[i]
 						local endPos = qTarget.pos:Shortened(myHero.pos, 350)
-						local hits = self:getMinionsInRange(endPos, Spells.W.damageRadius + 50)
+						local hits = self:getMinionsInRange(endPos, Spells.W.damageRadius)
 
 						if #hits < minHits then break end
 
@@ -1525,60 +1513,37 @@ function Katarina:getCircularAOEPos(list, width, forceTarget, noExcusion)
 	end
 end
 
-function Katarina:Killsteal(unit, combo, Q, E, R, I, D)
+function Katarina:Killsteal(unit, combo, Q, E, R, I)
 	local menuAccess = self.Menu.Killsteal
 
-	if combo.jump and E then
-		if D and combo.Dagger and combo.jump[1]:isDropped() then
-			local pos = self:getJumpPos(unit, combo.jump)
-
-			if pos then
-				self:castE(pos)
-			end
-		elseif not D then
-			local pos = self:getJumpPos(unit, combo.jump)
-
-			if pos then
-				self:castE(pos)
-			end
-		end
-	elseif combo.E and E then
+	if combo.jump and E and ((combo.Dagger and combo.Dagger:isDropped() and combo.Dagger:getRemainingTime() > 0.1) or not combo.Dagger) then
+		self:castE(combo.jumpPos)
+	elseif combo.E == 1 and E then
 		self:castE(unit)
 	end
 
-	if combo.Q and Q then
+	if combo.Q == 1 and Q then
 		self:castQ(unit)
 	end
 
-	if combo.I and I then
-		castIgnite(unit)
+	if combo.Ignite == 1 and I then
+		self:castIgnite(unit)
 	end
 
-	if combo.R and R then
+	if combo.R == 1 and R then
 		self:castR()
 	end
 end
 
-function Katarina:getMinionsInRange(unit, range, inE)
+function Katarina:getMinionsInRange(unit, range)
 	local list = {}
 	local c = 0
 
 	for i = 1, Game.MinionCount() do
 		local obj = Game.Minion(i)
-		local d = obj.pos:DistanceTo(unit)
+		local d = obj.pos:DistanceTo(unit.pos)
 
-		if inE and unit.networkID ~= obj.networkID and obj.distance < self.Spells.E.range then
-			local dmgType = Dagger:getDamageType(obj, unit, true)
-
-			if dmgType == "None" then
-				dmgType = Dagger:isCloserThanMe(unit, obj)
-			end
-
-			if dmgType ~= "None" and obj.distance - self.Spells.W.procRadius < self.Spells.E.range then
-				c = c + 1
-				list[c] = {obj, dmgType, "unit"}
-			end
-		elseif not inE and obj.team ~= myHero.team and obj.pos:DistanceTo(unit.pos or unit) <= range then
+		if obj.team ~= myHero.team and d <= range then
 			c = c + 1
 			list[c] = obj
 		end
@@ -1587,7 +1552,7 @@ function Katarina:getMinionsInRange(unit, range, inE)
 	return list
 end
 
-function Katarina:getHeroesInRange(unit, range, inE, enemiesOnly)
+function Katarina:getHeroesInRange(unit, range, enemiesOnly)
 	local list = {}
 	local c = 0
 	local Units = not enemiesOnly and mergeTables(self.Allies, self.Enemies) or self.Enemies
@@ -1595,21 +1560,10 @@ function Katarina:getHeroesInRange(unit, range, inE, enemiesOnly)
 	for i = 1, #Units do
 		local obj = Units[i]
 
-		if obj.valid then
-			local d = obj.pos:DistanceTo(unit)
+		if obj.valid and unit.networkID ~= obj.networkID then
+			local d = obj.pos:DistanceTo(unit.pos)
 
-			if inE and unit.networkID ~= obj.networkID and obj.distance < self.Spells.E.range then
-				local dmgType = Dagger:getDamageType(obj, unit, true)
-
-				if dmgType == "None" then
-					dmgType = Dagger:isCloserThanMe(unit, obj)
-				end
-
-				if dmgType ~= "None" and obj.distance - self.Spells.W.procRadius < self.Spells.E.range then
-					c = c + 1
-					list[c] = {obj, dmgType, "unit"}
-				end
-			elseif not inE and obj.distance <= range then
+			if d <= range then
 				c = c + 1
 				list[c] = obj
 			end
@@ -1617,15 +1571,6 @@ function Katarina:getHeroesInRange(unit, range, inE, enemiesOnly)
 	end
 
 	return list
-end
-
-function Katarina:getJumpSpots(unit, range, useDaggers, inJumpRange)
-	local Daggers = useDaggers and self.Daggers:getDaggersInRange(unit, range) or {}
-	local Minions = self:getMinionsInRange(unit, range, inJumpRange)
-	local Heroes = self:getHeroesInRange(unit, range, inJumpRange)
-	local merge = mergeTables(Daggers, Minions, Heroes)
-
-	return merge
 end
 
 function Katarina:castQ(unit)
@@ -1704,6 +1649,154 @@ function Katarina:rCasted() --returns true if spell was casted within last .1s
 	if ret > 2 then self.Spells.R.lastCast = 0
 
 	return false end
+end
+
+function Katarina:getDamageType(object, unit)
+	local distance = object.pos:DistanceTo(unit.pos) - 150
+	--To close
+	if distance <= 150 then
+		return "AttackClose"
+	end
+	--AA
+	if distance <= myHero.range + myHero.boundingRadius + unit.boundingRadius then
+		return "Attack"
+	end
+	--E --> Double Jump
+	-- if distance <= Katarina.Spells.E.range - myHero.boundingRadius then
+	-- 	return "DoubleJump"
+	-- end
+	--R
+	if distance <= Katarina.Spells.R.range then
+		return "ComboJumpR"
+	end
+	--I
+	if Ignite and distance <= Katarina.Spells.Ignite.range then
+		return "ComboJumpI"
+	end
+	--Q
+	if distance <= Katarina.Spells.Q.range then
+		return "ComboJumpQ"
+	end
+	--Out of range
+	return
+end
+
+function Katarina:getBestMinionToMyHero(unit, range, rangeToMyHero)
+	local bestUnit = nil
+	local bestType = ""
+	local bestPriority = 9
+
+	for i = 1, Game.MinionCount() do
+		local Minion = Game.Minion(i)
+
+		if Minion.distance <= rangeToMyHero and Minion.pos:DistanceTo(unit.pos) <= range then
+			local damageType = self:getDamageType(Minion, unit)
+			local priority = damagePriorities[damageType] or 9
+
+			if priority < bestPriority then
+				bestPriority = priority
+				bestUnit = Minion
+				bestType = damageType
+			end
+		end
+	end
+
+	return bestUnit, bestType, bestPriority
+end
+
+function Katarina:getBestHeroToMyHero(unit, range, rangeToMyHero)
+	local bestUnit = nil
+	local bestType = ""
+	local bestPriority = 9
+
+	for i = 1, #self.Heroes do
+		local Hero = self.Heroes[i]
+
+		if Hero.networkID ~= unit.networkID and Hero.distance <= rangeToMyHero and Hero.pos:DistanceTo(unit.pos) <= range then
+			local damageType = self:getDamageType(Hero, unit)
+			local priority = damagePriorities[damageType] or 9
+
+			if priority < bestPriority then
+				bestPriority = priority
+				bestUnit = Hero
+				bestType = damageType
+			end
+		end
+	end
+
+	return bestUnit, bestType, bestPriority
+end
+
+function Katarina:getBestUnitToMyHero(unit, range)
+	local bestUnit = nil
+	local bestType = ""
+	local bestPriority = 9
+	--Minions
+	local bestMinion, bestMinionType, bestMinionPriority = self:getBestMinionToMyHero(unit, range + 150, self.Spells.E.range)
+
+	if bestMinionPriority < bestPriority then
+		bestUnit = bestMinion
+		bestType = bestMinionType
+		bestPriority = bestMinionPriority
+	end
+
+	--Heroes
+	local bestHero, bestHeroType, bestHeroPriority = self:getBestHeroToMyHero(unit, range + 150, self.Spells.E.range)
+
+	if bestHeroPriority < bestPriority then
+		bestUnit = bestHero
+		bestType = bestHeroType
+		bestPriority = bestHeroPriority
+	end
+
+	return bestUnit, bestType, bestPriority
+end
+
+function Katarina:getBestDaggerToMyHero(unit, range)
+	local Daggers = self.Daggers:getDaggers()
+	local bestPriority = 9
+	local bestDagger = nil
+	local bestType = ""
+
+	for i = 1, #Daggers do
+		local _dagger = Daggers[i]
+		local distance = myHero.pos:DistanceTo(_dagger.pos)
+
+		if distance <= self.Spells.E.range + myHero.boundingRadius and unit.pos:DistanceTo(_dagger.pos) <= range then
+			local damageType = _dagger:getDamageType(unit)
+			local priority = damagePriorities[damageType] or 9
+
+			if priority < bestPriority then
+				bestPriority = priority
+				bestDagger = _dagger
+				bestType = damageType
+			end
+		end
+	end
+
+	return bestDagger, bestType, bestPriority
+end
+
+function Katarina:getDaggersInRange(unit, range)
+	local Daggers = self.Daggers:getDaggers()
+	local list = {}
+	local c = 0
+
+	for i = 1, #Daggers do
+		local _dagger = Daggers[i]
+		local distance = myHero.pos:DistanceTo(_dagger.pos)
+
+		if distance <= range then
+			c = c + 1
+			list[c] = _dagger
+		end
+	end
+
+	return list
+end
+
+function Katarina:getJumpSpot(jump, unit)
+	return jump.pos:Extended(unit.pos, jump.boundingRadius)
 end
 --=== Auto Update ==--
 local function AutoUpdate()
