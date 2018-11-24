@@ -1,4 +1,4 @@
-local version = 0.02
+local version = 0.03
 local author = "Maxxxel"
 
 if myHero.charName ~= "Katarina" then return end
@@ -515,17 +515,15 @@ function Katarina:loadTables()
 		end
 	}
 	
-	if Ignite then
-		self.Spells.Ignite = {
-			ready = function()
-				return myHero:GetSpellData(Ignite).currentCd == 0
-			end,
-			range = 575,
-			rawDamage = function()
-				return 25 * myHero.levelData.lvl + 55
-			end
-		}
-	end
+	self.Spells.Ignite = {
+		ready = function()
+			return Ignite and myHero:GetSpellData(Ignite).currentCd == 0
+		end,
+		range = 575,
+		rawDamage = function()
+			return 25 * myHero.levelData.lvl + 55
+		end
+	}
 
 	return true
 end
