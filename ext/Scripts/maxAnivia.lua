@@ -1,8 +1,6 @@
 if myHero.charName ~= 'Anivia' then return end
-require '2DGeometry'
-require 'PremiumPrediction'
 
-local version = 0.21
+local version = 0.22
 local Timer = Game.Timer
 local SpellLetters = {[1] = "Q1", [2] = "Q2", [3] = "W", [4] = "E", [5] = "R1", [6] = "R2"}
 local rem = table.remove
@@ -221,7 +219,7 @@ function Anivia:loadMenu()
 		-- 	self.Menu.AddOns.AutoQ:MenuElement({id = "ProcNum", name = "2. Minimum Hits for Q to proc", value = 2, min = 1, max = 5, step = 1})
 		-- 	self.Menu.AddOns.AutoQ:MenuElement({id = "procType", name = "3. Unit type", value = 1, drop = {'Champions', 'Minions', 'Jungle', 'Champions + Minions', 'Champions + Jungle', 'Minions + Jungle', 'Champions + Minions + Jungle'}})
 	self.Menu:MenuElement({id = "Options", name = " 7. Options", type = MENU})
-		self.Menu.Options:MenuElement({id = "Wall", 	name = "1. Wall Prediction width", value = 25, min = 0, max = 100, step = 1})
+		self.Menu.Options:MenuElement({id = "Wall", 	name = "1. Wall Prediction width", value = 70, min = 0, max = 150, step = 1})
 		self.Menu.Options:MenuElement({id = "info", name = "Increase value if wall pushes him out", type = SPACE})
 	self.Menu:MenuElement({id = "Draw", name = " 8. Draw", type = MENU})
 		self.Menu.Draw:MenuElement({id = "Enabled", name = "1. Draw Stuff", value = true})
@@ -787,8 +785,8 @@ function Anivia:castQ(unit)
 	if not self.Q and not self.QCasted then
 		local spell = self.Spells.Q
 		local pos, chance = PremiumPrediction:GetLinearAOEPrediction(myHero, unit, spell.speed, spell.range, spell.delay, spell.width, 0, false)
-		
-		if pos and chance >= 5 then
+
+		if pos and chance >= 0.50 then
 		    CastSpell(HK_Q, pos)
 		end 
 	end
@@ -799,7 +797,7 @@ function Anivia:castR(unit)
 		local spell = self.Spells.R
 		local pos, chance = PremiumPrediction:GetCircularAOEPrediction(myHero, unit, spell.speed, spell.range, spell.delay, spell.width(), 0, false)
 
-		if pos and chance >= 5 then
+		if pos and chance >= 0.50 then
 			for i = 1, 10 do
 		   		CastSpell(HK_R, pos)
 		   	end
@@ -1180,11 +1178,13 @@ end
 local function AutoUpdate()
 	-- Get PremiumPrediction
 	local PP = ReadFile(COMMON_PATH, "PremiumPrediction.lua")
+	local PPV = ReadFile(COMMON_PATH, "PremiumPrediction.version")
 
-	if not PP then
+	if not PP or not PPV then
 		DownloadFile("https://raw.githubusercontent.com/Ark223/GoS-Scripts/master/PremiumPrediction.lua", COMMON_PATH, "PremiumPrediction.lua")
+		require 'PremiumPrediction'
 		print("maxAnivia: Downloaded PremiumPrediction. Please Reload with 2x F6")
-		return false
+		return
 	end
 
     DownloadFile("https://raw.githubusercontent.com/Maxxxel/GOS/master/ext/Scripts/maxAnivia.version", COMMON_PATH, "maxAnivia.version")
@@ -1202,6 +1202,9 @@ local function AutoUpdate()
 end
 
 if AutoUpdate() then
+	require '2DGeometry'
+	require 'PremiumPrediction'
+
 	DelayAction(function()
 		if not _G.GamsteronOrbwalkerLoaded then print("You need Gamsteron Orbwalker") return end
 		Anivia()
