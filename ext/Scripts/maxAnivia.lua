@@ -2,7 +2,7 @@ if myHero.charName ~= 'Anivia' then return end
 require '2DGeometry'
 require 'PremiumPrediction'
 
-local version = 0.2
+local version = 0.21
 local Timer = Game.Timer
 local SpellLetters = {[1] = "Q1", [2] = "Q2", [3] = "W", [4] = "E", [5] = "R1", [6] = "R2"}
 local rem = table.remove
@@ -106,26 +106,6 @@ function Anivia:onTick()
 end
 
 function Anivia:onDraw()
-	for i = 1, #self.Enemies do
-		local unit = self.Enemies[i]
-
-		for i = 0, unit.buffCount do
-			local buff = unit:GetBuff(i)
-
-	        if buff.count > 0 then
-	            Draw.Text(
-		            "type: " .. tostring(buff.type) .. " | " ..
-					"name: " .. tostring(buff.name) .. " | " ..
-					"startTime: " .. tostring(buff.startTime) .. " | " ..
-					"expireTime: " .. tostring(buff.expireTime) .. " | " ..
-					"duration: " .. tostring(buff.duration) .. " | " ..
-					"stacks: " .. tostring(buff.stacks) .. " | " ..
-					"count: " .. tostring(buff.count), 
-				unit.pos2D.x, unit.pos2D.y + i * 20)
-	        end
-		end
-	end
-
 	if not myHero.dead and self.Menu.Draw.Enabled:Value() then
 		for spell = 1, 6, 1 do
 			local Active = 
