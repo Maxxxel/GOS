@@ -1,4 +1,4 @@
-local version = 0.03
+local version = 0.04
 local author = "Maxxxel"
 
 if myHero.charName ~= "Katarina" then return end
@@ -14,6 +14,7 @@ local insert = table.insert
 local concat = table.concat
 local math = math
 local max = math.max
+local min = math.min
 local floor = math.floor
 local Summ1, Summ2 = myHero:GetSpellData(SUMMONER_1), myHero:GetSpellData(SUMMONER_2)
 local Ignite = Summ1.name == "SummonerDot" and SUMMONER_1 or Summ2.name == "SummonerDot" and SUMMONER_2
@@ -48,6 +49,7 @@ local damagePriorities = {
 	["ComboJumpI"] = 4,
 	["ComboJumpQ"] = 5
 }
+local particles = {}
 -- WORK IN PROGRESS!!!
 -- local wallJumpPositions = {
 -- 	{7262,7174,6424,6774}, --x
@@ -131,6 +133,20 @@ local function DownloadFile(url, path, fileName)
     DownloadFileAsync(url, path .. fileName, function() end)
     while not FileExist(path .. fileName) do end
 end
+
+local function newParticle(particle)
+	for i = 1, #particles do
+		local p = particles[i]
+
+		if p.pos == particle.pos or p == particle or p.pos.x == 0 then
+			return false
+		end
+	end
+
+	particles[#particles + 1] = particle
+	
+	return true
+end
 --=== Start of Dagger Class ===--
 local Dagger = {}
 Dagger.list = {}
@@ -185,7 +201,15 @@ function Dagger:getJumpSpot(unit, damageType)
 end
 
 function Dagger:getDaggers()
-	return self.list
+	local c = 0
+	local list = {}
+
+	for id, o in pairs(self.ids) do
+		c = c + 1
+		list[c] = o
+	end
+
+	return list
 end
 
 function Dagger:timeTillLand()
@@ -214,9 +238,11 @@ function Dagger:isDead()
 end
 
 function Dagger:checkOnTick()
-	if #self.list > 0 then
-		for i = 1, #self.list do
-			local _dagger = self.list[i]
+	local total = self:getDaggers()
+
+	if #total > 0 then
+		for i = 1, #total do
+			local _dagger = total[i]
 
 			if _dagger and _dagger:isDead() then
 				_dagger:delete()
@@ -226,8 +252,8 @@ function Dagger:checkOnTick()
 end
 
 function Dagger:delete()
-	local num = self.ids[self.id]
-	rem(self.list, num)
+	-- local num = self.ids[self.id]
+	-- rem(self.list, num)
 	self.ids[self.id] = nil
 end
 
@@ -247,8 +273,8 @@ local function newDagger(obj)
 		}
 
 		local _Dagger = setmetatable(proxy, Dagger)
-		insert(Dagger.list, _Dagger)
-		Dagger.ids[ID] = #Dagger.list
+		-- insert(Dagger.list, _Dagger)
+		Dagger.ids[ID] = _Dagger --#Dagger.list
 
 		return true
 	end
@@ -386,7 +412,7 @@ function Katarina:loadMenu()
 		self.Menu.Draw:MenuElement({id = "Debug", name = "7. Draw Debug", value = false})
 	self.Menu:MenuElement({id = "Options", 		name = "7. Options", type = MENU})
 		self.Menu.Options:MenuElement({id = "recalcTime", name = "1. Combo/KS Recalc time", value = .1, min = 0, max = .5, step = .05})
-		self.Menu.Options:MenuElement({id = "wDelay", name = "2. W Detection Rate", value = .25, min = 0, max = .5, step = .05})
+		self.Menu.Options:MenuElement({id = "wDelay", name = "2. W Detection Rate", value = .05, min = .05, max = .2, step = .05})
 		self.Menu.Options:MenuElement({id = "QDetectionrate", name = "3. Q Detection Rate", value = .3, min = 0, max = .5, step = .05})
 		self.Menu.Options:MenuElement({id = "RStop", name = "4. Stop R if no enemy in range", true})
 		self.Menu.Options:MenuElement({id = "RCancel", name = "5. Stop R if KS possible", true})
@@ -406,7 +432,6 @@ function Katarina:loadCallbacks()
 	Callback.Add("Tick", function() Katarina:Main() end)
 	Callback.Add("Tick", function() Dagger:checkOnTick() end)
 	Callback.Add("Draw", function() Katarina:GFX() end)
-	Callback.Add("WndMsg", function(a, b) Katarina:Cast(a, b) end)
 end
 
 function Katarina:loadTables()
@@ -437,6 +462,8 @@ function Katarina:loadTables()
 		range = 620,
 		delay = .2,
 		speed = 1800,
+		particles = {},
+		obj = nil,
 		ready = function()
 			local spell = myHero:GetSpellData(0)
 			return spell.level > 0 and spell.currentCd == 0
@@ -491,9 +518,10 @@ function Katarina:loadTables()
 	self.Spells.R = {
 		lastCast = 0,
 		range = 500,
+		onCast = false,
 		ready = function()
 			local spell = myHero:GetSpellData(3)
-			return spell.level > 0 and spell.currentCd == 0
+			return spell.level > 0 and spell.currentCd == 0 and not self:isUltying()
 		end,
 		readyIn = function()
 			local spell = myHero:GetSpellData(3)
@@ -504,17 +532,16 @@ function Katarina:loadTables()
 		end,
 		daggerBounces = function(unit, pos)
 			if pos then
-				pos = pos.pos or pos
-				local ms = unit.ms
-				local timeToMoveOut = (self.Spells.R.range - pos:DistanceTo(unit.pos)) / ms
+				local p = pos.pos or pos
+				local ms = unit.ms + 1
+				local timeToMoveOut = (self.Spells.R.range - unit.pos:DistanceTo(p)) / ms
 
-				return floor(timeToMoveOut / 0.16666666)
+				return min(15, floor(timeToMoveOut / 0.16666666))
 			end
 
 			return 1
 		end
 	}
-	
 	self.Spells.Ignite = {
 		ready = function()
 			return Ignite and myHero:GetSpellData(Ignite).currentCd == 0
@@ -563,6 +590,11 @@ function Katarina:Main()
 		self:loadUnits()
 		return
 	end
+	--Ulti Stuff and Dagger
+	self:manage()
+	--Dagger Management
+	self:DaggerManager()
+	-- self:detectDaggers()
 	--Check the Orbwalker for next Actions
 	self.mode = not self.isKillstealing and self.Orbwalker:getMode()
 	--get Combos for units
@@ -578,13 +610,11 @@ function Katarina:Main()
 	--Hotkeys
 	self:AutoJump()
 	self:WallJump()
-	--Dagger Management
-	self:qDetect()
 	--R
 	if self:isUltying() then
-		self:RStop()
 		self.Orbwalker:setAttack(false)
 		self.Orbwalker:setMovement(false)
+		self:RStop()
 	else
 		self.Orbwalker:setAttack(true)
 		self.Orbwalker:setMovement(true)
@@ -622,7 +652,7 @@ function Katarina:GFX()
 	-- 	end
 	-- end
 	-- Draw.Text(myHero.pos.x .." , " .. myHero.pos.y .." , " .. myHero.pos.z, myHero.pos:To2D())
-	
+
 	if not myHero.dead then
 		if self.Menu.Draw.Enabled:Value() then
 			if self.Menu.Draw.Debug:Value() then
@@ -652,6 +682,20 @@ function Katarina:GFX()
 							Draw.Line(enemy.pos2D.x, enemy.pos2D.y, p.x, p.y)
 							Draw.Circle(t.jumpPos, 50)
 						end
+					end
+				end
+
+				local Daggers = self.Daggers:getDaggers()
+
+				for i = 1, #Daggers do
+					local d = Daggers[i]
+
+					if d:isDropped() then
+						Draw.Circle(d.pos, 140)
+					else
+						local timeTillDrop = d:timeTillLand()
+
+						Draw.Text(timeTillDrop, d.pos:To2D())
 					end
 				end
 			else
@@ -687,6 +731,30 @@ function Katarina:GFX()
 			end
 		end
 	end
+end
+
+function Katarina:manage()
+	local gotR = false
+
+	for i = 0, myHero.buffCount do
+		local buff = myHero:GetBuff(i)
+
+		if buff.count > 0 then
+			if buff.name == "katarinawhaste" then
+				local started = time() - buff.startTime < self.Menu.Options.wDelay:Value()
+
+				if started and not self:wCasted() then
+					self.Spells.W.lastCast = time()
+					self.Spells.W.lastCastPos = myHero.pos
+				end
+			elseif buff.name == "katarinarsound" then
+				gotR = true
+				self.Spells.R.onCast = true
+			end
+		end
+	end
+
+	self.Spells.R.onCast = gotR
 end
 
 function Katarina:Escape()
@@ -739,9 +807,13 @@ function Katarina:RStop()
 		local enemies = #self:getHeroesInRange(myHero, self.Spells.R.range, true)
 
 		if enemies == 0 then
-			Move(mousePos)
 			self.Orbwalker:setAttack(true)
 			self.Orbwalker:setMovement(true)
+
+			Move(myHero.pos)
+			Move(mousePos)
+			Move(mousePos)
+			Move(myHero.pos)
 		end
 	end
 end
@@ -789,7 +861,7 @@ function Katarina:WallJump()
 end
 
 function Katarina:isUltying()
-	return myHero.isChanneling and myHero.activeSpell.valid and myHero.activeSpellSlot == 3
+	return self.Spells.R.onCast or myHero.isChanneling and myHero.activeSpell.valid and myHero.activeSpellSlot == 3
 end
 
 function Katarina:castIgnite(unit)
@@ -800,53 +872,19 @@ function Katarina:castIgnite(unit)
 	end
 end
 
-function Katarina:qDetect()
-	if myHero.isChanneling and myHero.activeSpell.valid and myHero.activeSpellSlot == 0 then
-		if not self.Spells.Q.pressed then
-			self.Spells.Q.pressed = true
+function Katarina:DaggerManager()
+	local needSearch = false
 
-			DelayAction(function()
-				self:findDagger(true)
-			end, self.Spells.Q.delay + self.Menu.Options.QDetectionrate:Value())
+	for i = #self.Spells.Q.particles, 1, -1 do
+		local particle = self.Spells.Q.particles[i]
+
+		if particle and (particle.name ~= "Katarina_base_Q_mis" or particle.pos.y > myHero.pos.y + 200) then
+			self.Spells.Q.particles[i] = nil
+			needSearch = true
 		end
 	end
-end
 
-function Katarina:Cast(msg, wParam)
-	if wParam == 50 and msg >= 256 then
-		if self.Spells.W.ready() then
-			self.Spells.W.lastCast = time()
-			self.Spells.W.lastCastPos = myHero.pos
-
-			delayed(self.findDagger, self.Menu.Options.wDelay:Value())
-		end
-	end
-end
-
-function Katarina:findDagger(LFQ, notFound)
-	local foundQ = false
-
-	for i = 1, Game.ParticleCount() do
-		local par = Game.Particle(i)
-
-		if par.name == "Katarina_Base_W_Indicator_Ally" then
-			local foundNew = newDagger(par)
-
-			if foundNew and LFQ then 
-				Katarina.Spells.Q.pressed = false
-				foundQ = true 
-			end
-		end 
-	end
-
-	if LFQ and not foundQ and not notFound then
-		DelayAction(function()
-			Katarina:findDagger(true, true)
-		end, .2)
-	elseif not foundQ and notFound then
-		Katarina.Spells.Q.pressed = false
-		print("Unfortunately Q wasnt detected successfully, please try to increase the Q-Detection-Rate in the Options Menu if it occurs more frequently.")
-	end
+	self:qCasted(needSearch or self:wCasted())
 end
 
 function Katarina:goodTarget(unit)
@@ -1004,7 +1042,7 @@ function Katarina:calcDamage(combo, unit, Q, E, R, I)
 		local D = combo.jump and combo.jump[3] and combo.jump[2]
 
 		if not D or (D == "AttackClose" or D == "Attack") then
-			tMD = tMD + tableAccess.E.rawDamage()
+			tMD = tMD + tableAccess.E.rawDamage() * (combo.Dagger and 2 or 1)
 		end
 	end
 
@@ -1013,7 +1051,7 @@ function Katarina:calcDamage(combo, unit, Q, E, R, I)
 		
 		if pos then
 			local multi = tableAccess.R.daggerBounces(unit, pos)
-			tMD = tMD + tableAccess.R.rawDamage() * 1
+			tMD = tMD + tableAccess.R.rawDamage() * multi
 		end
 	end
 
@@ -1032,7 +1070,8 @@ end
 function Katarina:getCombos()
 	local tableAccess = self.Spells
 	local Q, W, E, R, I, A = tableAccess.Q.ready(), tableAccess.W.ready(), tableAccess.E.ready(), tableAccess.R.ready(), tableAccess.Ignite.ready(), self.Orbwalker:canAttack()
-	
+	local ks = false
+
 	if Q or E or R or I or A or W then
 		local rTime = self.Menu.Options.recalcTime:Value()
 
@@ -1054,10 +1093,10 @@ function Katarina:getCombos()
 					self.killstealTable[enemy.networkID].killable = comboCanKill
 
 					if comboCanKill and not (self:isUltying() and not self.Menu.Options.RCancel:Value()) then
+						ks = true
 						self.isKillstealing = true
 						self:Killsteal(enemy, tbl, ksQ, ksE, ksR, ksI)
 					elseif not self:isUltying() then
-						self.isKillstealing = false
 						if self.mode == "Combo" and not self:isUltying() then
 							self:Combo(enemy, tbl)
 						end
@@ -1070,6 +1109,8 @@ function Katarina:getCombos()
 	else
 		self.killstealTable = {}
 	end
+
+	self.isKillstealing = ks
 end
 
 function Katarina:getWCast(useW, modeW, comboW)
@@ -1105,7 +1146,7 @@ function Katarina:Combo(target, combo)
 	local Q, W, E, R = menuAccess.Q.Enabled:Value(), menuAccess.W.Enabled:Value(), menuAccess.E.Enabled:Value(), menuAccess.R.Enabled:Value()
 
 	if Q or W or E or R then
-		if E and not self.Spells.Q.pressed then
+		if E and not self.Spells.Q.casted then
 			local m2 = menuAccess.E.Mode2:Value()
 			local m3 = W and menuAccess.W.Mode:Value()
 			local m4 = R and menuAccess.R.Mode:Value()
@@ -1143,7 +1184,7 @@ function Katarina:Combo(target, combo)
 
 			if combo.E == 1 then
 				local spellStates = ((combo.Q or self.Spells.Q.readyIn() < 2) and Q) or ((combo.R or self.Spells.R.readyIn() < 2) and R) or ((combo.W or self.Spells.W.readyIn() < 2) and W)
-				local daggerOrQ = combo.Dagger or self:qCasted(.2)
+				local daggerOrQ = combo.Dagger or self.Spells.Q.casted
 				local canAAReset = menuAccess.E.AR:Value() and not combo.AA and self.Spells.AA.inRange(target)
 
 				if not spellStates and not daggerOrQ and canAAReset then
@@ -1372,7 +1413,7 @@ function Katarina:Clear()
 	if Mode ~= 5 then
 		local Spells = self.Spells
 		local rangeToCheck = (Mode == 1 and (Spells.Q.ready() and Spells.Q.range)) or (Mode == 2 and (Spells.Q.ready() and Spells.Q.range)) or (Mode == 3 and (Spells.E.ready() and Spells.E.range)) or (Mode == 4 and (Spells.Q.ready() and Spells.Q.range or (Spells.E.ready() and Spells.E.range)))
-		
+
 		if rangeToCheck then
 			local lastHitTarget = _G.SDK.HealthPrediction:GetLastHitTarget()
 			local killableMinions = {Q = {}, D = {}}
@@ -1428,16 +1469,14 @@ function Katarina:Clear()
 				local bestDagger = nil
 
 				if Spells.Q.ready() then
-					local farmMinions = self:getMinionsInRange(myHero, Spells.E.range - 350)
+					local farmMinions = self:getMinionsInRange(myHero, Spells.E.range)
 
 					for i = 1, #farmMinions do
 						local qTarget = farmMinions[i]
 						local endPos = qTarget.pos:Shortened(myHero.pos, 350)
 						local hits = self:getMinionsInRange(endPos, Spells.W.damageRadius)
 
-						if #hits < minHits then break end
-
-						if #hits > bestHits then
+						if #hits > bestHits and #hits > minHits then
 							bestHits = #hits
 							bestDagger = qTarget
 						end
@@ -1515,21 +1554,21 @@ function Katarina:Killsteal(unit, combo, Q, E, R, I)
 	local menuAccess = self.Menu.Killsteal
 
 	if combo.jump and E and ((combo.Dagger and combo.Dagger:isDropped() and combo.Dagger:getRemainingTime() > 0.1) or not combo.Dagger) then
-		self:castE(combo.jumpPos)
+		self:castE(combo.jumpPos, nil, nil, R and combo.R, nil, Q and combo.Q)
 	elseif combo.E == 1 and E then
-		self:castE(unit)
+		self:castE(unit, nil, nil, R and combo.R, nil, Q and combo.Q)
 	end
 
-	if combo.Q == 1 and Q then
+	if not E or not combo.E and combo.Q == 1 and Q then
 		self:castQ(unit)
+	end
+
+	if not E or not combo.E and combo.R == 1 and R then
+		self:castR()
 	end
 
 	if combo.Ignite == 1 and I then
 		self:castIgnite(unit)
-	end
-
-	if combo.R == 1 and R then
-		self:castR()
 	end
 end
 
@@ -1539,7 +1578,7 @@ function Katarina:getMinionsInRange(unit, range)
 
 	for i = 1, Game.MinionCount() do
 		local obj = Game.Minion(i)
-		local d = obj.pos:DistanceTo(unit.pos)
+		local d = obj.pos:DistanceTo(unit.pos or unit)
 
 		if obj.team ~= myHero.team and d <= range then
 			c = c + 1
@@ -1553,13 +1592,13 @@ end
 function Katarina:getHeroesInRange(unit, range, enemiesOnly)
 	local list = {}
 	local c = 0
-	local Units = not enemiesOnly and mergeTables(self.Allies, self.Enemies) or self.Enemies
+	local Units = enemiesOnly and self.Enemies or mergeTables(self.Allies, self.Enemies)
 
 	for i = 1, #Units do
 		local obj = Units[i]
 
-		if obj.valid and unit.networkID ~= obj.networkID then
-			local d = obj.pos:DistanceTo(unit.pos)
+		if obj.valid and not obj.dead and obj.health > 0 and unit.networkID ~= obj.networkID then
+			local d = obj.pos:DistanceTo(unit.pos or unit)
 
 			if d <= range then
 				c = c + 1
@@ -1572,7 +1611,6 @@ function Katarina:getHeroesInRange(unit, range, enemiesOnly)
 end
 
 function Katarina:castQ(unit)
-	if self:isUltying() then return end
 	local t = time()
 
 	if t - self.Spells.Q.lastCast > 0 then
@@ -1582,12 +1620,10 @@ function Katarina:castQ(unit)
 end
 
 function Katarina:castW()
-	if self:isUltying() then return end
 	Cast(HK_W)
 end
 
-function Katarina:castE(pos, attackAfter, castW, castR, wait)
-	if self:isUltying() then return end
+function Katarina:castE(pos, attackAfter, castW, castR, wait, castQ)
 	self.Orbwalker:setMovement(false)
 
 	if not wait then
@@ -1595,8 +1631,10 @@ function Katarina:castE(pos, attackAfter, castW, castR, wait)
 
 		if t - self.Spells.E.lastCast > 0 then
 			self.Spells.E.lastCast = t + .05
+
 			if self.Orbwalker:canMove() and not self.Orbwalker:isAttacking() then 
 				if castW == 1 then self:castW() end
+				if castQ == 1 then self:castQ() end
 				if castR == 1 then self:castR() return end
 				
 				Cast(HK_E, pos)
@@ -1607,9 +1645,15 @@ function Katarina:castE(pos, attackAfter, castW, castR, wait)
 					end, 0)
 				end
 
+				if castQ == 2 then 
+					DelayAction(function()
+						self:castQ() 
+					end, 0)
+				end
+
 				if castR == 2 then 
 					DelayAction(function()
-						self:castR() 
+						self:castR()
 					end, 0)
 				end
 			end
@@ -1619,20 +1663,67 @@ end
 
 function Katarina:castR()
 	Cast(HK_R)
+	self.Spells.R.onCast = true
 end
 
-function Katarina:qCasted(timex) --returns true if spell was casted within last .1s
+function Katarina:qCasted(forceSearch) --returns true if spell was casted within last .25s
 	local dat = myHero:GetSpellData(0)
-	return time() - (dat.castTime - dat.cd) < (timex or .1)
+	local currentCD = dat.currentCd
+	local spellCD = dat.cd
+	local lastCast = spellCD - currentCD
+	local nothingFound = true
+	local qCasted = not self.Spells.Q.casted and lastCast > 0 and lastCast <= .25
+
+	if qCasted or forceSearch then
+		if qCasted then
+			self.Spells.Q.casted = true
+		end
+		--Check for long range cast
+		for i = Game.ParticleCount(), 1, -1 do
+			local mis = Game.Particle(i)
+
+			if mis.name == "Katarina_base_Q_mis" then
+				local np = newParticle(mis)
+
+				if np then
+					nothingFound = false
+				end
+					
+				self.Spells.Q.particles[#self.Spells.Q.particles + 1] = mis
+			elseif mis.name == "Katarina_Base_W_Indicator_Ally" then
+				local np = newDagger(mis)
+			end
+		end
+
+		if nothingFound and not forceSearch then
+			DelayAction(function()
+				self:qCasted(true)
+			end, .2)
+		end
+
+		return true
+	elseif lastCast <= 0 or lastCast > .25 or currentCD == 0 then
+		self.Spells.Q.casted = false
+		return false
+	end
+
+	return false
 end
 
 function Katarina:wCasted() --returns true if spell was casted within last .1s
 	local ret = time() - self.Spells.W.lastCast
+	local dat = myHero:GetSpellData(1 )
+	local activeCD = dat.cd - dat.currentCd
 
-	if ret < .1 then return true end
-	if ret > 2 then self.Spells.W.lastCast = 0
+	if ret < .1 or (activeCD > 0 and activeCD <= .25 and dat.currentCd ~= 0) then
+		return true 
+	end
 
-	return false end
+	if ret > 2 then 
+		self.Spells.W.lastCast = 0
+	end
+
+	return false 
 end
 
 function Katarina:eCasted() --returns true if spell was casted within last .1s
