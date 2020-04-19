@@ -87,7 +87,7 @@ local MinionNew = function(i)
 end
 
 local MissileCountNew = function()
-	mPMisCo = mPMisCo == nil and MinionCountOld() or mPMisCo
+	mPMisCo = mPMisCo == nil and MissileCountOld() or mPMisCo
 
 	return mPMisCo
 end
